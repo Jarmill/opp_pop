@@ -1,0 +1,105 @@
+classdef opp_mode
+    %OPP_MODE Measures describing the trajectory at mode m 
+    %(before switch m, or at the end of the sequence)
+    %   Detailed explanation goes here
+    
+    properties
+        mode;          %the mode m (defines the id)
+        opts;          %relevant options for the mode
+        levels;        %locations for each inverter voltage level
+        L;             %levels of the inverter        
+        transition;    %guard measures for the partition staying within the level (no switching)
+    end
+    
+    methods
+        function obj = opp_mode(m, vars, opts)
+            %OPP_MODE Construct an instance of this class
+            %   create locations
+            obj.mode = m;
+            obj.L = opts.L;
+            
+            N = length(opts.L);
+            P = opts.partition;
+            obj.levels = cell(N, P);
+            obj.transition = cell(N, P-1);
+
+            %define the generic support set
+            lsupp_base = loc_support(vars);
+            lsupp_base.TIME_INDEP = 1;
+            lsupp_base.FREE_TERM = 0;
+            lsupp1.Tmax = 1;
+
+            %define the support set
+            X_other = [vars.x(3)*(1-2*Delta - vars.x(3)];            
+            if length(vars.x)<4
+                X_other = [X_other; 1-vars.x(4)^2];
+            end
+            Delta = opts.f0*opts.Ts;
+            X_trig = [vars.x(1)^2 + vars.x(2)^2 ==1];
+
+            X = [X_trig; X_other];
+            lsupp1.X = X;
+
+            %terminate
+            Xstop = [vars.x(1)==1; vars.x(0)==0; X_other];
+            if m==0                
+               lsupp1.X_init = Xstop;
+            elseif m==opts.k || (opts.early_stop && (mod(m, 2)==0))
+                lsupp.X_term = Xstop;
+            end
+
+            %TODO: define grid-side filter dynamics
+            %define the dynamics within the mode
+
+
+
+            for i = 1:N
+                for j = 1:P
+                    curr_level = obj.create_level_loc(i, j, vars);
+                end
+            end
+
+            for i=1:N
+                for j=1:P-1
+                    curr_transition = obj.create_transition_loc(i, j, vars);
+                end
+            end
+        end
+
+        
+        
+        function level_out = create_level_loc(obj,inputArg)
+            %METHOD1 Summary of this method goes here
+            %   Detailed explanation goes here
+            outputArg = obj.Property1 + inputArg;
+        end
+
+
+        function f = mode_dynamics(vars, opts, le)
+
+            f_trig = 2*pi*[-vars.x(2); vars.x(1)];
+            f_phi = vars.x(3);
+            %dynamics of the load
+            if (length(vars.x)==3) || (im(opts.Z_load) == 0)                      
+                %purely resistive
+                f_load = [];
+            elseif (imag(opts.Z_load) >= 0)
+                %inductive load
+                %i' = -(R/L)i + (1/L) v
+                %per-unit system, ignore the L value
+                inductance = imag(opts.Z_load)/(2*pi*opts.f0);
+                resistance= real(opts.Z_load);                
+                f_load = -(resistance)/(inductance)*vars.x(4) + u_curr;
+            else
+                 %vc' = (v-vc)/(R*C)
+                 %per-unit, ignore (R*C) factor
+                 %TODO: v is from the voltage source. Modify when it is 
+                 %filtered by a grid-side filter
+                 f_load = u_curr - vars.x(4);
+            end
+
+            f = [f_trig; f_phi; f_load]
+        end
+    end
+end
+
