@@ -5,22 +5,23 @@ classdef opp_location < location_interface
     properties
         mode;
         partition; 
+        level;
+        id;
     end
     
     methods
-        function obj = opp_location(loc_supp, f, objective, id)
+        function obj = opp_location(loc_supp, f, objective, info)
             %OPP_LOCATION Construct an instance of this class
             %   Detailed explanation goes here
-            if nargin < 3             
-                %by default, no objective
-                objective = [];                
-            end
-            
-            if nargin < 4
-                id = [];            
-            end
+          
+            id = info.id;
+
             obj@location_interface(loc_supp, f, objective, id);
             
+            obj.mode = info.mode;
+            obj.partition = info.partition;
+            obj.level= info.level;
+            obj.id = info.id;
             %TODO: make id the last argument                                       
             obj.sys  = subsystem_base(obj.supp, obj.f, 1, id);
         end
@@ -93,6 +94,55 @@ classdef opp_location < location_interface
             end            
         end
 
+        
+        function [v_trig, mon_trig] = trig_monom(obj, d)
+            %moments of [c, s] (trigonometric lift, used for Lebesgue
+            %constraint)
+            x_curr = obj.sys{1}.meas_occ.vars.x;
+            x_trig = x_curr(1:2);
+            v_curr = mmon(x_curr_trig, 0, d);
+
+            mon_trig = mom(v_curr);
+
+        end
+
+        function [harm_poly, harm_mom] = voltage_harmonics_mom(obj, vars, harm_in)
+            %voltage harmonics evaluation 
+            %equivalent to a resistive load
+            harm_eval = [vars.x(1).^harm_in.index_cos; vars.x(1).^harm_in.index_sin];
+            sub_eval = obj.sys{1}.meas_occ.var_sub(vars, harm_eval);
+
+            harm_poly = obj.level*sub_eval;
+            harm_mom = mom(harm_poly);            
+        end
+        function [harm_poly, harm_mom] = load_harmonics_mom(obj, vars, harm_in, Z_type, Z_scale)
+            %voltage harmonics evaluation 
+            %equivalent to a resistive load
+
+            if Z_type == 0
+                [harm_poly, harm_mom]  = obj.voltage_harmonics_mom(vars, harm_in);
+            elseif Z_type ==1
+                [harm_poly, harm_mom]  = obj.capacitance_harmonics_mom(vars, harm_in, Z_scale);
+            else
+                [harm_poly, harm_mom]  = obj.inductance_harmonics_mom(vars, harm_in, Z_scale);
+            end           
+        end
+
+        function [harm_poly, harm_mom] = capacitance_harmonics_mom(obj, vars, Z_scale)
+            %current evaluation for a capacative load
+            harm_eval = [vars.x(1).^harm_in.index_cos; vars.x(1).^harm_in.index_sin];
+            harm_poly = harm_eval.*(obj.level-vars.x(4));
+
+            harm_mom = mom(harm_poly);
+        end
+
+        function [harm_poly, harm_mom] = inductance_harmonics_mom(obj, vars, Z_scale)
+            %current evaluation for a capacative load
+            harm_eval = [vars.x(1).^harm_in.index_cos; vars.x(1).^harm_in.index_sin];
+            harm_poly = harm_eval.*(Z_scale*vars.x(4));
+
+            harm_mom = mom(harm_poly);
+        end
     end
 end
 

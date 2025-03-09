@@ -134,7 +134,7 @@ classdef opp_manager
         end  
 
         %% form the constraints
-        function [mom_con, supp_con, len_dual] = cons(obj, d)
+        function [mom_con, supp_con] = cons(obj, d)
 
             %generate the constraints
             supp_con = obj.supp_con();
@@ -143,7 +143,7 @@ classdef opp_manager
             con_prob = obj.con_prob_dist();
             
             %initial = sum of terminal measure
-            con_preserve = obj.con_return();
+            con_preserve = obj.con_preserve_init_mass();
 
             %flow +jump continuity constraints
             
@@ -152,71 +152,38 @@ classdef opp_manager
             %harmonics constraints
             con_harm = obj.con_harmonics();
 
-            con_leb = obj.con_lebesgue_circ(d);
+            mom_con = [con_prob; con_preserve; con_liou; con_harm];
 
-            mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb];
-
-
-            %TODO: objective constraints as well
-            
-            %TODO: index the dual variables
-            len_dual = 0;
-
-        end
-
-        function leb_con = con_lebesgue_circ(obj, d)
-            %the signal encircles the unit disk entirely in one period
-            %this means that the (c, s) marginal of the occupation measures
-            %is a Lebesgue distribution
-            
-            %get the lebesgue distribution
-            pw = genPowGlopti(2, d);
-            leb_circ = LebesgueMomSphere(pw,r);
-
-            %get moments of the (c, s)-marginal
-            trmon_sum = 0;
-            for m = 1:length(obj.modes)
-                tr_curr = obj.modes{m}.trig_occ_monom(d);
-                trmon_sum = trmon_sum + tr_curr;
-            end
-
-            leb_con = (trmon_sum == leb_circ);
-            
         end
 
         function harm_con = con_harmonics(obj)
-            %collect harmonics constraints on the voltage source and the load
             harm = obj.opts.harmonics;
-            harm_load_data = obj.opts.harmonics_load;
+            harm_load = obj.opts.harmonics_load;
 
-            % harmonics on voltage source
+            harm_con = [];
             if ~isempty(harm)
                 harm_source = 0;
-                for m = 0:length(obj.modes)   
-                    [~, harm_mom] = obj.modes{m}.voltage_harmonics_mom(obj.vars, harm);
-                    harm_source = harm_source + harm_mom;
+                for m = 0:length(obj.modes)                    
+                    harm_source = harm_source + obj.modes{m}.voltage_harmonics_mom(obj.vars, harm);
                 end
-                harm_source_con = harmonics_process(harm, harm_source);
-            else
-                harm_source_con = [];                
+
+                bnd = [harm_source.bound_cos; harm_source.bound_sin];
+
+                bnd
+                % eq_ind = harm.
             end
 
 
-            %TODO: grid side filters
 
-            %harmonics on the load side
-            if ~isempty(harm_load_data)          
-                harm_load = 0;
-                for m = 0:length(obj.modes)     
-                    [~, harm_mom_load] = obj.modes{m}.load_harmonics_mom(obj.vars, harm_load_data);
-                    harm_load = harm_load + harm_mom_load;
+            if ~isempty(harm_load)
+
+                if ~isempty(harm)
+                harm_source = 0;
+                for m = 0:length(obj.modes)                    
+                    harm_source = harm_source + obj.modes{m}.load_harmonics_mom(obj.vars, harm_load);
                 end
-                harm_load_con = harmonics_process(harm, harm_load);
-            else
-                harm_load_con = [];
             end
-            
-            harm_con = [harm_load_con; harm_source_con];
+            end
 
             %TODO: finish this. Sum up the harmonics over all components
         end
@@ -224,19 +191,20 @@ classdef opp_manager
         function flow_con = con_flow(obj)
             %the flow conservation constraint (the big one)
 
-            %start the storage structure 
-            Nmodes = length(obj.modes);
-            liou_cell = cell(Nmodes, 1);
-            jump_src = cell(Nmodes-1, 1);
-            jump_dst = cell(Nmodes, 1);
+            %start the storage structure            
+            liou_cell = cell(obj.opts.k+1, 1);
+            jump_src = cell(obj.opts.k, 1);
+            jump_dst = cell(obj.opts.k, 1);
 
             %compute all terms
-            for m=1:(Nmodes)
+            for m=1:(obj.opts.k+1)
                 liou_cell{m} = obj.modes.flow(d);
+
             end
 
             %add the jump to the cell terms
-            for m=1:(Nmodes)                
+            for m=1:(obj.opts.k)
+                % if m<obj.opts.k
                 [jump_src{m}, jump_dst{m}] = obj.jumps{m}.liou_reset(d);
             end
 
@@ -244,7 +212,7 @@ classdef opp_manager
             
             %iterate over all cells
             flow_con = [];
-            for m = 1:Nmodes
+            for m = 1:obj.opts.k+1
                 liou_curr = liou_cell{m};
                 for n=1:N
                     for p = 1:P
@@ -253,71 +221,64 @@ classdef opp_manager
                         else
                             dst_curr = jump_dst{m-1}{n, p};
                         end
-                        if m==Nmodes
+                        if m==(obj.opts.k+1)
                             src_curr = 0;
                         else
                             src_curr = jump_src{m}{n, p};
                         end
                         
                         flow_curr = liou_curr{n, p} + src_curr + dst_curr==0;
-                        
-                        %stack them into a giant vector: flow_con
+
                         flow_con = [flow_con; flow_curr];
                     end
                 end
             end
 
-            
+            %stack them into a giant vector: flow_con
         end
 
         function mass_con_eq = con_prob_dist(obj)
             %initial measure is a probability distribution (mass 1)
             
-            [mass_init_all, mass_init_sum] = obj.modes{1}.mass_init_mode();
+            mass_init_all = obj.modes{1}.mass_init_mode();
 
-            % mass_init_summary = sum(sum(mass_init_all));
+            mass_init_summary = sum(sum(mass_init_all));
 
-            mass_con_eq = (mass_init_sum==1);
+            mass_con_eq = (mass_init_summary==1);
             
         end
 
-        function return_con = con_return(obj, d)
+        function mass_con_eq = con_preserve_init_mass(obj)
             %conservation of position between the initial and final measure
             
-            % mass_con = obj.modes{1}.mass_init_mode();
-            init_monom = obj.modes{1}.init_monom(d);
+            mass_con = obj.modes{1}.mass_init_mode();
 
             %TODO: 
             %This is for full-wave. generalize for other symmetry
             %structures
-
-            return_mom = init_monom;
-            if obj.opts.early_stop                
-                for m = 3:2:length(obj.modes)
-                    % mass_con = mass_con - obj.modes{m}.mass_term_mode();
-                    stop_monom = obj.modes{m}.term_monom(d);
-                    return_mom = madd_cell_mom(return_mom, stop_monom, -1);
+            if obj.opts.early_stop
+                for m = 3:2:(obj.opts.k+1)
+                    mass_con = mass_con - obj.modes{m}.mass_term_mode();
                 end
             else
-                % mass_con = mass_con - obj.modes{end}.mass_term_mode();
-                stop_monom = obj.modes{end}.term_monom(d);
-                return_mom = madd_cell_mom(return_mom, stop_monom, -1);
+                mass_con = mass_con - obj.modes{end}.mass_term_mode();
             end
 
-            return_con = (return_mom==0);
-        
+            mass_con = reshape(mass_con, [], 1);
+            
+            mass_con_eq = (mass_con == 0);
         end
 
         
         function supp_con_all = supp_con(obj)
             %fetch support constraints from the model
-            supp_con_all = [];
+            supp_con = [];
 
             for i = 1:length(obj.jumps)
-                supp_con_all = [supp_con_all; obj.jumps{i}.supp_con()];
+                supp_con = [supp_con; obj.jumps{i}.supp_con()];
             end%cell of opp_switch
             for i = 1:length(obj.modes)
-                supp_con_all = [supp_con_all; obj.modes{i}.supp_con()];
+                supp_con = [supp_con; obj.modes{i}.supp_con()];
             end
           %cell of opp_mode(), contains initial/terminal/occupation measures
 

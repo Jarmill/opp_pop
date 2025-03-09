@@ -8,6 +8,11 @@ classdef opp_options < handle
         Ts(1, 1)double{mustBeNonnegative} = 1e-4; %minimal inter-switch sample time (sec)
         Z_load(1, 1)double = 0+0j; %impedance of the load (given frequency f0)
         L = [-1, 0, 1]; %levels of the inverter
+        
+
+        %harmonics constraints
+        harmonics = [];
+        harmonics_load = [];
 
 
         %TODO:

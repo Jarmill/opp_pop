@@ -129,6 +129,10 @@ classdef location_interface < handle
         function mass = mass_init(obj)
             mass = obj.init.mass();
         end
+
+        function mass = mass_term(obj)
+            mass = obj.term.mass();
+        end
         
         %% support
         function supp_con_out = supp_con(obj)

@@ -51,34 +51,49 @@ classdef opp_jump < handle
             %moments of the guards going up and down in the transition
             mom_src = cell(N, P);
             mom_dst = cell(N, P);
+
+
+            for n =1:N
+                for p=1:P
+                    mom_src{n, p} = 0;
+                    mom_dst{n, p} = 0;
+                end
+            end
+
             
 
             for p = 1:P
                 for n=1:Np
-
                     [mom_src_up, mom_dst_up] = obj.jump_up{n, p}.liou_reset(d);
                     [mom_src_down, mom_dst_down] = obj.jump_down{n, p}.liou_reset(d);
 
                     mom_src{n, p} = 0;
                     if n<Np
                         mom_src{n, p} = mom_src{n, p} + mom_src_up;
-                        mom_dst{n+1, p} = mom_dst{n, p} + mom_dst_up;
+                        mom_dst{n+1, p} = mom_dst{n+1, p} + mom_dst_up;
                     end
                     if n>1
                         mom_src{n, p} = mom_src{n, p} + mom_src_down;
-                        mom_dst{n-1, p} = mom_dst{n, p} + mom_dst_down;
+                        mom_dst{n-1, p} = mom_dst{n-1, p} + mom_dst_down;
                     end
-
-                    % if 
-                    %     mom{n, p} = mom_src_down;
-                    % elseif n==Np
-                    %     mom_jumps{n, p} = mom_src
-                    % else
-                    % end
                 end
             end
-            
+        end
 
+        % function 
+        %TODO: add switching losses as a constraint
+
+        function supp_con_out = supp_con(obj)
+            %fetch all support constraints
+            [Np, P] = size(obj.jump_up);
+            supp_con_out = cell(N, P);
+            for n=1:Np
+                for p = 1:P                    
+                    curr_up = obj.jump_up.supp_con();
+                    curr_down = obj.jump_up.supp_con();
+                    supp_con_out = [supp_con_out; curr_up; curr_down];
+                end
+            end
         end
     end
 end

@@ -68,8 +68,8 @@ classdef opp_mode
                     if opts.partition > 1
                         curr_lsupp.X = [curr_lsupp.X; X_partition(j)];
                     end
-                    
-                    obj.levels{n, j} = opp_location(curr_lsupp, curr_f, curr_objective, curr_id);
+                    cell_info = struct('mode', m, 'partition', p, 'level', n, 'id', id);
+                    obj.levels{n, j} = opp_location(curr_lsupp, curr_f, curr_objective, cell_info);
 
                 end
             end
@@ -109,7 +109,7 @@ classdef opp_mode
                 inductance = imag(opts.Z_load)/(2*pi*opts.f0);
                 % resistance= real(opts.Z_load);                
                 % f_load = -(resistance)/(inductance)*vars.x(4) + Lscale;
-                objective = vars.x(4)*(N/inductance)^2*(opts.L).^2;
+                objective = vars.x(4)*(Lmax/inductance)^2*(opts.L).^2;
             else
                  %vc' = (v-vc)/(R*C)
                  %per-unit, ignore (R*C) factor
@@ -119,7 +119,7 @@ classdef opp_mode
                  resistance= real(opts.Z_load);  
                  RC = resistance*capacitance;
                  % f_load = Lscale - vars.x(4)/(resistance*capacitance);
-                 objective = (opts.L.^2) + 2*(opts.L)*vars.x(4)*(N/RC) + (N/RC)^2*vars.x(4)^2;
+                 objective = (opts.L.^2) + 2*(opts.L)*vars.x(4)*(Lmax/RC) + (Lmax/RC)^2*vars.x(4)^2;
             end
         end
         
@@ -205,33 +205,91 @@ classdef opp_mode
 
         %fetching moments
 
-        function harm = harmonics_mom(obj, vars, harm_monom)
-
+        function harm = voltage_harmonics_mom(obj, vars, harm_in)
             %voltage harmonics constraints
-            harm= mom(p)*0;
+            harm= mom(vars.x(1))*zeros;
+            
             [N, P] = size(obj.levels);
 
             for n=1:N
-                for p = 1:P
-                    occ_curr = obj.levels{n, p}.sys{1}.meas_occ;
+                for p = 1:P            
+                    [~, harm_mom] = obj.levels{n, p}.voltage_harmonics_mom(obj, vars, harm_in);       
+                    harm = harm+harm_mom;                    
+                end
+            end
+        end
 
-                    harm_curr = mom(occ_curr.var_sub(vars, harm_monom));
-                    harm = harm+obj.opts.L(n)*harm_curr;
 
-                    % mom_out = mom_out + p_eval;
+        function harm = load_harmonics_mom(obj, vars, harm_in)
+            %voltage harmonics constraints
+            % harm= mom(p)*0;
+            Lmax = max(obj.opts.L);
+
+            % Z_type = 0;
+            
+            if (length(vars.x)==3) || (im(obj.opts.Z_load) == 0)                      
+                %purely resistive
+                % harm = obj.voltage_harmonics_mom(vars, harm_in);
+                Z_type = 0;
+                Z_scale = 1;
+            else                
+                if (imag(obj.opts.Z_load) >= 0)
+                    
+                    %inductive load
+                    %i' = -(R/L)i + (1/L) v
+                    inductance = imag(obj.opts.Z_load)/(2*pi*obj.opts.f0);
+                    Z_type = 1;
+                    Z_scale = (Lmax/inductance);
+                    % harm = (harm_eval.*vars.x(4)) *  .*(obj.opts.L);
+                else
+                     %vc' = (v-vc)/(R*C)
+                     %per-unit, ignore (R*C) factor
+                     %TODO: v is from the voltage source. Modify when it is 
+                     %filtered by a grid-side filter                    
+                     capacitance= -imag(obj.opts.Z_load)*(2*pi*obj.opts.f0);
+                     resistance= real(obj.opts.Z_load);                       
+                     RC = resistance*capacitance;
+                     Z_type = 2;
+                     Z_scale = (Lmax/RC);                     
                 end
             end
 
+            for n=1:N
+                for p = 1:P            
+                    [~, harm_mom] = obj.levels{n, p}.load_harmonics_mom(obj, vars, harm_in, Z_type, Z_scale);       
+                    harm = harm+harm_mom;                    
+                end
+            end
         end
 
-        function mass_init_mode = initial_mass(obj)
+        %TODO: current harmonics
+
+        function [mass_init_mode, mass_sum]= initial_mass(obj)
             %return the mass of the initial measure in this mode
-            mass_init_mode = [];
             [N, P] = size(obj.levels);
+            mass_init_mode = zeros(N, P)*mom(obj.vars.x(1));
+            mass_sum = 0;
 
             for n=1:N
                 for p = 1:P
-                    mass_init_mode = mass_init_mode + obj.levels{n, p}.mass_init();
+                    mass_curr = obj.levels{n, p}.mass_init();
+                    mass_init_mode(n, p) = mass_curr;
+                    mass_sum = mass_sum + mass_curr;
+                    % mass_init_mode = mass_init_mode + obj.levels{n, p}.mass_init();
+                end
+            end
+        end
+
+        function mass_term_mode = terminal_mass(obj)
+            %return the mass of the initial measure in this mode
+            mass_term_mode = [];
+            [N, P] = size(obj.levels);
+            mass_term_mode = zeros(N, P)*mom(obj.vars.x(1));
+
+            for n=1:N
+                for p = 1:P
+                    mass_term_mode(n, p) = obj.levels{n, p}.mass_term();
+                    % mass_init_mode = mass_init_mode + obj.levels{n, p}.mass_init();
                 end
             end
         end
@@ -247,22 +305,17 @@ classdef opp_mode
             end
         end
 
-        function trmon = trig_occ_monom(obj, d)
+        function [trmon, trmon_sum] = trig_occ_monom(obj, d)
             %get moments of the occupation measure
             %for the (c, s) marginal
             [N, P] = size(obj.levels);
-            trmon = cell(N, P);
-
-            
+            trmon = cell(N, P);    
+            trmon_sum = 0;
             for n=1:N
-                for p = 1:P
-                    x_curr= obj.levels{n, p}.sys{1}.vars.x;
-                    x_curr_trig = x_curr(1:2);
-
-                    v_curr = mmon(x_curr_trig, 0, d);
-
-                    
-                    trmon = mom(v_curr);
+                for p = 1:P                    
+                    [~, tr_curr] = obj.levels{n, p}.trig_monom(d);
+                    trmon{n, p} = tr_curr;
+                    trmon_sum = trmon_sum + tr_curr;
                 end
             end
         end
@@ -289,6 +342,23 @@ classdef opp_mode
             bmon = 0;
 
 
+        end
+
+        function supp_con_out = supp_con(obj)
+            %fetch all support constraints
+            [N, P] = size(obj.levels);
+            supp_con_out = cell(N, P);
+            for n=1:N
+                for p = 1:P                    
+                    curr_loc = obj.levels{n, p};
+                    if p<P
+                        curr_trans = obj.transition{n, p};
+                    else
+                        curr_trans = [];
+                    end
+                    supp_con_out = [supp_con_out; curr_loc; curr_trans];
+                end
+            end
         end
     end
 end
