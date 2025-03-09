@@ -9,10 +9,11 @@ classdef opp_mode
         levels;        %locations for each inverter voltage level
         L;             %levels of the inverter        
         transition;    %guard measures for the partition staying within the level (no switching)
+        vars;          %basic variable type
     end
     
     methods
-        function obj = opp_mode(m, vars, opts)
+        function obj = opp_mode(m, lsupp_ref, opts)
             %OPP_MODE Construct an instance of this class
             %   create locations
             obj.mode = m;
@@ -24,61 +25,134 @@ classdef opp_mode
             obj.transition = cell(N, P-1);
 
             %define the generic support set
-            lsupp_base = loc_support(vars);
-            lsupp_base.TIME_INDEP = 1;
-            lsupp_base.FREE_TERM = 0;
-            lsupp1.Tmax = 1;
+            lsupp_base = lsupp_ref;
 
-            %define the support set
-            X_other = [vars.x(3)*(1-2*Delta - vars.x(3)];            
-            if length(vars.x)<4
-                X_other = [X_other; 1-vars.x(4)^2];
-            end
-            Delta = opts.f0*opts.Ts;
-            X_trig = [vars.x(1)^2 + vars.x(2)^2 ==1];
+            vars = lsupp_base.vars;           
+            obj.vars = vars;
 
-            X = [X_trig; X_other];
-            lsupp1.X = X;
-
+            %define the terminal set
             %terminate
-            Xstop = [vars.x(1)==1; vars.x(0)==0; X_other];
+            Xstop = [vars.x(1)==1; vars.x(2)==0; lsupp_base.X(2:end)];
             if m==0                
-               lsupp1.X_init = Xstop;
+               lsupp_base.X_init = Xstop;
             elseif m==opts.k || (opts.early_stop && (mod(m, 2)==0))
-                lsupp.X_term = Xstop;
+                lsupp_base.X_term = Xstop;
             end
 
             %TODO: define grid-side filter dynamics
             %define the dynamics within the mode
 
+            X_partition = support_partition(opts.partition, vars);
+            
 
+            f = all_dynamics(vars, opts);
 
-            for i = 1:N
+            objective_mode = all_objective_mode(vars, opts);
+            
+
+            % loc_id = N*opts.partition*m + reshape(1:(N*opts.partition), N, []);
+            %create locations for each level
+            for n = 1:N
+                curr_f = f(:, n);
+                curr_objective = objective_mode(n);                
                 for j = 1:P
-                    curr_level = obj.create_level_loc(i, j, vars);
+                    % curr_id = loc_id(n, j);
+                    curr_id = sprintf('%d_%d_%d', m, n, j);
+
+                    curr_lsupp = lsupp_base;
+
+                    if j>1
+                        curr_lsupp.X_init = [];
+                    end
+
+                    if opts.partition > 1
+                        curr_lsupp.X = [curr_lsupp.X; X_partition(j)];
+                    end
+                    
+                    obj.levels{n, j} = opp_location(curr_lsupp, curr_f, curr_objective, curr_id);
+
                 end
             end
 
-            for i=1:N
+            %create transitions between the partition 
+            %when advancing the angle theta
+            
+            % gtop =    guard(1, vars, loc1, loc2, Xgtop, x);
+            for n=1:N
                 for j=1:P-1
-                    curr_transition = obj.create_transition_loc(i, j, vars);
+                    curr_trans_id = sprintf('trans_%d_%d_%d', n, j, j+1);
+                    
+                    obj.transition{n, j} = guard(curr_trans_id, lsupp_base.vars, ...
+                        obj.levels{n, j}, obj.levels{n, j+1}, curr_supp, vars.x);
                 end
             end
         end
 
-        
-        
-        function level_out = create_level_loc(obj,inputArg)
-            %METHOD1 Summary of this method goes here
-            %   Detailed explanation goes here
-            outputArg = obj.Property1 + inputArg;
+        %% functions used in the constructor
+
+        function objective = all_objective_mode(vars, opts)
+            %return the mode-objective at each level
+            %
+            %TODO: 
+            %the scaling factors may be wrong for inductance and
+            %capacitance. check this later.
+            %
+            N = length(opts.L);
+            if (length(vars.x)==3) || (im(opts.Z_load) == 0)                      
+                %purely resistive
+                objective = (opts.L.^2);
+            elseif (imag(opts.Z_load) >= 0)
+                
+                %inductive load
+                %i' = -(R/L)i + (1/L) v
+                %per-unit system, ignore the L value
+                inductance = imag(opts.Z_load)/(2*pi*opts.f0);
+                % resistance= real(opts.Z_load);                
+                % f_load = -(resistance)/(inductance)*vars.x(4) + Lscale;
+                objective = vars.x(4)*(N/inductance)^2*(opts.L).^2;
+            else
+                 %vc' = (v-vc)/(R*C)
+                 %per-unit, ignore (R*C) factor
+                 %TODO: v is from the voltage source. Modify when it is 
+                 %filtered by a grid-side filter
+                 capacitance= -imag(opts.Z_load)*(2*pi*opts.f0);
+                 resistance= real(opts.Z_load);  
+                 RC = resistance*capacitance;
+                 % f_load = Lscale - vars.x(4)/(resistance*capacitance);
+                 objective = (opts.L.^2) + 2*(opts.L)*vars.x(4)*(N/RC) + (N/RC)^2*vars.x(4)^2;
+            end
         end
+        
 
-
-        function f = mode_dynamics(vars, opts, le)
-
+        function f = all_dynamics(vars, opts)
+            %create the dynamics as a matrix f
+            %row: each level
+            %column: each state
             f_trig = 2*pi*[-vars.x(2); vars.x(1)];
             f_phi = vars.x(3);
+            f_clock = 1;
+            f_load = load_dynamics(vars, opts);
+
+            % f = [f_trig; f_phi; f_load];
+            N = length(opts.L);
+            f_basic = [f_trig; f_phi; f_clock] * ones(1, N);
+
+            f = [f_basic; f_load];
+        end
+
+
+        function f_load = load_dynamics(vars, opts)
+            %dynamics in the mode
+            %(trig spinning around a circle, clock increasing, load
+            %charging/modifying the current)
+            %vars: variables (t, x)
+            %opts: options from opp_options
+            %n: level of the inverter
+
+            %scaled inverter value
+            Lscale = opts.L/max(abs(opts.L));
+            % u_curr = opts.L(n)/max(abs(opts.L));           
+
             %dynamics of the load
             if (length(vars.x)==3) || (im(opts.Z_load) == 0)                      
                 %purely resistive
@@ -89,16 +163,130 @@ classdef opp_mode
                 %per-unit system, ignore the L value
                 inductance = imag(opts.Z_load)/(2*pi*opts.f0);
                 resistance= real(opts.Z_load);                
-                f_load = -(resistance)/(inductance)*vars.x(4) + u_curr;
+                f_load = -(resistance)/(inductance)*vars.x(4) + Lscale;
             else
                  %vc' = (v-vc)/(R*C)
                  %per-unit, ignore (R*C) factor
                  %TODO: v is from the voltage source. Modify when it is 
                  %filtered by a grid-side filter
-                 f_load = u_curr - vars.x(4);
+                 capacitance= -imag(opts.Z_load)*(2*pi*opts.f0);
+                 resistance= real(opts.Z_load);  
+                 f_load = Lscale - vars.x(4)/(resistance*capacitance);
+            end
+        end
+    
+        %% functions used to describe constraints
+        function liou = flow(obj, d)
+            %return the continuity equation within the mode
+            [N, P] = size(obj.levels);
+            liou = cell(N, P);
+            %start with continuity within the location
+            %positive: incoming, negative: outgoing
+            for n=1:N
+                for p = 1:P
+                    liou{n, p} = obj.levels{n, p}.liou_con(d);
+                end
             end
 
-            f = [f_trig; f_phi; f_load]
+            %now handle transitions within the mode
+            for n=1:N
+                for p = 1:P-1
+                    trans_loss = obj.transition{n, p}.reset_push(d);
+                    liou{n, p} = liou{n, p} - trans_loss;
+                    liou{n, p+1} = liou{n, p+1} + trans_loss;
+                end
+            end
+
+            %return liou
+            %the manager will sew together jumps between multiple modes.
+
+        end
+
+
+        %fetching moments
+
+        function harm = harmonics_mom(obj, vars, harm_monom)
+
+            %voltage harmonics constraints
+            harm= mom(p)*0;
+            [N, P] = size(obj.levels);
+
+            for n=1:N
+                for p = 1:P
+                    occ_curr = obj.levels{n, p}.sys{1}.meas_occ;
+
+                    harm_curr = mom(occ_curr.var_sub(vars, harm_monom));
+                    harm = harm+obj.opts.L(n)*harm_curr;
+
+                    % mom_out = mom_out + p_eval;
+                end
+            end
+
+        end
+
+        function mass_init_mode = initial_mass(obj)
+            %return the mass of the initial measure in this mode
+            mass_init_mode = [];
+            [N, P] = size(obj.levels);
+
+            for n=1:N
+                for p = 1:P
+                    mass_init_mode = mass_init_mode + obj.levels{n, p}.mass_init();
+                end
+            end
+        end
+
+        function imon = init_monom(obj, d)
+            %moments of the initial measure
+            [N, P] = size(obj.levels);
+            imon = cell(N, P);
+            for n=1:N
+                for p = 1:P
+                    imon = obj.levels{n, p}.init.mom_monom(d);
+                end
+            end
+        end
+
+        function trmon = trig_occ_monom(obj, d)
+            %get moments of the occupation measure
+            %for the (c, s) marginal
+            [N, P] = size(obj.levels);
+            trmon = cell(N, P);
+
+            
+            for n=1:N
+                for p = 1:P
+                    x_curr= obj.levels{n, p}.sys{1}.vars.x;
+                    x_curr_trig = x_curr(1:2);
+
+                    v_curr = mmon(x_curr_trig, 0, d);
+
+                    
+                    trmon = mom(v_curr);
+                end
+            end
+        end
+
+        function tmon = term_monom(obj, d)
+            %moments of the terminal measure
+            [N, P] = size(obj.levels);
+            tmon = cell(N, P);
+            for n=1:N
+                for p = 1:P                    
+                      if isempty(obj.levels{n, p}.term)
+                          tmon{n, p} = 0;
+                      else
+                          tmon{n, p} = obj.levels{n, p}.term.mom_monom(d);
+                      end                                    
+                end
+            end
+        end
+
+        %TODO: three phase balance constraint
+        function bmon = balance_term(obj, d)
+            %three-phase balanced symmetry in the current
+
+
         end
     end
 end

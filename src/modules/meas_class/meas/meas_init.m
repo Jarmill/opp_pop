@@ -17,6 +17,8 @@ classdef meas_init < meas_collection
             
             if nargin < 2
                 loc_id = [];
+            elseif isnumeric(loc_id)
+                loc_id = num2str(loc_id);
             end
 
             %copy over variables 
@@ -87,7 +89,7 @@ classdef meas_init < meas_collection
                     suffix = ['_', num2str(i), suffix];
                 end
                 if ~isempty(loc_id)
-                    suffix = ['_', num2str(loc_id), suffix];
+                    suffix = ['_', loc_id, suffix];
                 end
                 supp_curr = [obj.vars.t==0; X0_cell{i}; TH0_cell{i}];
                 obj.meas{i} = obj.meas_def({'t', 'x', 'th'}, suffix, supp_curr);

@@ -1,8 +1,9 @@
-function [arc] = support_arc(m, x, Delta)
+function [arc] = support_arc(m, vars, Delta)
 %SUPPORT_ARC what angles on the unit disc are permissible for mode m
-c = x(1);
-s = x(2);
+c = vars.x(1);
+s = vars.x(2);
 
+%TODO: 
         if m==0        
             mD = 2*Delta;        
             %arc [0, 2pi-2alpha]

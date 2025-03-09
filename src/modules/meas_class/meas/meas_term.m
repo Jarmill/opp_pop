@@ -11,8 +11,9 @@ classdef meas_term < meas_collection
             
             if nargin < 2
                 loc_id = [];
+            elseif isnumeric(loc_id)
+                loc_id = num2str(loc_id);
             end
-            
             %copy over variables 
             varnames = {'t','x','th'};
             obj@meas_collection(loc_supp, varnames); 
@@ -79,7 +80,7 @@ classdef meas_term < meas_collection
                     suffix = ['_', num2str(i), suffix];
                 end
                 if ~isempty(loc_id)
-                    suffix = ['_', num2str(loc_id), suffix];
+                    suffix = ['_', loc_id, suffix];
                 end
 
                 supp_curr = [tsupp ; XT_cell{i}; THT_cell{i}];

@@ -1,0 +1,70 @@
+classdef opp_jump < handle
+    %OPP_JUMP measures describing the switch from m-1 to m
+    %(m=1 to k)
+    
+    properties
+       mode;          %the mode m (defines the id)
+       opts;          %relevant options for the mode
+       jump_up;       %guards for transiting up a level
+       jump_down;     %guards for transiting down a level
+       src;           %source mode 
+       dst;           %destination mode
+       L;             %levels of the inverter               
+       vars;          %basic variable type       
+    end
+    
+    methods
+        function obj = opp_jump(m, opts, vars, X_jump)
+            %OPP_JUMP Construct an instance of this class
+            %   Detailed explanation goes here
+            
+            obj.vars = vars;
+
+            reset_law = x;
+            reset_law(3) = 0;
+
+            P = opts.partition;
+            N = length(obj.L);
+
+            obj.mode = m;
+            X_partition = support_partition(opts.partition, vars);
+            
+            for n=1:N-1
+                for p = 1:P
+                    supp_curr = [X_jump; X_partition(p)];
+                    curr_name = sprintf('jump_%d_%d_%d', m, n, p);
+                    obj.jump_up = guard(curr_name, vars, src.level{n, p}, ...
+                        dst.level{n+1, p}, supp_curr, reset_law);
+                    obj.jump_down = guard(curr_name, vars, src.level{n, p}, ...
+                        dst.level{n-1, p}, supp_curr, reset_law);
+                end
+            end
+            
+        end
+        
+        function [mom_jumps] = liou_reset(obj, d)
+            %METHOD1 Summary of this method goes here
+            %   Detailed explanation goes here
+            [Np, P] = size(obj.dst);
+            N = Np+1;
+            mom_jumps = cell(N, P);
+            
+
+            for p = 1:P
+                for n=1:N
+
+                    [mom_src_up, mom_dst_up] = obj.jump_up{n, p}.liou_reset(d);
+                    [mom_src_down, mom_dst_down] = obj.jump_down{n, p}.liou_reset(d);
+
+                    if n==1
+                        mom_jumps{n, p} = mom_src_down;
+                    elseif n==Np
+                        mom_jumps{n, p} = mom_src
+                end
+            end
+            
+
+        end
+    end
+end
+

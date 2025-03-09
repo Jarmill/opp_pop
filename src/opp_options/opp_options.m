@@ -28,7 +28,7 @@ classdef opp_options < handle
         %polynomial optimization parameters
         partition(1, 1)uint32 = 4; %number of partitions of the disc c^2+s^2=1
         solver = 'mosek';
-        time_dep(1, 1)logical = 1; %include time as an explicit state
+        TIME_INDEP(1, 1)logical = false; %include time as an explicit state
 
     end
 

@@ -45,6 +45,8 @@ classdef subsystem_interface < handle
             
             if nargin < 4
                 loc_id = [];
+            elseif isnumeric(loc_id)
+                loc_id = num2str(loc_id);
             end
             
             if nargin >= 5
@@ -56,7 +58,7 @@ classdef subsystem_interface < handle
             obj.sys_id = sys_id;
             obj.prefix = ['_', num2str(sys_id), '_'];
             if ~isempty(loc_id)
-                obj.prefix = ['_', num2str(loc_id), obj.prefix];
+                obj.prefix = ['_', loc_id, obj.prefix];
             end
             
             %support            

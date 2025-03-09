@@ -27,6 +27,9 @@ classdef guard < meas_base
             
             obj@meas_base(vars_old, supp_old);
             obj.id = id;
+            if isnumeric(obj.id)
+                obj.id = num2str(obj.id);
+            end
             obj.src = src;
             obj.dest = dest;
 %             obj.reset = reset_old;
@@ -48,12 +51,12 @@ classdef guard < meas_base
                 t_new = [];
                 obj.TIME_INDEP = 1;
             else
-                tname = ['t', suffix, '_', num2str(obj.id)];                       
+                tname = ['t', suffix, '_', obj.id];                       
                 mpol(tname, 1, 1);
                 t_new = eval(tname);                   
             end
             
-            xname = ['x', suffix, '_', num2str(obj.id)];                        
+            xname = ['x', suffix, '_', obj.id];                        
             mpol(xname, length(obj.vars.x), 1);
             x_new = eval(xname);
             

@@ -28,6 +28,8 @@ classdef subsystem < subsystem_interface
             
             if nargin < 4
                 loc_id = [];
+            elseif isnumeric(loc_id)
+                loc_id = num2str(loc_id);
             end
             
             %superclass constructor
