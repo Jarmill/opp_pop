@@ -33,9 +33,11 @@ classdef opp_mode
             %define the terminal set
             %terminate
             Xstop = [vars.x(1)==1; vars.x(2)==0; lsupp_base.X(2:end)];
+
+            mode_end = opts.k/(2^opts.Symmetry);
             if m==0                
                lsupp_base.X_init = Xstop;
-            elseif m==opts.k || (opts.early_stop && (mod(m, 2)==0))
+            elseif m==mode_end || (opts.early_stop && (mod(m, 2)==0))
                 lsupp_base.X_term = Xstop;
             end
 
@@ -61,7 +63,7 @@ classdef opp_mode
 
                     curr_lsupp = lsupp_base;
 
-                    if j>1
+                    if j>1 || ((opts.start_level==0) && (n~= opts.start_level))
                         curr_lsupp.X_init = [];
                     end
 

@@ -273,12 +273,14 @@ classdef opp_manager
         function mass_con_eq = con_prob_dist(obj)
             %initial measure is a probability distribution (mass 1)
             
-            [mass_init_all, mass_init_sum] = obj.modes{1}.mass_init_mode();
+            [~, mass_init_sum] = obj.modes{1}.mass_init_mode();
+
+            % mass_init = 
 
             % mass_init_summary = sum(sum(mass_init_all));
 
             mass_con_eq = (mass_init_sum==1);
-            
+           
         end
 
         function return_con = con_return(obj, d)

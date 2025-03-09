@@ -62,6 +62,10 @@ classdef loc_support
             %   sys_id:     system in reference to examine
             
             
+            if nargin < 1
+                vars = struct;
+            end
+
             %iterate through variables 
             varnames = fields(vars);
             for i = 1:length(varnames)

@@ -6,7 +6,6 @@ classdef opp_location < location_interface
         mode;
         partition; 
         level;
-        id;
     end
     
     methods
@@ -21,9 +20,9 @@ classdef opp_location < location_interface
             obj.mode = info.mode;
             obj.partition = info.partition;
             obj.level= info.level;
-            obj.id = info.id;
+            % obj.id = info.id;
             %TODO: make id the last argument                                       
-            obj.sys  = subsystem_base(obj.supp, obj.f, 1, id);
+            obj.sys  = subsystem_base(obj.supp, obj.f, [], id);
         end
         
         function vars_out = get_vars_end(obj)
@@ -109,7 +108,7 @@ classdef opp_location < location_interface
         function [harm_poly, harm_mom] = voltage_harmonics_mom(obj, vars, harm_in)
             %voltage harmonics evaluation 
             %equivalent to a resistive load
-            harm_eval = [vars.x(1).^harm_in.index_cos; vars.x(1).^harm_in.index_sin];
+            harm_eval = [vars.x(1).^harm_in.index_cos; vars.x(1).^harm_in.index_sin]/pi;
             sub_eval = obj.sys{1}.meas_occ.var_sub(vars, harm_eval);
 
             harm_poly = obj.level*sub_eval;
@@ -130,7 +129,7 @@ classdef opp_location < location_interface
 
         function [harm_poly, harm_mom] = capacitance_harmonics_mom(obj, vars, Z_scale)
             %current evaluation for a capacative load
-            harm_eval = [vars.x(1).^harm_in.index_cos; vars.x(1).^harm_in.index_sin];
+            harm_eval = [vars.x(1).^harm_in.index_cos; vars.x(1).^harm_in.index_sin]/pi;
             harm_poly = harm_eval.*(obj.level-vars.x(4));
 
             harm_mom = mom(harm_poly);
@@ -138,10 +137,19 @@ classdef opp_location < location_interface
 
         function [harm_poly, harm_mom] = inductance_harmonics_mom(obj, vars, Z_scale)
             %current evaluation for a capacative load
-            harm_eval = [vars.x(1).^harm_in.index_cos; vars.x(1).^harm_in.index_sin];
+            harm_eval = [vars.x(1).^harm_in.index_cos; vars.x(1).^harm_in.index_sin]/pi;
             harm_poly = harm_eval.*(Z_scale*vars.x(4));
 
             harm_mom = mom(harm_poly);
+        end
+
+        %holdovers from abstract class
+        function dual_out = dual_process(obj)
+            dual_out = []
+        end
+
+        function leq= len_eq_cons(obj)
+            leq= []
         end
     end
 end

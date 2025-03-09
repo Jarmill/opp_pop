@@ -56,7 +56,11 @@ classdef subsystem_interface < handle
             %identification and names
             obj.loc_id = loc_id;
             obj.sys_id = sys_id;
-            obj.prefix = ['_', num2str(sys_id), '_'];
+            if isempty(sys_id)
+                obj.prefix = '_';
+            else
+                obj.prefix = ['_', num2str(sys_id), '_'];
+            end
             if ~isempty(loc_id)
                 obj.prefix = ['_', loc_id, obj.prefix];
             end
