@@ -7,15 +7,16 @@ function [X_partition] = support_partition(partition, x)
 c = x(1);
 s = x(2);
 
-mD = 2*pi/partition;
+mD = 2*pi/double(partition);
 
 if partition == 1
     X_partition = [];
 else
     X_partition = ones(partition, 1)*c;
     for i = 1:partition
-        th1 = mD*(i-1);
-        th2 = mD*i;
+        di = double(i);
+        th1 = mD*(di-1);
+        th2 = mD*di;
 
         s1 = sin(th1);
         s2 = sin(th2);

@@ -6,7 +6,7 @@ cell_out = cell1;
 [N, P] = size(cell1);
 for n = 1:N
     for p = 1:P
-        cell1{n, p} = cell1{n, p} + C*cell2{n, P};
+        cell_out{n, p} = cell1{n, p} + C*cell2{n, p};
     end
 end
 

@@ -26,14 +26,14 @@ classdef opp_manager
                 'mosek.MSK_DPAR_BASIS_TOL_X', 1e-8, 'mosek.MSK_DPAR_INTPNT_CO_TOL_MU_RED', 1e-9, ...
                 'mosek.MSK_DPAR_INTPNT_TOL_PATH', 1e-6);            
 
-            [jumps, modes] = obj.create_system(opts);
+            [obj.vars, obj.jumps, obj.modes] = obj.create_system(opts);
         end
 
         %% construct everything
-        function [jumps, modes] = create_system(opts)
+        function [vars, jumps, modes] = create_system(obj, opts)
             %used in the constructor
 
-            k = opts.k;
+            k = opts.k/(2^opts.Symmetry);
             jumps = cell(k, 1);
             modes = cell(k+1, 1);
 
@@ -45,7 +45,7 @@ classdef opp_manager
 
             
             %create the basic location structure
-            if opts.TIME_INDEP
+            if ~opts.TIME_INDEP
                 mpol('t', 1, 1)
             else
                 t = [];
@@ -55,7 +55,7 @@ classdef opp_manager
             lsupp_base = loc_support();
             lsupp_base.vars.x = x;
             lsupp_base.vars.t = t;
-            obj.vars = lsupp_base.vars;
+            vars = lsupp_base.vars;
 
             lsupp_base.TIME_INDEP = opts.TIME_INDEP;
             lsupp_base.FREE_TERM = 0;
@@ -64,23 +64,24 @@ classdef opp_manager
             %create the support set
 
             Delta = opts.f0*opts.Ts;
-            X_trig = x(1)^2 + x(2)^2 ==1;
+            X_trig = 1-x(1)^2 + x(2)^2;
 
             %clock and rescaled load
             X_clock_mode = x(3)*(1-2*Delta - x(3));    
             X_clock_jump = (x(3)-Delta)*(1-2*Delta - x(3));    
             
-            if length(vars.x)<4
+            if length(x)<4
                 X_load = [];
             else
                 X_load = 1-x(4)^2;                
             end
 
-            lsupp_base.X = X;
+            
 
             X = [X_trig==0; X_clock_mode>=0; X_load>=0];
             X_jump = [X_trig==0; X_clock_jump>=0; X_load>=0];
                        
+            lsupp_base.X = X;
             %define the reset law for the jump
             
 
@@ -90,6 +91,10 @@ classdef opp_manager
                 arc_curr = support_arc(m, x, Delta);
                 lsupp_curr.X = [lsupp_curr.X; arc_curr>=0];
                 modes{m+1} = opp_mode(m, lsupp_curr, opts);
+
+                if m~=0
+                    jumps{m} = opp_jump(m, opts, vars, X_jump);
+                end
             end
 
 
@@ -171,13 +176,13 @@ classdef opp_manager
             
             %get the lebesgue distribution
             pw = genPowGlopti(2, d);
-            leb_circ = LebesgueMomSphere(pw,r);
+            leb_circ = LebesgueMomSphere(pw,1);
 
             %get moments of the (c, s)-marginal
             trmon_sum = 0;
             for m = 1:length(obj.modes)
                 tr_curr = obj.modes{m}.trig_occ_monom(d);
-                trmon_sum = trmon_sum + tr_curr;
+                trmon_sum = trmon_sum + cell_sum(tr_curr);
             end
 
             leb_con = (trmon_sum == leb_circ);
@@ -273,7 +278,7 @@ classdef opp_manager
         function mass_con_eq = con_prob_dist(obj)
             %initial measure is a probability distribution (mass 1)
             
-            [~, mass_init_sum] = obj.modes{1}.mass_init_mode();
+            [~, mass_init_sum] = obj.modes{1}.initial_mass();
 
             % mass_init = 
 
@@ -287,26 +292,36 @@ classdef opp_manager
             %conservation of position between the initial and final measure
             
             % mass_con = obj.modes{1}.mass_init_mode();
-            init_monom = obj.modes{1}.init_monom(d);
+            init_monom = obj.modes{1}.init_monom(d, true);
 
             %TODO: 
             %This is for full-wave. generalize for other symmetry
             %structures
 
-            return_mom = init_monom;
+            return_mom = {init_monom{:, 1}};
             if obj.opts.early_stop                
                 for m = 3:2:length(obj.modes)
                     % mass_con = mass_con - obj.modes{m}.mass_term_mode();
-                    stop_monom = obj.modes{m}.term_monom(d);
-                    return_mom = madd_cell_mom(return_mom, stop_monom, -1);
+                    stop_monom = obj.modes{m}.term_monom(d, true);
+                    return_mom = madd_cell_mom(return_mom, {stop_monom{:, end}}, -1);
                 end
             else
                 % mass_con = mass_con - obj.modes{end}.mass_term_mode();
-                stop_monom = obj.modes{end}.term_monom(d);
-                return_mom = madd_cell_mom(return_mom, stop_monom, -1);
+                stop_monom = obj.modes{end}.term_monom(d, true);
+                return_mom = madd_cell_mom(return_mom, {stop_monom{:, end}}, -1);
             end
 
-            return_con = (return_mom==0);
+            [N, P] = size(return_mom);
+            return_con = [];
+            for n = 1:N
+                for p = 1:P
+                    if ~isnumeric(return_mom{n, p})
+                        return_con = [return_con; return_mom{n, p}==0];
+                    end
+                end
+            end
+
+            % return_con = (return_mom==0);
         
         end
 
@@ -341,7 +356,7 @@ classdef opp_manager
             end
             
             for i = 1:length(obj.modes)
-                objective = objective + obj.jumps{i}.modes();
+                objective = objective + obj.modes{i}.objective();
             end
 
         end

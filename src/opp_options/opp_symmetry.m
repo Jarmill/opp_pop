@@ -1,4 +1,4 @@
-classdef opp_symmetry < uint32
+classdef opp_symmetry < int32
    enumeration
       Full (0)
       Half (1)

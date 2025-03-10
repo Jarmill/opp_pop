@@ -15,14 +15,14 @@ classdef opp_location < location_interface
           
             id = info.id;
 
-            obj@location_interface(loc_supp, f, objective, id);
+            obj@location_interface(loc_supp, f, [], id);
             
             obj.mode = info.mode;
             obj.partition = info.partition;
             obj.level= info.level;
             % obj.id = info.id;
             %TODO: make id the last argument                                       
-            obj.sys  = subsystem_base(obj.supp, obj.f, [], id);
+            obj.sys  = {subsystem_base(obj.supp, obj.f, [], id)};
         end
         
         function vars_out = get_vars_end(obj)
@@ -58,21 +58,26 @@ classdef opp_location < location_interface
             cons_eq = (-liou==0);                        
         end      
 
+        %
+        %TODO: need to deal with the objective
+        %
+
+
         function [obj_min, obj_con_ineq, obj_con_eq] = objective_con(obj, objective)
             %OBJECTIVE_CON deal with the objective, which may be maximin
-                                    
+
             %TODO: This should maybe go in the manager
             %The current implementation is only for peak estimation
-            
+
             %TODO: include support for putting objectives on initial and
             %occupation measures as well as the terminal measure
             if nargin == 1
                 objective = obj.get_objective();
             end
-                                    
+
             obj_con_eq = [];
             obj_con_ineq = [];
-            
+
             var_end = obj.var_index(obj.vars, {'t', 'x'});
             if isempty(objective)
                 obj_min = 0;
@@ -99,9 +104,29 @@ classdef opp_location < location_interface
             %constraint)
             x_curr = obj.sys{1}.meas_occ.vars.x;
             x_trig = x_curr(1:2);
-            v_curr = mmon(x_curr_trig, 0, d);
+            v_trig = mmon(x_trig, 0, d);
 
-            mon_trig = mom(v_curr);
+            mon_trig = mom(v_trig);
+
+        end
+
+        function [v_ntrig, mon_ntrig] = non_trig_monom_init(obj, d)
+            %moments of all other variables [phi, l] 
+            x_curr = obj.init.meas{1}.vars.x;
+            x_ntrig = x_curr(3:end);
+            v_ntrig = mmon(x_ntrig, 0, d);
+
+            mon_ntrig = mom(v_ntrig);
+
+        end
+
+        function [v_ntrig, mon_ntrig] = non_trig_monom_term(obj, d)
+            %moments of all other variables [phi, l] 
+            x_curr = obj.term.meas{1}.vars.x;
+            x_ntrig = x_curr(3:end);
+            v_ntrig = mmon(x_ntrig, 0, d);
+
+            mon_ntrig = mom(v_ntrig);
 
         end
 

@@ -12,7 +12,7 @@ s = x(2);
             %arc [alpha, 2pi-alpha]
             arc= cos(mD) - cos(mD)*c;
         else
-            mD = m*Delta;        
+            mD = double(m)*Delta;        
             %arc [malpha, 2pi]
             arc = cos(mD) - cos(mD)*c - sin(mD)*s;
         end

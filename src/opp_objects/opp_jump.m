@@ -19,24 +19,28 @@ classdef opp_jump < handle
             %   Detailed explanation goes here
             
             obj.vars = vars;
+            obj.L = opts.L;
 
-            reset_law = x;
-            reset_law(3) = 0;
+            reset_law = vars.x;
+            reset_law(3) = 0*vars.x(3);
 
             P = opts.partition;
             N = length(obj.L);
 
             obj.mode = m;
-            X_partition = support_partition(opts.partition, vars);
+            X_partition = support_partition(opts.partition, vars.x);
             
+            obj.jump_up = cell(N-1, P);
+            obj.jump_down = cell(N-1, P);
+
             for n=1:N-1
                 for p = 1:P
-                    supp_curr = [X_jump; X_partition(p)];
+                    supp_curr = [X_jump; X_partition(p)>=0];
                     curr_name = sprintf('jump_%d_%d_%d', m, n, p);
-                    obj.jump_up = guard(curr_name, vars, src.level{n, p}, ...
-                        dst.level{n+1, p}, supp_curr, reset_law);
-                    obj.jump_down = guard(curr_name, vars, src.level{n, p}, ...
-                        dst.level{n-1, p}, supp_curr, reset_law);
+                    obj.jump_up{n, p} = guard(curr_name, vars, [], ...
+                        [], supp_curr, reset_law);
+                    obj.jump_down{n, p} = guard(curr_name, vars, [], ...
+                        [], supp_curr, reset_law);
                 end
             end
             
@@ -86,11 +90,11 @@ classdef opp_jump < handle
         function supp_con_out = supp_con(obj)
             %fetch all support constraints
             [Np, P] = size(obj.jump_up);
-            supp_con_out = cell(N, P);
+            supp_con_out = [];
             for n=1:Np
                 for p = 1:P                    
-                    curr_up = obj.jump_up.supp_con();
-                    curr_down = obj.jump_up.supp_con();
+                    curr_up = obj.jump_up{n, p}.supp;
+                    curr_down = obj.jump_down{n, p}.supp;
                     supp_con_out = [supp_con_out; curr_up; curr_down];
                 end
             end

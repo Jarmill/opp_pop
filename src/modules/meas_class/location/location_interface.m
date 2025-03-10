@@ -84,7 +84,7 @@ classdef location_interface < handle
             end            
             
             %terminal measures
-            if ~isempty(objective)
+            if ~isempty(objective) || ~isempty(obj.supp.X_term)
 %                  obj.term = obj.meas_def_end('p', obj.supp.supp_term());                
                 obj.term = meas_term(obj.supp, obj.id);             
             end       
@@ -127,11 +127,19 @@ classdef location_interface < handle
         end
         
         function mass = mass_init(obj)
-            mass = obj.init.mass();
+            if isempty(obj.init)
+                mass = 0;
+            else
+                mass = obj.init.mass();
+            end
         end
 
         function mass = mass_term(obj)
-            mass = obj.term.mass();
+            if isempty(obj.term)
+                mass = 0;
+            else
+                mass = obj.term.mass();
+            end
         end
         
         %% support

@@ -27,11 +27,11 @@ classdef opp_options < handle
         three_phase(1, 1)opp_three_phase = opp_three_phase.Ignore; %how to deal with three-phase considerations
         Unipolar(1, 1)logical = false %unipolar (in case of half-wave or quarter-wave)
         early_stop(1, 1)logical = true %stop at even pulse numbers (instead of k)
-        start_level(1, 1)uint32 = 0; %start at an initial level (if not zero)
+        start_level(1, 1)int32 = 0; %start at an initial level (if not zero)
 
 
         %polynomial optimization parameters
-        partition(1, 1)uint32 = 4; %number of partitions of the disc c^2+s^2=1
+        partition(1, 1)int32 = 4; %number of partitions of the disc c^2+s^2=1
         solver = 'mosek';
         TIME_INDEP(1, 1)logical = false; %include time as an explicit state
 

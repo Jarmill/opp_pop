@@ -10,6 +10,8 @@ classdef opp_mode
         L;             %levels of the inverter        
         transition;    %guard measures for the partition staying within the level (no switching)
         vars;          %basic variable type
+        Z_load;
+        f0;
     end
     
     methods
@@ -18,6 +20,8 @@ classdef opp_mode
             %   create locations
             obj.mode = m;
             obj.L = opts.L;
+            obj.f0 = opts.f0;
+            obj.Z_load = opts.Z_load;
             
             N = length(opts.L);
             P = opts.partition;
@@ -32,7 +36,9 @@ classdef opp_mode
 
             %define the terminal set
             %terminate
-            Xstop = [vars.x(1)==1; vars.x(2)==0; lsupp_base.X(2:end)];
+            %ignore the trig constraint (beginning) and support arc
+            %constraint (end)
+            Xstop = [vars.x(1)==1; vars.x(2)==0; lsupp_base.X(2:end-1)];
 
             mode_end = opts.k/(2^opts.Symmetry);
             if m==0                
@@ -44,12 +50,12 @@ classdef opp_mode
             %TODO: define grid-side filter dynamics
             %define the dynamics within the mode
 
-            X_partition = support_partition(opts.partition, vars);
+            X_partition = support_partition(opts.partition, vars.x);
             
 
-            f = all_dynamics(vars, opts);
+            f = obj.all_dynamics(vars, opts);
 
-            objective_mode = all_objective_mode(vars, opts);
+            objective_mode = obj.all_objective_mode(vars, opts);
             
 
             % loc_id = N*opts.partition*m + reshape(1:(N*opts.partition), N, []);
@@ -57,21 +63,24 @@ classdef opp_mode
             for n = 1:N
                 curr_f = f(:, n);
                 curr_objective = objective_mode(n);                
-                for j = 1:P
+                for p = 1:P
                     % curr_id = loc_id(n, j);
-                    curr_id = sprintf('%d_%d_%d', m, n, j);
+                    curr_id = sprintf('m%d_n%d_p%d', m, n, p);
 
                     curr_lsupp = lsupp_base;
 
-                    if j>1 || ((opts.start_level==0) && (n~= opts.start_level))
+                    if p>1 || ((opts.start_level~=0) && (n~= opts.start_level))
                         curr_lsupp.X_init = [];
+                    end
+                    if p<P
+                        curr_lsupp.X_term = [];
                     end
 
                     if opts.partition > 1
-                        curr_lsupp.X = [curr_lsupp.X; X_partition(j)];
+                        curr_lsupp.X = [curr_lsupp.X; X_partition(p)>=0];
                     end
-                    cell_info = struct('mode', m, 'partition', p, 'level', n, 'id', id);
-                    obj.levels{n, j} = opp_location(curr_lsupp, curr_f, curr_objective, cell_info);
+                    cell_info = struct('mode', m, 'partition', p, 'level', n, 'id', curr_id);
+                    obj.levels{n, p} = opp_location(curr_lsupp, curr_f, curr_objective, cell_info);
 
                 end
             end
@@ -81,18 +90,23 @@ classdef opp_mode
             
             % gtop =    guard(1, vars, loc1, loc2, Xgtop, x);
             for n=1:N
-                for j=1:P-1
-                    curr_trans_id = sprintf('trans_%d_%d_%d', n, j, j+1);
+                for p=1:P-1
+                    curr_trans_id = sprintf('trans_%d_%d_%d', m, n, p);
                     
-                    obj.transition{n, j} = guard(curr_trans_id, lsupp_base.vars, ...
-                        obj.levels{n, j}, obj.levels{n, j+1}, curr_supp, vars.x);
+                    curr_supp = Xstop;
+                    RotAngle = 2*pi/double(P);
+                    dp = double(p);
+                    new_con = (vars.x(1:2)==[cos(dp*RotAngle); sin(dp*RotAngle)]);
+                    curr_supp(1:2) = new_con;
+                    obj.transition{n, p} = guard(curr_trans_id, lsupp_base.vars, ...
+                        obj.levels{n, p}, obj.levels{n, p+1}, curr_supp, vars.x);
                 end
             end
         end
 
         %% functions used in the constructor
 
-        function objective = all_objective_mode(vars, opts)
+        function objective = all_objective_mode(obj, vars, opts)
             %return the mode-objective at each level
             %
             %TODO: 
@@ -126,14 +140,14 @@ classdef opp_mode
         end
         
 
-        function f = all_dynamics(vars, opts)
+        function f = all_dynamics(obj, vars, opts)
             %create the dynamics as a matrix f
             %row: each level
             %column: each state
             f_trig = 2*pi*[-vars.x(2); vars.x(1)];
             f_phi = vars.x(3);
             f_clock = 1;
-            f_load = load_dynamics(vars, opts);
+            f_load = load_dynamics(obj, vars, opts);
 
             % f = [f_trig; f_phi; f_load];
             N = length(opts.L);
@@ -143,7 +157,7 @@ classdef opp_mode
         end
 
 
-        function f_load = load_dynamics(vars, opts)
+        function f_load = load_dynamics(obj, vars, opts)
             %dynamics in the mode
             %(trig spinning around a circle, clock increasing, load
             %charging/modifying the current)
@@ -225,21 +239,21 @@ classdef opp_mode
         function harm = load_harmonics_mom(obj, vars, harm_in)
             %voltage harmonics constraints
             % harm= mom(p)*0;
-            Lmax = max(obj.opts.L);
+            Lmax = max(obj.L);
 
             % Z_type = 0;
             
-            if (length(vars.x)==3) || (im(obj.opts.Z_load) == 0)                      
+            if (length(vars.x)==3) || (im(obj.Z_load) == 0)                      
                 %purely resistive
                 % harm = obj.voltage_harmonics_mom(vars, harm_in);
                 Z_type = 0;
                 Z_scale = 1;
             else                
-                if (imag(obj.opts.Z_load) >= 0)
+                if (imag(obj.Z_load) >= 0)
                     
                     %inductive load
                     %i' = -(R/L)i + (1/L) v
-                    inductance = imag(obj.opts.Z_load)/(2*pi*obj.opts.f0);
+                    inductance = imag(obj.Z_load)/(2*pi*obj.f0);
                     Z_type = 1;
                     Z_scale = (Lmax/inductance);
                     % harm = (harm_eval.*vars.x(4)) *  .*(obj.opts.L);
@@ -248,8 +262,8 @@ classdef opp_mode
                      %per-unit, ignore (R*C) factor
                      %TODO: v is from the voltage source. Modify when it is 
                      %filtered by a grid-side filter                    
-                     capacitance= -imag(obj.opts.Z_load)*(2*pi*obj.opts.f0);
-                     resistance= real(obj.opts.Z_load);                       
+                     capacitance= -imag(obj.Z_load)*(2*pi*obj.f0);
+                     resistance= real(obj.Z_load);                       
                      RC = resistance*capacitance;
                      Z_type = 2;
                      Z_scale = (Lmax/RC);                     
@@ -272,13 +286,16 @@ classdef opp_mode
             mass_init_mode = zeros(N, P)*mom(obj.vars.x(1));
             mass_sum = 0;
 
-            for n=1:N
-                for p = 1:P
+            for n=1:N 
+                p=1; %initial measure will only be found at the first partition index
+                % for p = 1:P
                     mass_curr = obj.levels{n, p}.mass_init();
-                    mass_init_mode(n, p) = mass_curr;
+                    if ~isnumeric(mass_curr)
+                        mass_init_mode(n, p) = mass_curr;
+                    end
                     mass_sum = mass_sum + mass_curr;
                     % mass_init_mode = mass_init_mode + obj.levels{n, p}.mass_init();
-                end
+                % end
             end
         end
 
@@ -296,13 +313,25 @@ classdef opp_mode
             end
         end
 
-        function imon = init_monom(obj, d)
+        function imon = init_monom(obj, d, NTRIG)
             %moments of the initial measure
+            %NTRIG: ignore trigonometric variables
+            if nargin < 3
+                NTRIG = false;
+            end
             [N, P] = size(obj.levels);
             imon = cell(N, P);
             for n=1:N
                 for p = 1:P
-                    imon = obj.levels{n, p}.init.mom_monom(d);
+                    if ~isempty(obj.levels{n, p}.init)
+                        if NTRIG
+                            [~, imon{n, p}] = obj.levels{n, p}.non_trig_monom_init(d);                            
+                        else
+                            [~, imon{n, p}] = obj.levels{n, p}.init.mom_monom(d);
+                        end
+                    else
+                        imon{n, p} = 0;
+                    end
                 end
             end
         end
@@ -313,8 +342,11 @@ classdef opp_mode
             [N, P] = size(obj.levels);
             trmon = cell(N, P);    
             trmon_sum = 0;
+            
             for n=1:N
                 for p = 1:P                    
+                    %TODO: the trig monom can be reduced by the algebraic
+                    %dependence (c^2+s^2=1)
                     [~, tr_curr] = obj.levels{n, p}.trig_monom(d);
                     trmon{n, p} = tr_curr;
                     trmon_sum = trmon_sum + tr_curr;
@@ -322,8 +354,12 @@ classdef opp_mode
             end
         end
 
-        function tmon = term_monom(obj, d)
+        function tmon = term_monom(obj, d, NTRIG)
             %moments of the terminal measure
+                        %NTRIG: ignore trigonometric variables
+            if nargin < 3
+                NTRIG = false;
+            end
             [N, P] = size(obj.levels);
             tmon = cell(N, P);
             for n=1:N
@@ -331,7 +367,11 @@ classdef opp_mode
                       if isempty(obj.levels{n, p}.term)
                           tmon{n, p} = 0;
                       else
-                          tmon{n, p} = obj.levels{n, p}.term.mom_monom(d);
+                          if NTRIG
+                              [~, tmon{n, p}] = obj.levels{n, p}.non_trig_monom_term(d);
+                          else    
+                            [~, tmon{n, p}] = obj.levels{n, p}.term.mom_monom(d);
+                          end
                       end                                    
                 end
             end
@@ -349,12 +389,12 @@ classdef opp_mode
         function supp_con_out = supp_con(obj)
             %fetch all support constraints
             [N, P] = size(obj.levels);
-            supp_con_out = cell(N, P);
+            supp_con_out = [];
             for n=1:N
                 for p = 1:P                    
-                    curr_loc = obj.levels{n, p};
+                    curr_loc = obj.levels{n, p}.supp_con();
                     if p<P
-                        curr_trans = obj.transition{n, p};
+                        curr_trans = obj.transition{n, p}.supp;
                     else
                         curr_trans = [];
                     end
