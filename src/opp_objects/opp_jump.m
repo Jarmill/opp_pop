@@ -36,10 +36,12 @@ classdef opp_jump < handle
             for n=1:N-1
                 for p = 1:P
                     supp_curr = [X_jump; X_partition(p)>=0];
-                    curr_name = sprintf('jump_m%d_n%d_p%d', m, n, p);
-                    obj.jump_up{n, p} = guard(curr_name, vars, [], ...
+                    % curr_name = sprintf('jump_m%d_n%d_p%d', m, n, p);
+                    name_down = sprintf('down_m%d_n%d_p%d', m, n, p);
+                    name_up = sprintf('up_m%d_n%d_p%d', m, n+1, p);
+                    obj.jump_up{n, p} = guard(name_up, vars, [], ...
                         [], supp_curr, reset_law);
-                    obj.jump_down{n, p} = guard(curr_name, vars, [], ...
+                    obj.jump_down{n, p} = guard(name_down, vars, [], ...
                         [], supp_curr, reset_law);
                 end
             end
@@ -49,7 +51,7 @@ classdef opp_jump < handle
         function [mom_src, mom_dst] = liou_reset(obj, d)
             %METHOD1 Summary of this method goes here
             %   Detailed explanation goes here
-            [Np, P] = size(obj.dst);
+            [Np, P] = size(obj.jump_up);
             N = Np+1;
 
             %moments of the guards going up and down in the transition
@@ -63,23 +65,20 @@ classdef opp_jump < handle
                     mom_dst{n, p} = 0;
                 end
             end
-
             
-
             for p = 1:P
                 for n=1:Np
                     [mom_src_up, mom_dst_up] = obj.jump_up{n, p}.liou_reset(d);
                     [mom_src_down, mom_dst_down] = obj.jump_down{n, p}.liou_reset(d);
-
-                    mom_src{n, p} = 0;
-                    if n<Np
+                    
+                    % if n<Np
                         mom_src{n, p} = mom_src{n, p} + mom_src_up;
                         mom_dst{n+1, p} = mom_dst{n+1, p} + mom_dst_up;
-                    end
-                    if n>1
-                        mom_src{n, p} = mom_src{n, p} + mom_src_down;
-                        mom_dst{n-1, p} = mom_dst{n-1, p} + mom_dst_down;
-                    end
+                    % end
+                    % if n>1
+                        mom_src{n+1, p} = mom_src{n+1, p} + mom_src_down;
+                        mom_dst{n, p} = mom_dst{n, p} + mom_dst_down;
+                    % end
                 end
             end
         end

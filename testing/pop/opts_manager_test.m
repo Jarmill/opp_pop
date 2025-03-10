@@ -19,7 +19,7 @@ opts.harmonics.bound_sin = [modulation, modulation;
 
 %% test a manager
 MG = opp_manager(opts);
-order = 2;
+order = 1;
 d = 2*order;
 
 %the manager can be created
@@ -28,12 +28,17 @@ d = 2*order;
 %% step through the constraints
 
 %support constraints can be generated
-% sc = MG.supp_con();
+sc = MG.supp_con();
 
-% lc = MG.con_lebesgue_circ(d); %works
-% pc = MG.con_prob_dist(); %works
-% rc = MG.con_return(d); 
+lc = MG.con_lebesgue_circ(d); %works
+pc = MG.con_prob_dist(); %works
+rc = MG.con_return(d); 
 
 %%harmonics
 
 hc= MG.con_harmonics();
+
+fc = MG.con_flow(d);
+
+mom_con = [fc; hc; rc; pc; lc];
+supp_con = sc;

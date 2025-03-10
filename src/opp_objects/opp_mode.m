@@ -145,13 +145,13 @@ classdef opp_mode
             %row: each level
             %column: each state
             f_trig = 2*pi*[-vars.x(2); vars.x(1)];
-            f_phi = vars.x(3);
+            % f_phi = vars.x(3);
             f_clock = 1;
             f_load = load_dynamics(obj, vars, opts);
 
             % f = [f_trig; f_phi; f_load];
             N = length(opts.L);
-            f_basic = [f_trig; f_phi; f_clock] * ones(1, N);
+            f_basic = [f_trig; f_clock; f_load] * ones(1, N);
 
             f = [f_basic; f_load];
         end

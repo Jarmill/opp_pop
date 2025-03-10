@@ -226,7 +226,7 @@ classdef opp_manager
             %TODO: finish this. Sum up the harmonics over all components
         end
 
-        function flow_con = con_flow(obj)
+        function flow_con = con_flow(obj, d)
             %the flow conservation constraint (the big one)
 
             %start the storage structure 
@@ -237,11 +237,11 @@ classdef opp_manager
 
             %compute all terms
             for m=1:(Nmodes)
-                liou_cell{m} = obj.modes.flow(d);
+                liou_cell{m} = obj.modes{m}.flow(d);
             end
 
             %add the jump to the cell terms
-            for m=1:(Nmodes)                
+            for m=1:(Nmodes-1)                
                 [jump_src{m}, jump_dst{m}] = obj.jumps{m}.liou_reset(d);
             end
 

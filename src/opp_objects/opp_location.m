@@ -22,6 +22,7 @@ classdef opp_location < location_interface
             obj.partition = info.partition;
             obj.level= info.level;
             obj.L = info.L;
+            obj.f = f;
             % obj.id = info.id;
             %TODO: make id the last argument                                       
             obj.sys  = {subsystem_base(obj.supp, obj.f, [], id)};
@@ -83,7 +84,7 @@ classdef opp_location < location_interface
             var_end = obj.var_index(obj.vars, {'t', 'x'});
             if isempty(objective)
                 obj_min = 0;
-            elseif length(objective) == 1    
+            elseif isscalar(objective)
                 obj_subs = obj.sys{1}.meas_occ.var_sub_mom(var_end, objective);
                 obj_min = (obj_subs);                            
             % else
@@ -135,11 +136,16 @@ classdef opp_location < location_interface
         function [harm_poly, harm_mom] = voltage_harmonics_mom(obj, vars, harm_in)
             %voltage harmonics evaluation 
             %equivalent to a resistive load
-            harm_monom = obj.harm_eval(vars, harm_in);
-            sub_eval = obj.sys{1}.meas_occ.var_sub(vars.x, harm_monom);
+            if obj.L ~= 0
+                harm_monom = obj.harm_eval(vars, harm_in);
+                sub_eval = obj.sys{1}.meas_occ.var_sub(vars.x, harm_monom);
 
-            harm_poly = obj.L*sub_eval;
-            harm_mom = mom(harm_poly);            
+                harm_poly = obj.L*sub_eval;
+                harm_mom = mom(harm_poly);            
+            else
+                harm_poly = 0;
+                harm_mom = 0;
+            end
         end
         function [harm_poly, harm_mom] = load_harmonics_mom(obj, vars, harm_in, Z_type, Z_scale)
             %voltage harmonics evaluation 
@@ -173,6 +179,8 @@ classdef opp_location < location_interface
         function harm_monom = harm_eval(obj, vars, harm_in)            
             % [vars.x(1).^harm_in.index_cos; vars.x(2).^harm_in.index_sin]/pi;
 
+            %TODO: this repeated computation (in opp_locations) is 
+            %inefficient, fix later. Not the most pressing issue.
 
             %compute the chebyshev moments. then divide by pi
             %cos(n theta) = T_n(cos(theta))
@@ -218,11 +226,11 @@ classdef opp_location < location_interface
 
         %holdovers from abstract class
         function dual_out = dual_process(obj)
-            dual_out = []
+            dual_out = [];
         end
 
         function leq= len_eq_cons(obj)
-            leq= []
+            leq= [];
         end
     end
 end

@@ -45,7 +45,7 @@ classdef subsystem_base < subsystem_interface
             %Lie derivatives (continuous systems only)
             
             %no box inputs, simple to perform
-             Ay = obj.meas_occ.mom_lie(d, obj.vars, obj.f);
+             Ay = obj.meas_occ.mom_lie(d, obj.get_vars(), obj.f);
            
             
         end       
