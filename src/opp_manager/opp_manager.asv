@@ -159,9 +159,9 @@ classdef opp_manager
 
             con_leb = obj.con_lebesgue_circ(d);
 
-            con_threephase = obj.con_balance(d);
+            con_balance = obj.con_balance(d);
 
-            mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb; con_threephase];
+            mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb];
 
 
             %TODO: objective constraints as well
@@ -229,23 +229,13 @@ classdef opp_manager
         end
 
         function bcon = con_balance(obj, d)
-            %ensure that the inductive current is three-phase balanced
-            %
-            %figure out if this is possible to do without inductive current
-            %
             if length(obj.vars.x)>3 && imag(obj.opts.Z_load)>0 ...
                     && obj.opts.balance == opp_three_phase.Balanced
-                mon_3 = obj.three_phase_rotate(obj.vars.x([1, 2, 4]), d, obj.opts.Symmetry);
+                mon_3 = obj.three_phase_rotate(obj.vars.x([1, 2, 4]), d);
 
-                width_3 = size(mon_3, 2);
-                mon_3_sum = mon_3*ones(width_3, 1);
+                mon_3_sum = mon_3*[1; 1; 1];
 
-                bmom = 0;
-                for m = 1:length(obj.modes)
-                    bmom = bmom + obj.modes{m}.mom_sub(vi, mon_3_sum);
-                end
-
-                bcon = mom(bmom)==0;
+                
 
             else
                 bcon = [];
@@ -253,31 +243,20 @@ classdef opp_manager
         end
 
 
-        function mon_3 = three_phase_rotate(obj, vars_inv, d, Symmetry)            
+        function mon_3 = three_phase_rotate(obj, vars_inv, d)            
             %return a vector of monomials in vars_inv
             %variable 1 and 2 are trigonometrically related (cos and sin)
             %the others are along for the ride
 
             %TODO: use this in constructing three-phase symmetry
 
-            R3 = [cos(2*pi/3), -sin(2*pi/3); sin(2*pi/3), cos(2*pi/3)];
+            R = [cos(2*pi/3), -sin(2*pi/3); sin(2*pi/3), cos(2*pi/3)];
 
-            vars_inv_trig = vars_inv(1:2);
             va = mmon(vars_inv, d);
-            vb = subs(va, vars_inv_trig, R3*vars_inv_trig);
-            vc = subs(va, vars_inv_trig, (R3*R3)*vars_inv_trig);
+            vb = subs(va, vars_inv(1:2), R*vars_inv(1:2));
+            vc = subs(va, vars_inv(1:2), (R*R)*vars_inv(1:2));
 
             mon_3 = [va, vb, vc];
-
-            if Symmetry==1
-                R2 = [-1, 0; 0, 1];
-
-                
-                mon_3_flip = subs(mon_3, vars_inv_trig, R2*vars_inv_trig);
-
-                mom_3 = [mom_3, -mon_3_flip];
-            end
-
         end
 
     

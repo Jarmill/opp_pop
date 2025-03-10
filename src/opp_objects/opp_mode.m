@@ -43,14 +43,14 @@ classdef opp_mode
             mode_end = opts.k/(2^opts.Symmetry);
             if m==0                
                lsupp_base.X_init = Xstop;
-            elseif m==mode_end || (opts.early_stop && (mod(m, 2)==0))
+            elseif m==mode_end || opts.Symmetry || (opts.early_stop && (mod(m, 2)==0))
                 lsupp_base.X_term = Xstop;
             end
 
             %TODO: define grid-side filter dynamics
             %define the dynamics within the mode
 
-            X_partition = support_partition(opts.partition, vars.x);
+            X_partition = support_partition(opts.partition, vars.x, opts.Symmetry);
             
 
             f = obj.all_dynamics(vars, opts);
@@ -94,7 +94,7 @@ classdef opp_mode
                     curr_trans_id = sprintf('trans_m%d_n%d_p%d', m, n, p);
                     
                     curr_supp = Xstop;
-                    RotAngle = 2*pi/double(P);
+                    RotAngle = 2*pi/double(P*2^opts.Symmetry);
                     dp = double(p);
                     new_con = (vars.x(1:2)==[cos(dp*RotAngle); sin(dp*RotAngle)]);
                     curr_supp(1:2) = new_con;
@@ -221,7 +221,7 @@ classdef opp_mode
 
         %fetching moments
 
-        function harm = voltage_harmonics_mom(obj, vars, harm_in)
+        function harm = voltage_harmonics_mom(obj, vars, harm_mon)
             %voltage harmonics constraints
             harm= mom(vars.x(1))*zeros;
             
@@ -229,14 +229,14 @@ classdef opp_mode
 
             for n=1:N
                 for p = 1:P            
-                    [~, harm_mom] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_in);       
+                    [~, harm_mom] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon);       
                     harm = harm+harm_mom;                    
                 end
             end
         end
 
 
-        function harm = load_harmonics_mom(obj, vars, harm_in)
+        function harm = load_harmonics_mom(obj, vars, harm_mon, harm_in)
             %voltage harmonics constraints
             % harm= mom(p)*0;
             Lmax = max(obj.L);
@@ -272,7 +272,7 @@ classdef opp_mode
 
             for n=1:N
                 for p = 1:P            
-                    [~, harm_mom] = obj.levels{n, p}.load_harmonics_mom(obj, vars, harm_in, Z_type, Z_scale);       
+                    [~, harm_mom] = obj.levels{n, p}.load_harmonics_mom(obj, vars, harm_mon, harm_in, Z_type, Z_scale);       
                     harm = harm+harm_mom;                    
                 end
             end
@@ -378,10 +378,20 @@ classdef opp_mode
         end
 
         %TODO: three phase balance constraint
-        function bmon = balance_term(obj, d)
+        function tmon = mom_sub(obj, vars, vref)
             %three-phase balanced symmetry in the current
             
-            bmon = 0;
+            [N, P] = size(obj.levels);
+            tmon = cell(N, P);
+            for n=1:N
+                for p = 1:P                    
+                      if isempty(obj.levels{n, p}.sys)
+                          tmon{n, p} = 0;
+                      else
+                          [~, tmon{n, p}] = obj.levels{n, p}.mom_occ_sub(vars, vref);
+                      end                                    
+                end
+            end
 
 
         end

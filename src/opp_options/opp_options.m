@@ -1,5 +1,5 @@
 classdef opp_options < handle
-    %UNTITLED Summary of this class goes here
+    %OPP_OPTIONS Options data structure for the optimal pulse pattern task
     %   Detailed explanation goes here
 
     properties

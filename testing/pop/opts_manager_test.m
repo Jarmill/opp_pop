@@ -19,7 +19,7 @@ opts.harmonics.bound_sin = [modulation, modulation;
 
 %% test a manager
 MG = opp_manager(opts);
-order = 1;
+order = 2;
 d = 2*order;
 
 %the manager can be created
@@ -42,3 +42,7 @@ fc = MG.con_flow(d);
 
 mom_con = [fc; hc; rc; pc; lc];
 supp_con = sc;
+
+% vi = MG.vars.x(1:2);
+vi = MG.vars.x;
+mon_3 = MG.three_phase_rotate(vi, d);

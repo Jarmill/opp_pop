@@ -132,13 +132,19 @@ classdef opp_location < location_interface
             mon_ntrig = mom(v_ntrig);
 
         end
+      
 
-        function [harm_poly, harm_mom] = voltage_harmonics_mom(obj, vars, harm_in)
+        function mom_out = mom_occ_sub(obj, vars, vref)
+            v_sub = obj.sys{1}.meas_occ.var_sub(vars, vref);
+            mom_out = mom(v_sub);            
+        end
+
+        function [harm_poly, harm_mom] = voltage_harmonics_mom(obj, vars, harm_mon)
             %voltage harmonics evaluation 
             %equivalent to a resistive load
             if obj.L ~= 0
-                harm_monom = obj.harm_eval(vars, harm_in);
-                sub_eval = obj.sys{1}.meas_occ.var_sub(vars.x, harm_monom);
+                % harm_monom = obj.harm_eval(vars, harm_in);
+                sub_eval = obj.sys{1}.meas_occ.var_sub(vars.x, harm_mon);
 
                 harm_poly = obj.L*sub_eval;
                 harm_mom = mom(harm_poly);            
@@ -147,82 +153,33 @@ classdef opp_location < location_interface
                 harm_mom = 0;
             end
         end
-        function [harm_poly, harm_mom] = load_harmonics_mom(obj, vars, harm_in, Z_type, Z_scale)
+        function [harm_poly, harm_mom] = load_harmonics_mom(obj, vars, harm_mon, Z_type, Z_scale)
             %voltage harmonics evaluation 
             %equivalent to a resistive load
 
             if Z_type == 0
-                [harm_poly, harm_mom]  = obj.voltage_harmonics_mom(vars, harm_in);
+                [harm_poly, harm_mom]  = obj.voltage_harmonics_mom(vars, harm_mon);
             elseif Z_type ==1
                 [harm_poly, harm_mom]  = obj.capacitance_harmonics_mom(vars, harm_in, Z_scale);
             else
-                [harm_poly, harm_mom]  = obj.inductance_harmonics_mom(vars, harm_in, Z_scale);
+                [harm_poly, harm_mom]  = obj.inductance_harmonics_mom(vars, harm_mon, Z_scale);
             end           
         end
 
-        function [harm_poly, harm_mom] = capacitance_harmonics_mom(obj, vars, harm_in, Z_scale)
+        function [harm_poly, harm_mom] = capacitance_harmonics_mom(obj, vars, harm_mon, Z_scale)
             %current evaluation for a capacative load
-            harm_monom = obj.harm_eval(vars, harm_in);
-            harm_poly = harm_monom.*(obj.L-vars.x(4));
+            harm_poly = harm_mon.*(obj.L-vars.x(4));
 
             harm_mom = mom(harm_poly);
         end
 
-        function [harm_poly, harm_mom] = inductance_harmonics_mom(obj, vars, harm_in, Z_scale)
+        function [harm_poly, harm_mom] = inductance_harmonics_mom(obj, vars, harm_mon, Z_scale)
             %current evaluation for a capacative load
-            harm_monom = obj.harm_eval(vars, harm_in);
-            harm_poly = harm_monom.*(Z_scale*vars.x(4));
+ 
+            harm_poly = harm_mon.*(Z_scale*vars.x(4));
 
             harm_mom = mom(harm_poly);
-        end
-
-        function harm_monom = harm_eval(obj, vars, harm_in)            
-            % [vars.x(1).^harm_in.index_cos; vars.x(2).^harm_in.index_sin]/pi;
-
-            %TODO: this repeated computation (in opp_locations) is 
-            %inefficient, fix later. Not the most pressing issue.
-
-            %compute the chebyshev moments. then divide by pi
-            %cos(n theta) = T_n(cos(theta))
-            %sin(n theta) = sin(theta) U_{n-1}(cos(theta))
-            
-            c = vars.x(1);
-            s = vars.x(2);
-            if ~isempty(harm_in.index_cos)
-                %chebyshev of the first kind
-                c_ind_max = max(max(harm_in.index_cos), 1);
-
-                T = zeros(c_ind_max+1, 1)*c;
-                T(1) = 1+0*c;
-                T(2) = c;
-                for p = 2:c_ind_max
-                    T(p+1) = 2*c*T(p) - T(p-1);
-                end
-
-                harm_cos = T(harm_in.index_cos+1);
-            else
-                harm_cos = [];
-            end
-            
-            if ~isempty(harm_in.index_sin)
-                %chebyshev of the second kind
-                s_ind_max = max(max(harm_in.index_sin), 1);
-
-                U = zeros(s_ind_max, 1)*c;
-                U(1) = 1+0*c;
-                U(2) = 2*c;
-                for p = 2:s_ind_max
-                    U(p+1) = 2*c*U(p) - U(p-1);
-                end
-
-                harm_sin = s*U(harm_in.index_sin);
-            else
-                harm_sin = [];
-            end
-
-            %package up the harmonics
-            harm_monom = [harm_cos; harm_sin]/pi;             
-        end
+        end        
 
         %holdovers from abstract class
         function dual_out = dual_process(obj)

@@ -1,4 +1,4 @@
-function [X_partition] = support_partition(partition, x)
+function [X_partition] = support_partition(partition, x, Symmetry)
 %SUPPORT_PARTITION segment the circle c^2 + s^2 = 1 into equal proportions
 %
 %
@@ -7,7 +7,7 @@ function [X_partition] = support_partition(partition, x)
 c = x(1);
 s = x(2);
 
-mD = 2*pi/double(partition);
+mD = 2*pi/double(partition*(2^Symmetry));
 
 if partition == 1
     X_partition = [];
@@ -18,14 +18,17 @@ else
         th1 = mD*(di-1);
         th2 = mD*di;
 
-        s1 = sin(th1);
-        s2 = sin(th2);
-        c1 = cos(th1);
-        c2 = cos(th2);
-    
-        offset = (s2-s1)*c1 - (c2-c1)*s1;
-
-        X_partition(i) = (s2-s1)*c - (c2-c1)*s - offset;
+        X_partition(i) = angle_range_arc(c, s, th1, th2);
+        
+        % 
+        % s1 = sin(th1);
+        % s2 = sin(th2);
+        % c1 = cos(th1);
+        % c2 = cos(th2);
+        % 
+        % offset = (s2-s1)*c1 - (c2-c1)*s1;
+        % 
+        % X_partition(i) = (s2-s1)*c - (c2-c1)*s - offset;
 
     end
 end

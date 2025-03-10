@@ -28,7 +28,7 @@ classdef opp_jump < handle
             N = length(obj.L);
 
             obj.mode = m;
-            X_partition = support_partition(opts.partition, vars.x);
+            X_partition = support_partition(opts.partition, vars.x, opts.Symmetry);
             
             obj.jump_up = cell(N-1, P);
             obj.jump_down = cell(N-1, P);
