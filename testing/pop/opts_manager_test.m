@@ -3,11 +3,18 @@ mset clear
 opts = opp_options;
 opts.L = [-1, 0, 1];
 opts.harmonics = opp_harmonics();
-opts.partition = 3;
+opts.partition = 2;
 opts.TIME_INDEP = true;
 opts.start_level = 0;
 opts.early_stop = 1;
-opts.k = 12;
+opts.k = 4;
+
+modulation = 1;
+opts.harmonics.index_cos = [opts.harmonics.index_cos; 2; 3; 4];
+opts.harmonics.bound_cos = [opts.harmonics.bound_cos; 0, 0; 0, 0; -0.1, 0.1];
+opts.harmonics.index_sin= [1; 2; 3; 4];
+opts.harmonics.bound_sin = [modulation, modulation;
+    0, 0; 0, 0; -0.1, 0.1];
 
 
 %% test a manager
@@ -25,4 +32,8 @@ d = 2*order;
 
 % lc = MG.con_lebesgue_circ(d); %works
 % pc = MG.con_prob_dist(); %works
-rc = MG.con_return(d); 
+% rc = MG.con_return(d); 
+
+%%harmonics
+
+hc= MG.con_harmonics();

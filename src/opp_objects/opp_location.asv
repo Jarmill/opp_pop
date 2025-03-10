@@ -174,46 +174,7 @@ classdef opp_location < location_interface
             % [vars.x(1).^harm_in.index_cos; vars.x(2).^harm_in.index_sin]/pi;
 
 
-            %compute the chebyshev moments. then divide by pi
-            %cos(n theta) = T_n(cos(theta))
-            %sin(n theta) = sin(theta) U_{n-1}(cos(theta))
-            
-            c = vars.x(1);
-            s = vars.x(2);
-            if ~isempty(harm_in.index_cos)
-                %chebyshev of the first kind
-                c_ind_max = max(max(harm_in.index_cos), 1);
-
-                T = zeros(c_ind_max+1, 1)*c;
-                T(1) = 1+0*c;
-                T(2) = c;
-                for p = 2:c_ind_max
-                    T(p+1) = 2*c*T(p) - T(p-1);
-                end
-
-                harm_cos = T(harm_in.index_cos+1);
-            else
-                harm_cos = [];
-            end
-            
-            if ~isempty(harm_in.index_sin)
-                %chebyshev of the second kind
-                s_ind_max = max(max(harm_in.index_sin), 1);
-
-                U = zeros(s_ind_max, 1)*c;
-                U(1) = 1+0*c;
-                U(2) = 2*c;
-                for p = 2:s_ind_max
-                    U(p+1) = 2*c*U(p) - U(p-1);
-                end
-
-                harm_sin = s*U(harm_in.index_sin);
-            else
-                harm_sin = [];
-            end
-
-            %package up the harmonics
-            harm_monom = [harm_cos; harm_sin]/pi;             
+            %compute the chebyshev moments
         end
 
         %holdovers from abstract class

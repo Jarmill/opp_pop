@@ -36,7 +36,7 @@ classdef opp_jump < handle
             for n=1:N-1
                 for p = 1:P
                     supp_curr = [X_jump; X_partition(p)>=0];
-                    curr_name = sprintf('jump_%d_%d_%d', m, n, p);
+                    curr_name = sprintf('jump_m%d_n%d_p%d', m, n, p);
                     obj.jump_up{n, p} = guard(curr_name, vars, [], ...
                         [], supp_curr, reset_law);
                     obj.jump_down{n, p} = guard(curr_name, vars, [], ...

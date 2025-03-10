@@ -79,7 +79,7 @@ classdef opp_mode
                     if opts.partition > 1
                         curr_lsupp.X = [curr_lsupp.X; X_partition(p)>=0];
                     end
-                    cell_info = struct('mode', m, 'partition', p, 'level', n, 'id', curr_id);
+                    cell_info = struct('mode', m, 'partition', p, 'level', n, 'L', opts.L(n), 'id', curr_id);
                     obj.levels{n, p} = opp_location(curr_lsupp, curr_f, curr_objective, cell_info);
 
                 end
@@ -91,7 +91,7 @@ classdef opp_mode
             % gtop =    guard(1, vars, loc1, loc2, Xgtop, x);
             for n=1:N
                 for p=1:P-1
-                    curr_trans_id = sprintf('trans_%d_%d_%d', m, n, p);
+                    curr_trans_id = sprintf('trans_m%d_n%d_p%d', m, n, p);
                     
                     curr_supp = Xstop;
                     RotAngle = 2*pi/double(P);
@@ -229,7 +229,7 @@ classdef opp_mode
 
             for n=1:N
                 for p = 1:P            
-                    [~, harm_mom] = obj.levels{n, p}.voltage_harmonics_mom(obj, vars, harm_in);       
+                    [~, harm_mom] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_in);       
                     harm = harm+harm_mom;                    
                 end
             end

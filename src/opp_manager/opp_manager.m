@@ -197,8 +197,8 @@ classdef opp_manager
             % harmonics on voltage source
             if ~isempty(harm)
                 harm_source = 0;
-                for m = 0:length(obj.modes)   
-                    [~, harm_mom] = obj.modes{m}.voltage_harmonics_mom(obj.vars, harm);
+                for m = 1:length(obj.modes)   
+                    harm_mom = obj.modes{m}.voltage_harmonics_mom(obj.vars, harm);
                     harm_source = harm_source + harm_mom;
                 end
                 harm_source_con = harmonics_process(harm, harm_source);
@@ -213,7 +213,7 @@ classdef opp_manager
             if ~isempty(harm_load_data)          
                 harm_load = 0;
                 for m = 0:length(obj.modes)     
-                    [~, harm_mom_load] = obj.modes{m}.load_harmonics_mom(obj.vars, harm_load_data);
+                    harm_mom_load = obj.modes{m}.load_harmonics_mom(obj.vars, harm_load_data);
                     harm_load = harm_load + harm_mom_load;
                 end
                 harm_load_con = harmonics_process(harm, harm_load);
