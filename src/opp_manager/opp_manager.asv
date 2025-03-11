@@ -64,23 +64,35 @@ classdef opp_manager
             %create the support set
 
             Delta = opts.f0*opts.Ts;
-            X_trig = 1-x(1)^2 + x(2)^2;
+
+            %BUG HERE BUG HERE BUG HERE
+            %X_trig = 1-x(1)^2 + x(2)^2;
+            X_trig = 1-x(1)^2 - x(2)^2;
 
             %clock and rescaled load
-            X_clock_mode = x(3)*(1-2*Delta - x(3));    
-            X_clock_jump = (x(3)-Delta)*(1-2*Delta - x(3));    
-            
             if length(x)<4
                 X_load = [];
             else
                 X_load = 1-x(4)^2;                
-            end
+                        end
+
+            X_clock_mode = x(3)*(1-2*Delta - x(3));    
+            X_clock_jump = (x(3)-Delta)*(1-2*Delta - x(3));    
+            X = [X_trig==0; X_clock_mode>=0; X_load>=0];             
+            X_jump = [X_trig==0; X_clock_jump>=0; X_load>=0];
+            
+
+            %BUG CHECKING
+            % X_clock_mode = x(3);
+            % X_clock_jump = (x(3))*(1 - x(3));    
+            % X = [X_trig==0; X_clock_mode==0; X_load>=0];
+            % 
+            % X_jump = [X_trig==0; X_clock_jump>=0; X_load>=0];
+            % 
 
             
 
-            X = [X_trig==0; X_clock_mode>=0; X_load>=0];
-            X_jump = [X_trig==0; X_clock_jump>=0; X_load>=0];
-                       
+                   
             lsupp_base.X = X;
             %define the reset law for the jump
             
@@ -158,19 +170,27 @@ classdef opp_manager
 
             %flow +jump continuity constraints
             % 
-            % con_liou = obj.con_flow(d);
+            con_liou = obj.con_flow(d);
             % 
             % %harmonics constraints
-            % con_harm = obj.con_harmonics();
+            con_harm = obj.con_harmonics();
             % 
             % %ignore the lebesgue constraint for now
             % may be causing issues
-            % con_leb = obj.con_lebesgue_circ(d);
+            con_leb = obj.con_lebesgue_circ(d);
             % 
-            % con_threephase = obj.con_balance(d);
+            con_threephase = obj.con_balance(d);
 
-            mom_con = [con_prob; con_preserve];
+            % mom_con = [con_prob; con_preserve; con_leb];
+            % mom_con = [con_prob; con_preserve; con_leb; con_harm];
+            % mom_con = [con_prob; con_preserve; con_leb(1:end)];
+            % mom_con = [con_prob; con_leb];
 
+            mom_con = [con_prob; con_preserve; con_harm; con_leb; con_threephase];
+            
+            % mom_con = [con_prob; con_preserve; con_liou; con_leb; con_threephase];
+
+            
             % mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb; con_threephase];
 
 
@@ -188,10 +208,11 @@ classdef opp_manager
             
             %get the lebesgue distribution
             pw = genPowGlopti(2, d);
-            leb_circ = LebesgueMomSphere(pw,1);
+            leb_circ = leb_sphere(pw,1);
 
             %get moments of the (c, s)-marginal
             trmon_sum = 0;
+            %TODO: change the lebesgue constraint for symmetry
             for m = 1:length(obj.modes)
                 tr_curr = obj.modes{m}.trig_occ_monom(d);
                 trmon_sum = trmon_sum + cell_sum(tr_curr);
@@ -401,7 +422,7 @@ classdef opp_manager
             Nmodes = length(obj.modes);
             liou_cell = cell(Nmodes, 1);
             jump_src = cell(Nmodes-1, 1);
-            jump_dst = cell(Nmodes, 1);
+            jump_dst = cell(Nmodes-1, 1);
 
             %compute all terms
             for m=1:(Nmodes)
@@ -603,7 +624,25 @@ classdef opp_manager
             opp_out = [];
         end
 
-        func
+        function [m_out] = mmat(obj)
+            
+            m_out = struct;
+            K = length(obj.modes);
+            % [N, P] = size(obj.modes{1}.levels);
+            % m_out.levels = cell(K, N, P);
+            m_out.modes = cell(K, 1);
+
+            for i = 1:K
+                m_out.modes{i} = obj.modes{i}.mmat();
+            end
+
+            m_out.jump = cell(K-1, 1);
+            for i=1:(K-1)
+                m_out.jump{i} = obj.jumps{i}.mmat();
+            end
+        end
+
+        function mass
 
     end
 end

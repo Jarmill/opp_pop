@@ -59,7 +59,7 @@ classdef opp_manager
 
             lsupp_base.TIME_INDEP = opts.TIME_INDEP;
             lsupp_base.FREE_TERM = 0;
-            lsupp_base.Tmax = 1;
+            lsupp_base.Tmax = double(2^opts.Symmetry);
 
             %create the support set
 
@@ -70,20 +70,29 @@ classdef opp_manager
             X_trig = 1-x(1)^2 - x(2)^2;
 
             %clock and rescaled load
-            X_clock_mode = x(3)*(1-2*Delta - x(3));    
-            X_clock_jump = (x(3)-Delta)*(1-2*Delta - x(3));    
-            
             if length(x)<4
                 X_load = [];
             else
                 X_load = 1-x(4)^2;                
-            end
+                        end
+
+            X_clock_mode = x(3)*(1-2*Delta - x(3));    
+            X_clock_jump = (x(3)-Delta)*(1-2*Delta - x(3));    
+            X = [X_trig==0; X_clock_mode>=0; X_load>=0];             
+            X_jump = [X_trig==0; X_clock_jump>=0; X_load>=0];
+            
+
+            %BUG CHECKING
+            % X_clock_mode = x(3);
+            % X_clock_jump = (x(3))*(1 - x(3));    
+            % X = [X_trig==0; X_clock_mode==0; X_load>=0];
+            % 
+            % X_jump = [X_trig==0; X_clock_jump>=0; X_load>=0];
+            % 
 
             
 
-            X = [X_trig==0; X_clock_mode>=0; X_load>=0];
-            X_jump = [X_trig==0; X_clock_jump>=0; X_load>=0];
-                       
+                   
             lsupp_base.X = X;
             %define the reset law for the jump
             
@@ -166,9 +175,7 @@ classdef opp_manager
             % %harmonics constraints
             con_harm = obj.con_harmonics();
             % 
-            % %ignore the lebesgue constraint for now
-            % may be causing issues
-            con_leb = obj.con_lebesgue_circ(d);
+            con_leb = obj.con_uni_circ(d);
             % 
             con_threephase = obj.con_balance(d);
 
@@ -179,7 +186,12 @@ classdef opp_manager
 
             % mom_con = [con_prob; con_preserve; con_harm; con_leb; con_threephase];
             
-            % mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb; con_threephase];
+            %con_liou is broken
+            % mom_con = [con_prob; con_preserve; con_liou; con_leb; con_threephase];            
+            
+            % mom_con = [con_prob; con_liou; con_leb; con_preserve; con_threephase];
+
+            mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb; con_threephase];
 
 
             %TODO: objective constraints as well
@@ -189,24 +201,31 @@ classdef opp_manager
 
         end
 
-        function leb_con = con_lebesgue_circ(obj, d)
+        function uni_con = con_uni_circ(obj, d)
             %the signal encircles the unit disk entirely in one period
             %this means that the (c, s) marginal of the occupation measures
-            %is a Lebesgue distribution
+            %is a uniform distribution (because time has been scaled back)
             
             %get the lebesgue distribution
-            pw = genPowGlopti(2, d);
-            leb_circ = leb_sphere(pw,1);
-
-            %get moments of the (c, s)-marginal
-            trmon_sum = 0;
-            %TODO: change the lebesgue constraint for symmetry
-            for m = 1:length(obj.modes)
-                tr_curr = obj.modes{m}.trig_occ_monom(d);
-                trmon_sum = trmon_sum + cell_sum(tr_curr);
+            if obj.opts.uniform_arc               
+                pw = genPowGlopti(2, d);
+                leb_circ = leb_sphere(pw,1);
+    
+                %time is scaled, should be uniform moments
+                uni_circ = leb_circ/(2*pi);
+    
+                %get moments of the (c, s)-marginal
+                trmon_sum = 0;
+                %TODO: change the lebesgue constraint for symmetry
+                for m = 1:length(obj.modes)
+                    tr_curr = obj.modes{m}.trig_occ_monom(d);
+                    trmon_sum = trmon_sum + cell_sum(tr_curr);
+                end
+    
+                uni_con = (trmon_sum == uni_circ);
+            else
+                uni_con = [];
             end
-
-            leb_con = (trmon_sum == leb_circ);
             
         end
 
@@ -410,7 +429,7 @@ classdef opp_manager
             Nmodes = length(obj.modes);
             liou_cell = cell(Nmodes, 1);
             jump_src = cell(Nmodes-1, 1);
-            jump_dst = cell(Nmodes, 1);
+            jump_dst = cell(Nmodes-1, 1);
 
             %compute all terms
             for m=1:(Nmodes)
@@ -483,7 +502,8 @@ classdef opp_manager
 
                 %index the terminal destination levels based on the
                 %applied symmetry
-                if obj.opts.Symmetry == 1
+                %unconstrained for quarter-wave symmetry (here at least)
+                if obj.opts.Symmetry == 0
                     stop_order = 1:N;
                 else
                     stop_order = N:-1:1;                
@@ -612,20 +632,47 @@ classdef opp_manager
             opp_out = [];
         end
 
-        function m_out= mmat(obj)
+        function [m_out] = mmat(obj)
+            
             m_out = struct;
             K = length(obj.modes);
             % [N, P] = size(obj.modes{1}.levels);
             % m_out.levels = cell(K, N, P);
-            m_out.levels = cell(K, 1);
+            m_out.modes = cell(K, 1);
 
             for i = 1:K
-                m_out.levels{i} = obj.modes{i}.mmat();
+                m_out.modes{i} = obj.modes{i}.mmat();
             end
 
             m_out.jump = cell(K-1, 1);
             for i=1:(K-1)
                 m_out.jump{i} = obj.jumps{i}.mmat();
+            end
+        end
+
+        function ms = mass_summary(obj)
+            ms = struct;
+            K = length(obj.modes);
+            [N, P] = size(obj.modes{1}.levels);
+
+            ms.mode = zeros(K, N, P);
+            for m=1:K
+                for n=1:N
+                    for p = 1:P
+                        ms.mode(m, n, p) = double(obj.modes{m}.levels{n, p}.sys{1}.meas_occ.mass());
+                    end
+                end
+            end
+
+            ms.jump_up = zeros(K-1, N-1, P);
+            ms.jump_down = zeros(K-1, N-1, P);
+            for m=1:K-1
+                for n=1:N-1
+                    for p = 1:P
+                        ms.jump_up(m, n, p) = double(obj.jumps{m}.jump_up{n, p}.mass());
+                        ms.jump_down(m, n, p) = double(obj.jumps{m}.jump_down{n, p}.mass());
+                    end
+                end
             end
         end
 

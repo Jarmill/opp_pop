@@ -26,10 +26,10 @@ classdef opp_options < handle
         k(1, 1)int32 = 4; %number of switches in the sequence
         Symmetry(1, 1)opp_symmetry = opp_symmetry.Full %symmetry type
         three_phase(1, 1)opp_three_phase = opp_three_phase.Ignore; %how to deal with three-phase considerations
-        Unipolar(1, 1)logical = false %unipolar (in case of half-wave or quarter-wave)
+        unipolar(1, 1)logical = false %unipolar (in case of half-wave or quarter-wave)
         early_stop(1, 1)logical = true %stop at even pulse numbers (instead of k)
         start_level(1, 1)int32 = 0; %start at an initial level (if not zero)
-
+        uniform_arc(1, 1)logical=true
 
         %polynomial optimization parameters
         partition(1, 1)int32 = 4; %number of partitions of the disc c^2+s^2=1

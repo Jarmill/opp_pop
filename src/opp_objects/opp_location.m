@@ -202,7 +202,7 @@ classdef opp_location < location_interface
                 m_out.term = obj.term.mmat();
             end
             
-            m_out.term = obj.sys{1}.meas_occ.mmat();
+            m_out.occ = obj.sys{1}.meas_occ.mmat();
             
         end
 

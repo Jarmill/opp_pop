@@ -35,7 +35,12 @@ classdef opp_jump < handle
 
             for n=1:N-1
                 for p = 1:P
-                    supp_curr = [X_jump; X_partition(p)>=0];
+                    if P > 1
+                        X_p = X_partition(p)>=0;
+                    else
+                        X_p = [];
+                    end
+                    supp_curr = [X_jump; X_p];
                     % curr_name = sprintf('jump_m%d_n%d_p%d', m, n, p);
                     name_down = sprintf('down_m%d_n%d_p%d', m, n, p);
                     name_up = sprintf('up_m%d_n%d_p%d', m, n+1, p);
