@@ -23,6 +23,7 @@ classdef opp_location < location_interface
             obj.level= info.level;
             obj.L = info.L;
             obj.f = f;
+            obj.objective = objective;
             % obj.id = info.id;
             %TODO: make id the last argument                                       
             obj.sys  = {subsystem_base(obj.supp, obj.f, [], id)};
@@ -57,7 +58,7 @@ classdef opp_location < location_interface
             len_dual.v = len_liou;
             len_dual.beta = length(cons_ineq);
             
-            %ensure this iss the correct sign
+            %ensure this is the correct sign
             cons_eq = (-liou==0);                        
         end      
 
@@ -77,16 +78,25 @@ classdef opp_location < location_interface
             if nargin == 1
                 objective = obj.get_objective();
             end
-
-            obj_con_eq = [];
-            obj_con_ineq = [];
-
+            % 
+            % obj_con_eq = [];
+            % obj_con_ineq = [];
+            % 
             var_end = obj.var_index(obj.vars, {'t', 'x'});
-            if isempty(objective)
-                obj_min = 0;
-            elseif isscalar(objective)
-                obj_subs = obj.sys{1}.meas_occ.var_sub_mom(var_end, objective);
-                obj_min = (obj_subs);                            
+            % if isempty(objective)
+            %     obj_min = 0;
+            % elseif isscalar(objective)
+
+            %this allows for three-phase considerations
+            if isnumeric(objective)
+                obj_subs = objective*obj.sys{1}.meas_occ.mass();
+            else
+                obj_subs = mom(obj.sys{1}.meas_occ.var_sub([var_end.t; var_end.x], objective));
+            end
+
+                obj_min = (obj_subs);   
+                obj_con_ineq = [];
+                obj_con_eq = [];
             % else
             %     obj_subs = obj.term.var_sub_mom(var_end, objective);
             %     q_name = ['q_', num2str(obj.id)];
@@ -99,7 +109,7 @@ classdef opp_location < location_interface
             %     obj_con_eq = [mass(q) == 1];
             %     obj_con_ineq= (mom(q) <= obj_subs);
             end            
-        end
+        
 
         
         function [v_trig, mon_trig] = trig_monom(obj, d)

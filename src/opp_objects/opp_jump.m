@@ -98,6 +98,12 @@ classdef opp_jump < handle
                 end
             end
         end
+
+        function obj_out = objective(obj)
+            %objective for the jump
+            %currently null
+            obj_out = 0;
+        end
     end
 end
 

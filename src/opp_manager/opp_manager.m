@@ -86,18 +86,21 @@ classdef opp_manager
             
 
             %declare the jumps and modes
+
+            %get the per-mode objectives
+            %TODO: generalize this towards three-phase objectives
+            objective_mode = obj.objective_level(vars, opts);
+            
             for m=0:k
                 lsupp_curr = lsupp_base;
                 arc_curr = support_arc(m, x, Delta, opts.Symmetry);
                 lsupp_curr.X = [lsupp_curr.X; arc_curr>=0];
-                modes{m+1} = opp_mode(m, lsupp_curr, opts);
+                modes{m+1} = opp_mode(m, lsupp_curr, objective_mode, opts);
 
                 if m~=0
                     jumps{m} = opp_jump(m, opts, vars, X_jump);
                 end
             end
-
-
         end
 
         %% the main routine
@@ -235,7 +238,11 @@ classdef opp_manager
             %
             if length(obj.vars.x)>3 && imag(obj.opts.Z_load)>0 ...
                     && obj.opts.three_phase == opp_three_phase.Balanced
-                mon_3 = obj.three_phase_rotate(obj.vars.x([1, 2, 4]), d);
+                
+                vars_inv = obj.vars.x([1, 2, 4]);
+                p_in = mmon(vars_inv, d-1)*vars_inv(3);
+
+                mon_3 = obj.three_phase_rotate(p_in, vars_inv);
 
                 width_3 = size(mon_3, 2);
                 mon_3_sum = mon_3*ones(width_3, 1);
@@ -293,8 +300,9 @@ classdef opp_manager
         end
 
 
-        function mon_3 = three_phase_rotate(obj, vars_inv, d)            
-            %return a vector of monomials in vars_inv
+        function mon_3 = three_phase_rotate(obj, p_in, vars_inv)            
+            %return a vector of polynomials in vars_inv
+            %rotated as [u(theta), u(theta-2pi/3), u(theta-4pi/3)]
             %variable 1 and 2 are trigonometrically related (cos and sin)
             %the others are along for the ride
 
@@ -304,7 +312,7 @@ classdef opp_manager
 
             vars_inv_trig = vars_inv(1:2);
             %monomials times the current
-            va = mmon(vars_inv, d-1)*vars_inv(3);
+            va = p_in;
             vb = subs(va, vars_inv_trig, R3*vars_inv_trig);
             vc = subs(va, vars_inv_trig, (R3*R3)*vars_inv_trig);
 
@@ -507,6 +515,52 @@ classdef opp_manager
         end
 
         %% process the objective
+
+        function objective = objective_level(obj, vars, opts)
+            %return the mode-objective at each level
+            %
+            %TODO: 
+            %the scaling factors may be wrong for inductance and
+            %capacitance. check this later.
+            %
+            N = length(opts.L);
+            Lmax = max(abs(opts.L));
+            sym_factor = double(2^opts.Symmetry);
+            %Another TODO: quarter-wave symmetry may break the
+             %characterization of the current in the inductor/capacitor
+            if (length(vars.x)==3) || (imag(opts.Z_load) == 0)                      
+                %purely resistive
+                objective = (opts.L.^2);
+            elseif (imag(opts.Z_load) >= 0)
+                
+                %inductive load
+                %i' = -(R/L)i + (1/L) v
+                %per-unit system, ignore the L value
+                inductance = imag(opts.Z_load)/(2*pi*opts.f0);
+                % resistance= real(opts.Z_load);                
+                % f_load = -(resistance)/(inductance)*vars.x(4) + Lscale;
+                objective = vars.x(4)*(Lmax/inductance)^2*(opts.L).^2;
+            else
+                 %vc' = (v-vc)/(R*C)
+                 %per-unit, ignore (R*C) factor
+                 %TODO: v is from the voltage source. Modify when it is 
+                 %filtered by a grid-side filter
+                 %
+                 %                 
+                 %
+                 capacitance= -imag(opts.Z_load)*(2*pi*opts.f0);
+                 resistance= real(opts.Z_load);  
+                 RC = resistance*capacitance;
+                 % f_load = Lscale - vars.x(4)/(resistance*capacitance);
+                 objective = (opts.L.^2) + 2*(opts.L)*vars.x(4)*(Lmax/RC) + (Lmax/RC)^2*vars.x(4)^2;
+            end
+            objective = objective'*sym_factor;
+
+
+            if opts.three_phase == "Floating"
+                objective = obj.three_phase_rotate(objective, opts.vars.x);
+            end
+        end
 
         function [objective, obj_con] = opp_objective(obj)
             %OPP_OBJECTIVE Form the objective of the OPP problem

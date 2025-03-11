@@ -1,21 +1,24 @@
 mset clear
 
 opts = opp_options;
-opts.L = [-1, 0, 1];
+% opts.L = [-1, 0, 1];
+opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
 opts.partition = 2;
 opts.TIME_INDEP = true;
 opts.start_level = 0;
 opts.early_stop = 1;
-opts.Symmetry = 2;
+% opts.Symmetry = 2;
+opts.Symmetry = 1;
 % opts.three_phase = "Balanced";
-opts.k = 4;
+% opts.k = 4;
+opts.k=12;
 
 
-R = 0;
-L = 5e-3;
-X = 1.0j*(2*pi)*opts.f0*L;
-opts.Z_load = R+X;
+% R = 0;
+% L = 5e-3;
+% X = 1.0j*(2*pi)*opts.f0*L;
+% opts.Z_load = R+X;
 
 
 
@@ -50,10 +53,11 @@ hc= MG.con_harmonics();
 
 % fc = MG.con_flow(d);
 
-mom_con = [fc; hc; rc; pc; lc];
+% mom_con = [fc; hc; rc; pc; lc];
 supp_con = sc;
 
 % vi = MG.vars.x(1:2);
-vi = MG.vars.x;
+% vi = MG.vars.x;
 % mon_3 = MG.three_phase_rotate(vi, d);
-bc = MG.con_balance(d);
+% bc = MG.con_balance(d);
+om = MG.opp_objective();
