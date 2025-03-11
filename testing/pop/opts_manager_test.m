@@ -8,13 +8,14 @@ opts.harmonics = opp_harmonics();
 opts.partition = 2;
 opts.TIME_INDEP = true;
 opts.start_level = 0;
-opts.early_stop = 0;
+opts.early_stop = 1;
 % opts.null_objective = true;
 opts.null_objective = false;
 opts.Symmetry = 0;
 % opts.Symmetry = 1;
 % opts.three_phase = "Balanced";
-opts.k = 4;
+% opts.k = 4;
+opts.k = 8;
 % opts.k=2;
 % opts.Ts = (pi/8)/opts.f0;
 % opts.Ts = 1e-3;
@@ -73,9 +74,44 @@ disp(sol)
 % mon_3 = MG.three_phase_rotate(vi, d);
 % bc = MG.con_balance(d);
 % om = MG.opp_objective();
+
+%% diagnose the solution
 if sol.status==0
-    m_out = MG.mmat();
-    ms = MG.mass_summary();
+    % m_out = MG.mmat();
+    % ms = MG.mass_summary();
+    pattern = MG.recover_pattern();
+
+    bound_lower = sol.obj_rec;
+    bound_upper = pattern.energy;
+
+
+    %plot the signal
+    N = 1000;
+th = linspace(0, 2*pi, N);
+
+%function
+x = pulse_func(th, pattern.u, pattern.alpha);
+
+figure(1)
+clf
+hold on
+plot(th, x)
+plot(th, sin(th), 'k');
+xlim([0, 2*pi]) 
+
+iL = cumsum(x)/N;
+energy_L_h = pi*sum(((na(2:end).^2 + nb(2:end).^2)./(1:Nh)'.^2));
+energy_L = sum(iL.^2)/N;
+
+figure(2)
+plot(th, iL);
+
+% figure(3)
+% clf
+% hold on
+% stem(na)
+% stem(nb)
+
 end
 
 

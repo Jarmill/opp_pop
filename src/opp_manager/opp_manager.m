@@ -640,7 +640,7 @@ classdef opp_manager
         end
 
         function [m_out] = mmat(obj)
-            
+            %get the moment matrix of all measure variables
             m_out = struct;
             K = length(obj.modes);
             % [N, P] = size(obj.modes{1}.levels);
@@ -658,6 +658,7 @@ classdef opp_manager
         end
 
         function ms = mass_summary(obj)
+            %collect the masses of the occupation measure into a neat array
             ms = struct;
             K = length(obj.modes);
             [N, P] = size(obj.modes{1}.levels);
@@ -681,6 +682,35 @@ classdef opp_manager
                     end
                 end
             end
+        end
+
+        function [pattern] = recover_pattern(obj)
+            %RECOVER_PATTERN recover a switching sequence from a solution 
+            %(mass of occupation measures)
+            %
+            %Output: struct pattern
+            % occ:      percentage of time spent in each location
+            % alpha:    switching angles
+            % u:        voltage levels
+            % energy:   energy in the switching sequence
+            ms = obj.mass_summary;
+            % L = obj.L;
+            
+            mocc = sum(ms.mode, 3);
+            
+
+            pattern = struct;
+            pattern.occ = mocc;
+
+            %TODO: generalize for other symmetry structures
+
+            %TODO: recovery for early stopping
+            [~, ind] = max(mocc, [], 2);
+            ang = sum(mocc, 2);
+            pattern.alpha = 2*pi*cumsum(ang(1:end-1))';
+            pattern.u = obj.opts.L(ind);
+            pattern.energy = (obj.opts.L(ind).^2)*(2*pi*ang);
+
         end
 
     end
