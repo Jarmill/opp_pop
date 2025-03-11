@@ -113,6 +113,7 @@ classdef opp_manager
             %formulate constraints
             [mom_con, supp_con, len_dual] = obj.cons(d);
                         
+            [objective, obj_con] = opp_objective(obj);
             %solve the program
             sol = obj.solve(objective, mom_con,supp_con);
             
@@ -127,7 +128,7 @@ classdef opp_manager
             
             %TODO: incorporate minquery into maximin (minimax) formulation
 
-            mset('yalmip',true);
+            mset('yalmip',true, 'verbose', false);
             %make sure the solution is precise
             mset(obj.sdp_settings);
             % https://docs.mosek.com/9.2/pythonfusion/parameters.html
@@ -136,7 +137,7 @@ classdef opp_manager
             P = msdp(min(objective), mom_con, supp_con);
 
             sol = struct;
-            tic;t 
+            tic;
             [sol.status,sol.obj_rec, ~,sol.dual_rec]= msol(P);     
             sol.solver_time = toc;
         end  
@@ -147,24 +148,30 @@ classdef opp_manager
             %generate the constraints
             supp_con = obj.supp_con();
             
-            %mass of initial measure = 1
+              
+
+            % %mass of initial measure = 1
             con_prob = obj.con_prob_dist();
-            
-            %initial = sum of terminal measure
-            con_preserve = obj.con_return();
+            % 
+            % %initial = sum of terminal measure
+            con_preserve = obj.con_return(d);
 
             %flow +jump continuity constraints
-            
+
             con_liou = obj.con_flow(d);
 
             %harmonics constraints
             con_harm = obj.con_harmonics();
 
+            %ignore the lebesgue constraint for now
+            %may be causing issues
             con_leb = obj.con_lebesgue_circ(d);
 
             con_threephase = obj.con_balance(d);
 
-            mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb; con_threephase];
+            mom_con = [con_prob; con_preserve; con_harm];
+
+            % mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb; con_threephase];
 
 
             %TODO: objective constraints as well
@@ -572,12 +579,18 @@ classdef opp_manager
             %will need to modify this for the three-phase quadratic program
             obj_con = [];
             objective = 0;
-            for i = 1:length(obj.jumps)
-                objective = objective + obj.jumps{i}.objective();
-            end
-            
-            for i = 1:length(obj.modes)
-                objective = objective + obj.modes{i}.objective();
+            if obj.opts.null_objective
+                %for testing only
+                [~, mass_init_sum] = obj.modes{1}.initial_mass();
+                objective = mass_init_sum;
+            else
+                for i = 1:length(obj.jumps)
+                    objective = objective + obj.jumps{i}.objective();
+                end
+                
+                for i = 1:length(obj.modes)
+                    objective = objective + obj.modes{i}.objective();
+                end
             end
 
         end

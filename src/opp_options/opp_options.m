@@ -13,6 +13,7 @@ classdef opp_options < handle
         %harmonics constraints
         harmonics = [];
         harmonics_load = [];
+        null_objective = true;
 
 
         %TODO:

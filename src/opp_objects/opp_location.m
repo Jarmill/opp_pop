@@ -154,7 +154,7 @@ classdef opp_location < location_interface
             %equivalent to a resistive load
             if obj.L ~= 0
                 % harm_monom = obj.harm_eval(vars, harm_in);
-                sub_eval = obj.sys{1}.meas_occ.var_sub(vars.x, harm_mon);
+                sub_eval = obj.sys{1}.meas_occ.var_sub([vars.t; vars.x], harm_mon);
 
                 harm_poly = obj.L*sub_eval;
                 harm_mom = mom(harm_poly);            

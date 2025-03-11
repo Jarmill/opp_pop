@@ -292,7 +292,7 @@ classdef opp_mode
                         if NTRIG
                             [~, imon{n, p}] = obj.levels{n, p}.non_trig_monom_init(d);                            
                         else
-                            [~, imon{n, p}] = obj.levels{n, p}.init.mom_monom(d);
+                            imon{n, p} = obj.levels{n, p}.init.mom_monom(d);
                         end
                     else
                         imon{n, p} = 0;
