@@ -173,7 +173,7 @@ classdef opp_manager
             con_liou = obj.con_flow(d);
             % 
             % %harmonics constraints
-            con_harm = obj.con_harmonics();
+            [con_harm, ~] = obj.con_harmonics();
             % 
             con_leb = obj.con_uni_circ(d);
             % 
@@ -186,11 +186,11 @@ classdef opp_manager
 
             % mom_con = [con_prob; con_preserve; con_harm; con_leb; con_threephase];
             
-            %con_liou is broken
-            % mom_con = [con_prob; con_preserve; con_liou; con_leb; con_threephase];            
-            
+            %without harmonics
             % mom_con = [con_prob; con_liou; con_leb; con_preserve; con_threephase];
 
+
+            %with harmonics
             mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb; con_threephase];
 
 
@@ -229,7 +229,7 @@ classdef opp_manager
             
         end
 
-        function harm_con = con_harmonics(obj)
+        function [harm_con, harm_source] = con_harmonics(obj)
             %collect harmonics constraints on the voltage source and the load
             harm = obj.harm_eval(obj.vars, obj.opts.harmonics);
             harm_load_data = obj.harm_eval(obj.vars, obj.opts.harmonics_load);
@@ -415,7 +415,12 @@ classdef opp_manager
                 end
     
                 %package up the harmonics
-                harm_monom = [harm_cos; harm_sin]/pi;    
+                % harm_monom = [harm_cos; harm_sin]/pi;    
+
+                %divide by pi to get the harmonic
+                %then multiply by 2pi because time is scaled to [0, 1]?
+                %figure this out
+                harm_monom = [harm_cos; harm_sin]*2;
 
                 %process the symmetry
                 harm_monom = obj.symmetry_eval(harm_monom, [c; s]);
@@ -566,7 +571,9 @@ classdef opp_manager
              %characterization of the current in the inductor/capacitor
             if (length(vars.x)==3) || (imag(opts.Z_load) == 0)                      
                 %purely resistive
-                objective = (opts.L.^2);
+                %sym_factor: replicate the square according to the symmetry
+                %2*pi: because time is normalized to [0, 1]
+                objective = sym_factor * (2*pi)*(opts.L.^2);
             elseif (imag(opts.Z_load) >= 0)
                 
                 %inductive load

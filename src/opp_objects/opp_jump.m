@@ -113,8 +113,8 @@ classdef opp_jump < handle
             m_out.down = cell(Np, P);
             for n=1:Np
                 for p = 1:P                    
-                    m_out.up = obj.jump_up{n, p}.mmat();
-                    m_out.down = obj.jump_down{n, p}.mmat();                    
+                    m_out.up{n, p} = obj.jump_up{n, p}.mmat();
+                    m_out.down{n, p} = obj.jump_down{n, p}.mmat();                    
                 end
             end
         end
@@ -126,4 +126,5 @@ classdef opp_jump < handle
         end
     end
 end
+
 

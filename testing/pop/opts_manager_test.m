@@ -5,19 +5,19 @@ opts.L = [-1, 0, 1];
 % opts.L = [-1, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
-opts.partition = 1;
+opts.partition = 2;
 opts.TIME_INDEP = true;
 opts.start_level = 0;
 opts.early_stop = 0;
-opts.null_objective = true;
-% opts.null_objective = false;
+% opts.null_objective = true;
+opts.null_objective = false;
 opts.Symmetry = 0;
 % opts.Symmetry = 1;
 % opts.three_phase = "Balanced";
 opts.k = 4;
 % opts.k=2;
 % opts.Ts = (pi/8)/opts.f0;
-opts.Ts = 1e-3;
+% opts.Ts = 1e-3;
 % opts.k=12;
 
 
@@ -38,8 +38,10 @@ opts.Ts = 1e-3;
 
 %% test a manager
 MG = opp_manager(opts);
-order = 1;
+order = 2;
 d = 2*order;
+
+%k=4, full-wave symmetry
 
 %the manager can be created
 %do the constraints work though?
