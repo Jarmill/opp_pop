@@ -191,6 +191,53 @@ classdef opp_location < location_interface
             harm_mom = mom(harm_poly);
         end        
 
+        %recover the solution
+        function m_out = mmat(obj)
+            m_out = struct('init', [], 'term', [], 'occ', []);
+            if ~isempty(obj.init)
+                m_out.init = obj.init.mmat();
+            end
+
+            if ~isempty(obj.term)
+                m_out.term = obj.term.mmat();
+            end
+            
+            m_out.term = obj.sys{1}.meas_occ.mmat();
+            
+        end
+
+
+        function [optimal, mom_out, corner] = recover(obj, tol)
+            %RECOVER if top corner of the moment matrix is rank-1, then
+            %return approximate optimizer
+            
+            if nargin < 2
+                tol = 5e-4;
+            end
+                        
+            if isempty(obj.init)
+                opt_init = 1;
+                mom_init.t = []; mom_init.x = [];
+                corner_init = 0;
+            else
+                [opt_init, mom_init, corner_init] = obj.init.recover(tol);
+            end
+            if isempty(obj.term)
+                opt_term = 1;
+                mom_term.t = []; mom_term.x = [];
+                corner_term = 0;
+            else
+                [opt_term, mom_term, corner_term] = obj.term.recover(tol);
+            end
+            
+            optimal = opt_init && opt_term;
+            
+            mom_out = struct('t0', mom_init.t, 'x0', mom_init.x, ...
+                             'tp', mom_term.t, 'xp', mom_term.x);     
+            corner = struct('init', corner_init, 'term', corner_term);
+        end
+
+
         %holdovers from abstract class
         function dual_out = dual_process(obj)
             dual_out = [];

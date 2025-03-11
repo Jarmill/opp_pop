@@ -112,6 +112,7 @@ classdef opp_mode
             f_trig = 2*pi*[-vars.x(2); vars.x(1)];
             % f_phi = vars.x(3);
             f_clock = 1;
+            % f_clock = 0; %TODO: BUG: TEST: 
             f_load = load_dynamics(obj, vars, opts);
 
             % f = [f_trig; f_phi; f_load];
@@ -154,6 +155,7 @@ classdef opp_mode
                  resistance= real(opts.Z_load);  
                  f_load = Lscale - vars.x(4)/(resistance*capacitance);
             end
+
         end
     
         %% functions used to describe constraints
@@ -386,6 +388,18 @@ classdef opp_mode
                         curr_trans = [];
                     end
                     supp_con_out = [supp_con_out; curr_loc; curr_trans];
+                end
+            end
+        end
+
+        %% recovery
+        function m_out = mmat(obj)
+            [N, P] = size(obj.levels);
+            % obj_min = 0;
+            m_out = cell(N, P);
+            for n=1:N
+                for p = 1:P               
+                    m_out{n, p} = obj.levels{n, p}.mmat();
                 end
             end
         end

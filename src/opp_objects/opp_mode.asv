@@ -292,7 +292,7 @@ classdef opp_mode
                         if NTRIG
                             [~, imon{n, p}] = obj.levels{n, p}.non_trig_monom_init(d);                            
                         else
-                            [~, imon{n, p}] = obj.levels{n, p}.init.mom_monom(d);
+                            imon{n, p} = obj.levels{n, p}.init.mom_monom(d);
                         end
                     else
                         imon{n, p} = 0;
@@ -361,17 +361,14 @@ classdef opp_mode
 
         end
 
-        function obj_min = get_objective(obj)
-            %fetch the objective (THD) from all of the 
+        function obj_min = objective(obj)
+            %fetch the objective (THD) from all of the mode locations
             [N, P] = size(obj.levels);
-            tmon = cell(N, P);
+            obj_min = 0;
             for n=1:N
-                for p = 1:P                    
-                      if isempty(obj.levels{n, p}.sys)
-                          tmon{n, p} = 0;
-                      else
-                          tmon{n, p} = obj.levels{n, p}.mom_occ_sub(vars, vref);
-                      end                                    
+                for p = 1:P               
+                    [om_curr, ~, ~] = obj.levels{n, p}.objective_con();
+                      obj_min = obj_min + om_curr;
                 end
             end
         end

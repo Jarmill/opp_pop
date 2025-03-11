@@ -4,7 +4,7 @@ opts = opp_options;
 opts.L = [-1, 0, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
-opts.partition = 2;
+opts.partition = 3;
 opts.TIME_INDEP = false;
 opts.start_level = 0;
 opts.early_stop = 1;
@@ -33,7 +33,7 @@ opts.k = 4;
 
 %% test a manager
 MG = opp_manager(opts);
-order = 1;
+order = 2;
 d = 2*order;
 
 %the manager can be created
@@ -66,3 +66,40 @@ disp(sol)
 % mon_3 = MG.three_phase_rotate(vi, d);
 % bc = MG.con_balance(d);
 % om = MG.opp_objective();
+if sol.status==0
+    m_out = MG.mmat();
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

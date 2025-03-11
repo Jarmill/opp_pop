@@ -157,19 +157,19 @@ classdef opp_manager
             con_preserve = obj.con_return(d);
 
             %flow +jump continuity constraints
-
+            % 
             con_liou = obj.con_flow(d);
+            % 
+            % %harmonics constraints
+            % con_harm = obj.con_harmonics();
+            % 
+            % %ignore the lebesgue constraint for now
+            % may be causing issues
+            % con_leb = obj.con_lebesgue_circ(d);
+            % 
+            % con_threephase = obj.con_balance(d);
 
-            %harmonics constraints
-            con_harm = obj.con_harmonics();
-
-            %ignore the lebesgue constraint for now
-            %may be causing issues
-            con_leb = obj.con_lebesgue_circ(d);
-
-            con_threephase = obj.con_balance(d);
-
-            mom_con = [con_prob; con_preserve; con_harm];
+            mom_con = [con_prob; con_preserve; con_liou];
 
             % mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb; con_threephase];
 
@@ -581,6 +581,8 @@ classdef opp_manager
             objective = 0;
             if obj.opts.null_objective
                 %for testing only
+                % m0 = obj.modes{1}.initial_mass();
+                % [~, mass_init_sum] = ones(1, length(obj.opts.L))*m0(:, 1);
                 [~, mass_init_sum] = obj.modes{1}.initial_mass();
                 objective = mass_init_sum;
             else
@@ -599,6 +601,23 @@ classdef opp_manager
             %process and recover the solution
 
             opp_out = [];
+        end
+
+        function m_out= mmat(obj)
+            m_out = struct;
+            K = length(obj.modes);
+            % [N, P] = size(obj.modes{1}.levels);
+            % m_out.levels = cell(K, N, P);
+            m_out.levels = cell(K, 1);
+
+            for i = 1:K
+                m_out.levels{i} = obj.modes{i}.mmat();
+            end
+
+            m_out.jump = cell(K-1, 1);
+            for i=1:(K-1)
+                m_out.jump{i} = obj.jumps{i}.mmat();
+            end
         end
 
     end

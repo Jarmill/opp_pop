@@ -5,10 +5,11 @@ opts.L = [-1, 0, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
 opts.partition = 2;
-opts.TIME_INDEP = true;
+opts.TIME_INDEP = false;
 opts.start_level = 0;
 opts.early_stop = 1;
-% opts.Symmetry = 2;
+opts.null_objective = true;
+opts.Symmetry = 2;
 % opts.Symmetry = 1;
 % opts.three_phase = "Balanced";
 opts.k = 4;
@@ -38,6 +39,10 @@ d = 2*order;
 %the manager can be created
 %do the constraints work though?
 
+sol = MG.run(order);
+
+disp(sol)
+
 %% step through the constraints
 
 % %support constraints can be generated
@@ -61,3 +66,40 @@ d = 2*order;
 % mon_3 = MG.three_phase_rotate(vi, d);
 % bc = MG.con_balance(d);
 % om = MG.opp_objective();
+if sol.status==0
+    m_out = MG.mmat();
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

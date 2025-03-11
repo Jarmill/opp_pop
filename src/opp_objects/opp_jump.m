@@ -99,6 +99,21 @@ classdef opp_jump < handle
             end
         end
 
+        function m_out = mmat(obj)
+            %get moment matrices of the jumps
+            m_out = struct;
+            [Np, P] = size(obj.jump_up);
+            % N = Np+1;
+            m_out.up = cell(Np, P);
+            m_out.down = cell(Np, P);
+            for n=1:Np
+                for p = 1:P                    
+                    m_out.up = obj.jump_up{n, p}.mmat();
+                    m_out.down = obj.jump_down{n, p}.mmat();                    
+                end
+            end
+        end
+
         function obj_out = objective(obj)
             %objective for the jump
             %currently null
