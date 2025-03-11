@@ -40,13 +40,13 @@ m = double(m);
         end
     elseif Symmetry==2
         if m==0
-            %arc [0, pi/2-Delta/2]
-            th1 = 0;
-            th2 = pi/2;
+            %arc [Delta/2, pi/2-Delta/2]
+            th1 = Delta/2;
+            th2 = pi/2-Delta/2;
         else
             %arc [0, pi/2-2Delta]
             th1 = (m-1)*Delta;
-            th2 = pi/2;
+            th2 = pi/2-Delta/2;
         end
     end
 

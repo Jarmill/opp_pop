@@ -133,7 +133,7 @@ classdef opp_manager
             P = msdp(min(objective), mom_con, supp_con);
 
             sol = struct;
-            tic; 
+            tic;t 
             [sol.status,sol.obj_rec, ~,sol.dual_rec]= msol(P);     
             sol.solver_time = toc;
         end  
@@ -234,26 +234,66 @@ classdef opp_manager
             %figure out if this is possible to do without inductive current
             %
             if length(obj.vars.x)>3 && imag(obj.opts.Z_load)>0 ...
-                    && obj.opts.balance == opp_three_phase.Balanced
-                mon_3 = obj.three_phase_rotate(obj.vars.x([1, 2, 4]), d, obj.opts.Symmetry);
+                    && obj.opts.three_phase == opp_three_phase.Balanced
+                mon_3 = obj.three_phase_rotate(obj.vars.x([1, 2, 4]), d);
 
                 width_3 = size(mon_3, 2);
                 mon_3_sum = mon_3*ones(width_3, 1);
 
+                %process the symmetry (if valid)
+                mon_3_sum = obj.symmetry_eval(mon_3_sum, obj.vars.x([1; 2]));
+
                 bmom = 0;
                 for m = 1:length(obj.modes)
-                    bmom = bmom + obj.modes{m}.mom_sub(vi, mon_3_sum);
+                    curr_mom = obj.modes{m}.mom_sub(obj.get_vars(), mon_3_sum);
+                    bmom = madd_cell_mom(bmom, curr_mom, 1);
                 end
 
-                bcon = mom(bmom)==0;
-
+                
+                bcon = [];
+                for i =1:size(bmom, 1)
+                    for j = 1:size(bmom, 2)
+                        bcon = [bcon; bmom{i, j}==0];
+                    end
+                end
+                
             else
                 bcon = [];
             end
         end
 
 
-        function mon_3 = three_phase_rotate(obj, vars_inv, d, Symmetry)            
+        function var_stack = get_vars(obj)
+            %return variables
+            var_stack = [obj.vars.t; obj.vars.x];
+        end
+
+        function w_sym = symmetry_eval(obj, w_in, vars_trig)
+            %compensate for the symmetry structure in the problem
+            %
+            %original: w(c, s) over the occupation measure
+            %
+            %Full-Wave w(c, s)
+            %Half-Wave w(c, s) - w(-c, -s)
+            %Quarter-Wave w(c, s) + w(-c, s) - w(-c, -s) - w(c, -s)
+
+            if obj.opts.Symmetry==0
+                w_sym = w_in;
+            else
+                w_refl = subs(w_in, vars_trig, -vars_trig);
+                if obj.opts.Symmetry==1
+                    w_sym = w_in - w_refl;
+                else
+                    Rp = [-1, 0; 0, 1];
+                    w_q_pos = subs(w_in, vars_trig, Rp*vars_trig);
+                    w_q_neg = subs(w_in, vars_trig, -Rp*vars_trig);
+                    w_sym = w_in + w_q_pos - w_q_neg - w_refl;
+                end
+            end
+        end
+
+
+        function mon_3 = three_phase_rotate(obj, vars_inv, d)            
             %return a vector of monomials in vars_inv
             %variable 1 and 2 are trigonometrically related (cos and sin)
             %the others are along for the ride
@@ -263,20 +303,21 @@ classdef opp_manager
             R3 = [cos(2*pi/3), -sin(2*pi/3); sin(2*pi/3), cos(2*pi/3)];
 
             vars_inv_trig = vars_inv(1:2);
-            va = mmon(vars_inv, d);
+            %monomials times the current
+            va = mmon(vars_inv, d-1)*vars_inv(3);
             vb = subs(va, vars_inv_trig, R3*vars_inv_trig);
             vc = subs(va, vars_inv_trig, (R3*R3)*vars_inv_trig);
 
             mon_3 = [va, vb, vc];
 
-            if Symmetry==1
-                R2 = [-1, 0; 0, 1];
-
-                
-                mon_3_flip = subs(mon_3, vars_inv_trig, R2*vars_inv_trig);
-
-                mom_3 = [mom_3, -mon_3_flip];
-            end
+            % if obj.opts.Symmetry==1
+            %     R2 = [-1, 0; 0, 1];
+            % 
+            % 
+            %     mon_3_flip = subs(mon_3, vars_inv_trig, R2*vars_inv_trig);
+            % 
+            %     mon_3 = [mon_3, -mon_3_flip];
+            % end
 
         end
 
@@ -331,7 +372,10 @@ classdef opp_manager
                 end
     
                 %package up the harmonics
-                harm_monom = [harm_cos; harm_sin]/pi;       
+                harm_monom = [harm_cos; harm_sin]/pi;    
+
+                %process the symmetry
+                harm_monom = obj.symmetry_eval(harm_monom, [c; s]);
             end
         end
 
@@ -403,29 +447,43 @@ classdef opp_manager
             % mass_con = obj.modes{1}.mass_init_mode();
             init_monom = obj.modes{1}.init_monom(d, true);
 
+            N = length(obj.opts.L);
             %TODO: 
             %This is for full-wave. generalize for other symmetry
             %structures
 
-            return_mom = {init_monom{:, 1}};
-            if obj.opts.early_stop                
-                for m = 3:2:length(obj.modes)
-                    % mass_con = mass_con - obj.modes{m}.mass_term_mode();
-                    stop_monom = obj.modes{m}.term_monom(d, true);
-                    return_mom = madd_cell_mom(return_mom, {stop_monom{:, end}}, -1);
-                end
+            if obj.opts.Symmetry == 2
+                return_con = [];
             else
-                % mass_con = mass_con - obj.modes{end}.mass_term_mode();
-                stop_monom = obj.modes{end}.term_monom(d, true);
-                return_mom = madd_cell_mom(return_mom, {stop_monom{:, end}}, -1);
-            end
+                return_mom = {init_monom{:, 1}};
 
-            [N, P] = size(return_mom);
-            return_con = [];
-            for n = 1:N
-                for p = 1:P
-                    if ~isnumeric(return_mom{n, p})
-                        return_con = [return_con; return_mom{n, p}==0];
+                %index the terminal destination levels based on the
+                %applied symmetry
+                if obj.opts.Symmetry == 1
+                    stop_order = 1:N;
+                else
+                    stop_order = N:-1:1;                
+                end
+
+                if obj.opts.early_stop                
+                    for m = 3:2:length(obj.modes)
+                        % mass_con = mass_con - obj.modes{m}.mass_term_mode();
+                        stop_monom = obj.modes{m}.term_monom(d, true);
+                        return_mom = madd_cell_mom(return_mom, {stop_monom{stop_order, end}}, -1);
+                    end
+                else
+                    % mass_con = mass_con - obj.modes{end}.mass_term_mode();
+                    stop_monom = obj.modes{end}.term_monom(d, true);
+                    return_mom = madd_cell_mom(return_mom, {stop_monom{stop_order, end}}, -1);
+                end
+    
+                [N, P] = size(return_mom);
+                return_con = [];
+                for n = 1:N
+                    for p = 1:P
+                        if ~isnumeric(return_mom{n, p})
+                            return_con = [return_con; return_mom{n, p}==0];
+                        end
                     end
                 end
             end
@@ -445,10 +503,10 @@ classdef opp_manager
             for i = 1:length(obj.modes)
                 supp_con_all = [supp_con_all; obj.modes{i}.supp_con()];
             end
-          %cell of opp_mode(), contains initial/terminal/occupation measures
-
-            
+          %cell of opp_mode(), contains initial/terminal/occupation measures           
         end
+
+        %% process the objective
 
         function [objective, obj_con] = opp_objective(obj)
             %OPP_OBJECTIVE Form the objective of the OPP problem

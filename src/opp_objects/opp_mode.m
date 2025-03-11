@@ -114,7 +114,8 @@ classdef opp_mode
             %capacitance. check this later.
             %
             N = length(opts.L);
-            if (length(vars.x)==3) || (im(opts.Z_load) == 0)                      
+            Lmax = max(abs(opts.L));
+            if (length(vars.x)==3) || (imag(opts.Z_load) == 0)                      
                 %purely resistive
                 objective = (opts.L.^2);
             elseif (imag(opts.Z_load) >= 0)
@@ -151,7 +152,7 @@ classdef opp_mode
 
             % f = [f_trig; f_phi; f_load];
             N = length(opts.L);
-            f_basic = [f_trig; f_clock; f_load] * ones(1, N);
+            f_basic = [f_trig; f_clock] * ones(1, N);
 
             f = [f_basic; f_load];
         end
@@ -170,7 +171,7 @@ classdef opp_mode
             % u_curr = opts.L(n)/max(abs(opts.L));           
 
             %dynamics of the load
-            if (length(vars.x)==3) || (im(opts.Z_load) == 0)                      
+            if (length(vars.x)==3) || (imag(opts.Z_load) == 0)                      
                 %purely resistive
                 f_load = [];
             elseif (imag(opts.Z_load) >= 0)
@@ -243,7 +244,7 @@ classdef opp_mode
 
             % Z_type = 0;
             
-            if (length(vars.x)==3) || (im(obj.Z_load) == 0)                      
+            if (length(vars.x)==3) || (imag(obj.Z_load) == 0)                      
                 %purely resistive
                 % harm = obj.voltage_harmonics_mom(vars, harm_in);
                 Z_type = 0;
@@ -388,7 +389,7 @@ classdef opp_mode
                       if isempty(obj.levels{n, p}.sys)
                           tmon{n, p} = 0;
                       else
-                          [~, tmon{n, p}] = obj.levels{n, p}.mom_occ_sub(vars, vref);
+                          tmon{n, p} = obj.levels{n, p}.mom_occ_sub(vars, vref);
                       end                                    
                 end
             end
