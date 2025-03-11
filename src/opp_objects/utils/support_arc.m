@@ -51,6 +51,7 @@ m = double(m);
     end
 
     arc = angle_range_arc(c, s, th1, th2);
+    % arc = (1-c^2);
 
 end
 

@@ -64,7 +64,10 @@ classdef opp_manager
             %create the support set
 
             Delta = opts.f0*opts.Ts;
-            X_trig = 1-x(1)^2 + x(2)^2;
+
+            %BUG HERE BUG HERE BUG HERE
+            %X_trig = 1-x(1)^2 + x(2)^2;
+            X_trig = 1-x(1)^2 - x(2)^2;
 
             %clock and rescaled load
             X_clock_mode = x(3)*(1-2*Delta - x(3));    
@@ -161,16 +164,21 @@ classdef opp_manager
             con_liou = obj.con_flow(d);
             % 
             % %harmonics constraints
-            % con_harm = obj.con_harmonics();
+            con_harm = obj.con_harmonics();
             % 
             % %ignore the lebesgue constraint for now
             % may be causing issues
-            % con_leb = obj.con_lebesgue_circ(d);
+            con_leb = obj.con_lebesgue_circ(d);
             % 
-            % con_threephase = obj.con_balance(d);
+            con_threephase = obj.con_balance(d);
 
-            mom_con = [con_prob; con_preserve; con_liou];
+            % mom_con = [con_prob; con_preserve; con_leb];
+            % mom_con = [con_prob; con_preserve; con_leb; con_harm];
+            % mom_con = [con_prob; con_preserve; con_leb(1:end)];
+            % mom_con = [con_prob; con_leb];
 
+            % mom_con = [con_prob; con_preserve; con_harm; con_leb; con_threephase];
+            
             % mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb; con_threephase];
 
 
@@ -188,10 +196,11 @@ classdef opp_manager
             
             %get the lebesgue distribution
             pw = genPowGlopti(2, d);
-            leb_circ = LebesgueMomSphere(pw,1);
+            leb_circ = leb_sphere(pw,1);
 
             %get moments of the (c, s)-marginal
             trmon_sum = 0;
+            %TODO: change the lebesgue constraint for symmetry
             for m = 1:length(obj.modes)
                 tr_curr = obj.modes{m}.trig_occ_monom(d);
                 trmon_sum = trmon_sum + cell_sum(tr_curr);

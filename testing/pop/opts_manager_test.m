@@ -4,15 +4,19 @@ opts = opp_options;
 opts.L = [-1, 0, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
-opts.partition = 3;
-opts.TIME_INDEP = false;
+opts.partition = 2;
+opts.TIME_INDEP = true;
 opts.start_level = 0;
-opts.early_stop = 1;
+opts.early_stop = 0;
 opts.null_objective = true;
-opts.Symmetry = 2;
+% opts.null_objective = false;
+opts.Symmetry = 0;
 % opts.Symmetry = 1;
 % opts.three_phase = "Balanced";
-opts.k = 4;
+% opts.k = 4;
+opts.k=4;
+% opts.Ts = (pi/8)/opts.f0;
+opts.Ts = 1e-3;
 % opts.k=12;
 
 
@@ -33,7 +37,7 @@ opts.k = 4;
 
 %% test a manager
 MG = opp_manager(opts);
-order = 2;
+order = 1;
 d = 2*order;
 
 %the manager can be created
