@@ -5,7 +5,8 @@ opts.L = [-1, 0, 1];
 % opts.L = [-1, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
-opts.partition = 2;
+% opts.partition = 2;
+opts.partition = 4;
 opts.TIME_INDEP = true;
 opts.start_level = 0;
 opts.early_stop = 1;
@@ -15,7 +16,8 @@ opts.Symmetry = 0;
 % opts.Symmetry = 1;
 % opts.three_phase = "Balanced";
 % opts.k = 4;
-opts.k = 8;
+% opts.k = 8;
+opts.k = 12;
 % opts.k=2;
 % opts.Ts = (pi/8)/opts.f0;
 % opts.Ts = 1e-3;
@@ -29,17 +31,16 @@ opts.k = 8;
 
 
 
-% modulation = 1;
-% opts.harmonics.index_cos = [opts.harmonics.index_cos; 2; 3; 4];
-% opts.harmonics.bound_cos = [opts.harmonics.bound_cos; 0, 0; 0, 0; -0.1, 0.1];
-% opts.harmonics.index_sin= [1; 2; 3; 4];
-% opts.harmonics.bound_sin = [modulation, modulation;
-%     0, 0; 0, 0; -0.1, 0.1];
+modulation = 1;
+opts.harmonics.index_cos = [opts.harmonics.index_cos; 2; 3; 4];
+opts.harmonics.bound_cos = [opts.harmonics.bound_cos; 0, 0; 0, 0; -0.1, 0.1];
+opts.harmonics.index_sin= [1; 2; 3; 4];
+opts.harmonics.bound_sin = [modulation, modulation; 0, 0; 0, 0; -0.1, 0.1];
 
 
 %% test a manager
 MG = opp_manager(opts);
-order = 2;
+order = 3;
 d = 2*order;
 
 %k=4, full-wave symmetry
@@ -78,7 +79,7 @@ disp(sol)
 %% diagnose the solution
 if sol.status==0
     % m_out = MG.mmat();
-    % ms = MG.mass_summary();
+    ms = MG.mass_summary();
     pattern = MG.recover_pattern();
 
     bound_lower = sol.obj_rec;

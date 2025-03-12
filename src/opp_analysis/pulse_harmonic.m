@@ -21,7 +21,7 @@ for i = 1:nalpha
         nb = 0;
     else
         na=  na+ (u(i)/n)*(sin(n*thnext) - sin(n*thprev))/pi;
-        nb=  nb+ (u(i)/n)*(cos(n*thnext) - cos(n*thprev))/pi;
+        nb=  nb- (u(i)/n)*(cos(n*thnext) - cos(n*thprev))/pi;
     end
 
 

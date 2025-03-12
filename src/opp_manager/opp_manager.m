@@ -664,10 +664,14 @@ classdef opp_manager
             [N, P] = size(obj.modes{1}.levels);
 
             ms.mode = zeros(K, N, P);
+            ms.trans = zeros(K, N, P-1);
             for m=1:K
                 for n=1:N
                     for p = 1:P
                         ms.mode(m, n, p) = double(obj.modes{m}.levels{n, p}.sys{1}.meas_occ.mass());
+                        if p < P
+                            ms.trans(m, n, p) = double(obj.modes{m}.transition{n, p}.mass());
+                        end
                     end
                 end
             end
