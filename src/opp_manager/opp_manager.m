@@ -686,6 +686,9 @@ classdef opp_manager
                     end
                 end
             end
+
+            [c, mom_harm] = obj.con_harmonics();
+            ms.harm = double(mom_harm);
         end
 
         function [pattern] = recover_pattern(obj)
@@ -714,6 +717,8 @@ classdef opp_manager
             pattern.alpha = 2*pi*cumsum(ang(1:end-1))';
             pattern.u = obj.opts.L(ind);
             pattern.energy = (obj.opts.L(ind).^2)*(2*pi*ang);
+
+            
 
         end
 
