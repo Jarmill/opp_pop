@@ -104,15 +104,23 @@ classdef meas_interface < handle
         
         function d_out = mmat(obj)
             %return moment matrix evaluated at current solution
-            d_out = double(mmat(obj.meas));
+            if isempty(obj.supp)
+                d_out = [];
+            else
+                d_out = double(mmat(obj.meas));
+            end
         end
         
         function d_out = mmat_corner(obj)
             %return top-corner moment matrix evaluated at current solution
             %only moments of order 0-2
-            monom_curr = obj.monom(0, 1);
-            mmat_curr = mom(monom_curr*monom_curr');            
-            d_out = double(mmat_curr);
+            if isempty(obj.supp)
+                d_out = [];
+            else
+                monom_curr = obj.monom(0, 1);
+                mmat_curr = mom(monom_curr*monom_curr');            
+                d_out = double(mmat_curr);
+            end
         end
         
         function d_out = mvec(obj)

@@ -14,3 +14,9 @@
    %    du[6] = 0.0
    %    du[7] = 1.0
    %    du[8] = 0.0
+
+   a = 0.6674572160283855;
+   alpha = [a, pi-a, a+pi, 2*pi-a];
+   u = [0 1 0 -1 0];
+
+   [na, nb] = pulse_harmonics(3, u, alpha);

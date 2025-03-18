@@ -153,10 +153,15 @@ classdef opp_manager
             [sol.status,sol.obj_rec, ~,sol.dual_rec]= msol(P);     
             sol.solver_time = toc;
 
-            sol.mass = obj.mass_summary();
-
-            [~, mom_harm] = obj.con_harmonics();
-            sol.harmonics = double(mom_harm);
+            if sol.status == 0
+                sol.mass = obj.mass_summary();
+    
+                [~, mom_harm] = obj.con_harmonics();
+                sol.harmonics = double(mom_harm);
+            else
+                sol.mass = [];
+                sol.harmonics = [];
+            end
             
         end  
 
@@ -212,8 +217,8 @@ classdef opp_manager
             %this means that the (c, s) marginal of the occupation measures
             %is a uniform distribution (because time has been scaled back)
             
-            %get the lebesgue distribution
-            if obj.opts.uniform_arc               
+            %get the uniform distribution over the circular arc
+            if obj.opts.uniform_arc && obj.opts.TIME_INDEP               
                 pw = genPowGlopti(2, d);
                 leb_circ = leb_sphere(pw,1);
     
@@ -374,9 +379,6 @@ classdef opp_manager
         function harm_monom = harm_eval(obj, vars, harm_in)            
             % [vars.x(1).^harm_in.index_cos; vars.x(2).^harm_in.index_sin]/pi;
 
-            %TODO: this repeated computation (in opp_locations) is 
-            %inefficient, fix later. Not the most pressing issue.
-
             %compute the chebyshev moments. then divide by pi
             %cos(n theta) = T_n(cos(theta))
             %sin(n theta) = sin(theta) U_{n-1}(cos(theta))
@@ -427,9 +429,10 @@ classdef opp_manager
                 %then multiply by 2pi because time is scaled to [0, 1]?
                 %figure this out
                 harm_monom = [harm_cos; harm_sin]*2;
+                % harm_monom = [harm_cos; harm_sin]/pi;
 
                 %process the symmetry
-                harm_monom = obj.symmetry_eval(harm_monom, [c; s]);
+                % harm_monom = obj.symmetry_eval(harm_monom, [c; s]);
             end
         end
 
@@ -588,7 +591,7 @@ classdef opp_manager
                 inductance = imag(opts.Z_load)/(2*pi*opts.f0);
                 % resistance= real(opts.Z_load);                
                 % f_load = -(resistance)/(inductance)*vars.x(4) + Lscale;
-                objective = vars.x(4)*(Lmax/inductance)^2*(opts.L).^2;
+                objective = (2*pi)*vars.x(4)*(Lmax/inductance)^2*(opts.L).^2;
             else
                  %vc' = (v-vc)/(R*C)
                  %per-unit, ignore (R*C) factor
@@ -603,7 +606,7 @@ classdef opp_manager
                  % f_load = Lscale - vars.x(4)/(resistance*capacitance);
                  objective = (opts.L.^2) + 2*(opts.L)*vars.x(4)*(Lmax/RC) + (Lmax/RC)^2*vars.x(4)^2;
             end
-            objective = objective'*sym_factor;
+            objective = objective'*sym_factor/(2*pi);
 
 
             if opts.three_phase == "Floating"
@@ -722,9 +725,14 @@ classdef opp_manager
             ang = sum(mocc, 2);
             pattern.alpha = 2*pi*cumsum(ang(1:end-1))';
             pattern.u = obj.opts.L(ind);
-            pattern.energy = (obj.opts.L(ind).^2)*(2*pi*ang);
+            pattern.energy = (obj.opts.L(ind).^2)*(2*pi*ang)/(2*pi);
 
-            
+            %harmonics
+            nmax = max(max(obj.opts.harmonics.index_cos), max(obj.opts.harmonics.index_sin));
+            [na, nb] = pulse_harmonics(nmax, pattern.u, pattern.alpha);
+
+            pattern.harmonics = [na(obj.opts.harmonics.index_cos+1); 
+                nb(obj.opts.harmonics.index_sin+1)]';
 
         end
 

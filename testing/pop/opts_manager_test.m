@@ -5,11 +5,12 @@ opts.L = [-1, 0, 1];
 % opts.L = [-1, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
-opts.partition = 1;
+opts.partition = 4;
 % opp.Z_load = 1.0j;
 opp.Z_load = 0;
 % opts.partition = 8;
 % opts.partition = 16;
+% opts.TIME_INDEP = true;
 opts.TIME_INDEP = true;
 opts.start_level = 0;
 opts.early_stop = 0;
@@ -21,9 +22,26 @@ opts.Symmetry = 0;
 % opts.k = 4;
 opts.k = 8;
 
+%k=4 example
+% opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
+
 
 %k=8 pattern example
+%optima of 3.2006, 
+%
 opts.allowed_levels = sparse(1:9, [2, 3, 2, 3, 2, 1, 2, 1, 2], ones(1, 9), 9, 3);
+%
+%
+%
+%unrestricted lower bound (order=1): 3.1922
+%unrestricted lower bound (order=2): 3.5550
+%
+%restricted lower bound (order=2) 3.5786
+%
+%partition may be bugged
+%
+%lower bound (order=1, partition=4):
+
 
 
 
@@ -52,7 +70,8 @@ opts.allowed_levels = sparse(1:9, [2, 3, 2, 3, 2, 1, 2, 1, 2], ones(1, 9), 9, 3)
 %% test a manager
 MG = opp_manager(opts);
 % order = 4;
-order = 1;
+order = 2;
+% order = 1;
 d = 2*order;
 
 %k=4, full-wave symmetry
@@ -63,6 +82,7 @@ d = 2*order;
 sol = MG.run(order);
 
 disp(sol)
+
 
 %% step through the constraints
 
@@ -105,6 +125,7 @@ th = linspace(0, 2*pi, N);
 %function
 x = pulse_func(th, pattern.u, pattern.alpha);
 
+M = MG.mmat();
 
 %% plotting 
 figure(1)
