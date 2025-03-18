@@ -15,8 +15,35 @@
    %    du[7] = 1.0
    %    du[8] = 0.0
 
-   a = 0.6674572160283855;
-   alpha = [a, pi-a, a+pi, 2*pi-a];
-   u = [0 1 0 -1 0];
+   % a = 0.6674572160283855;
+   % alpha = [a, pi-a, a+pi, 2*pi-a];
+   % u = [0 1 0 -1 0];
 
-   [na, nb] = pulse_harmonics(3, u, alpha);
+   a = [0.6055937525415025;
+       0.6213040492559058
+   0.6370187386620668;
+   0.6527302458124219;
+   0.6684416046082732;
+   0.6841567523061838;
+   0.6998670059248276;
+   1.5629421252042202];
+   u0 = 0;
+   uv = [0 1 0 1 0 1 0 1 0]';
+   aa_quad = [0; kron(a, [1; 1]); pi/2];
+    u_quad = kron(uv, [1; 1]);
+    aa_all = [aa_quad; pi - (aa_quad(end:-1:1)); pi + aa_quad; 2*pi - aa_quad(end:-1:1)];
+    u_all = [u_quad; u_quad(end:-1:1); -u_quad; -u_quad(end:-1:1)];
+
+   % [na, nb] = pulse_harmonics(3, u, alpha);
+
+   figure(34)
+   clf
+   hold on
+   plot(aa_all, u_all, 'linewidth', 1)
+   xlim([0, 2*pi])
+
+   theta = linspace(0, 2*pi, 500);
+   plot(theta, sin(theta), ':k', 'linewidth', 2);
+   % xlabel('\theta')
+   % ylabel('u(\theta)')
+   axis off
