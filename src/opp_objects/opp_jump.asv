@@ -49,13 +49,9 @@ classdef opp_jump < handle
                     if ~isempty(opts.allowed_levels) 
 
                         %jump up
-                        if  (~opts.allowed_levels(m, n) || ~opts.allowed_levels(m+1, n+1))
-                            supp_up = [];
-                        end
-                        if  (~opts.allowed_levels(m, n+1) || ~opts.allowed_levels(m+1, n))
-                            supp_down = [];
-                        end
-                        % supp_curr = [];
+                        if opts.allowed_levels(m, ) && ~opts.allowed_levels(m+1, n)
+
+                        supp_curr = [];
 
                         %jump down
                         

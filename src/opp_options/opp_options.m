@@ -16,6 +16,7 @@ classdef opp_options < handle
         null_objective = true;
 
 
+
         %TODO:
         %power budget (and allocation of switching device parameters)
         Power_max(1, 1)double = 1000; 
@@ -30,6 +31,8 @@ classdef opp_options < handle
         early_stop(1, 1)logical = true %stop at even pulse numbers (instead of k)
         start_level(1, 1)int32 = 0; %start at an initial level (if not zero)
         uniform_arc(1, 1)logical=true
+
+        allowed_levels = []; %which levels are allowed at which switching indices?
 
         %polynomial optimization parameters
         partition(1, 1)int32 = 4; %number of partitions of the disc c^2+s^2=1

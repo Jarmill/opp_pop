@@ -5,7 +5,7 @@ opts.L = [-1, 0, 1];
 % opts.L = [-1, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
-opts.partition = 2;
+opts.partition = 1;
 % opp.Z_load = 1.0j;
 opp.Z_load = 0;
 % opts.partition = 8;
@@ -18,8 +18,15 @@ opts.null_objective = false;
 opts.Symmetry = 0;
 % opts.Symmetry = 1;
 % opts.three_phase = "Balanced";
-opts.k = 4;
-% opts.k = 8;
+% opts.k = 4;
+opts.k = 8;
+
+
+%k=8 pattern example
+opts.allowed_levels = sparse(1:9, [2, 3, 2, 3, 2, 1, 2, 1, 2], ones(1, 9), 9, 3);
+
+
+
 % opts.k = 12;
 % opts.k = 16;
 % opts.k=2;
@@ -45,7 +52,7 @@ opts.k = 4;
 %% test a manager
 MG = opp_manager(opts);
 % order = 4;
-order = 2;
+order = 1;
 d = 2*order;
 
 %k=4, full-wave symmetry

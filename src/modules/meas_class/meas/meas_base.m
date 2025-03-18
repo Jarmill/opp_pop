@@ -21,30 +21,38 @@ classdef meas_base < meas_interface
         %% liouville moments 
         function mom_out = mom_lie(obj, d, vars_old, f_old, suppress_time)
             %lie moments: v --> v_t + f' grad v
-            v = obj.monom(d);
-            f_curr = obj.var_sub(vars_old, f_old);
-            mom_out = mom(diff(v, obj.vars.x)*f_curr);
-            
-            if (isfield(obj.vars, 't') && ~isempty(obj.vars.t)) && (nargin < 5)
-                mom_out = mom(diff(v, obj.vars.t)) + mom_out;
+            if isempty(obj.supp)
+                mom_out = 0;
+            else
+                v = obj.monom(d);
+                f_curr = obj.var_sub(vars_old, f_old);
+                mom_out = mom(diff(v, obj.vars.x)*f_curr);
+                
+                if (isfield(obj.vars, 't') && ~isempty(obj.vars.t)) && (nargin < 5)
+                    mom_out = mom(diff(v, obj.vars.t)) + mom_out;
+                end
             end
         end
         
         function mom_out = mom_hess(obj, d, vars_old, g_old)
             %lie moments for hessian : v --> g' (hess v) g
-            v = obj.monom(d);
-            
-            
-            g_curr = obj.var_sub(vars_old, g_old);
-            
-            v_hess = v;
-            for i = 1:length(v)
-                v_partial = diff(v(i), obj.vars.x);
-                hess_curr = diff(v_partial', obj.vars.x);
-                v_hess(i) = g_curr'* hess_curr *g_curr;
+            if isempty(obj.supp)
+                mom_out = 0;
+            else
+                v = obj.monom(d);
+                
+                
+                g_curr = obj.var_sub(vars_old, g_old);
+                
+                v_hess = v;
+                for i = 1:length(v)
+                    v_partial = diff(v(i), obj.vars.x);
+                    hess_curr = diff(v_partial', obj.vars.x);
+                    v_hess(i) = g_curr'* hess_curr *g_curr;
+                end
+                
+                mom_out = mom(v_hess);
             end
-            
-            mom_out = mom(v_hess);
             
         end
         
@@ -53,11 +61,15 @@ classdef meas_base < meas_interface
             if nargin < 5
                 t_new = 0;
             end
-            v = obj.monom_proj(d);
-            f_curr = obj.var_sub(vars_old, f_old);
-            Rv = subs(v, [obj.vars.t; obj.vars.x], ...
-                [obj.vars.t+t_shift; f_curr]);
-            mom_out = mom(Rv);
+            if isempty(obj.supp)
+                mom_out = 0;
+            else
+                v = obj.monom_proj(d);
+                f_curr = obj.var_sub(vars_old, f_old);
+                Rv = subs(v, [obj.vars.t; obj.vars.x], ...
+                    [obj.vars.t+t_shift; f_curr]);
+                mom_out = mom(Rv);
+            end
         end        
         
         

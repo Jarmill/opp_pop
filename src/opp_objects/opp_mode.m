@@ -79,6 +79,14 @@ classdef opp_mode
                     if opts.partition > 1
                         curr_lsupp.X = [curr_lsupp.X; X_partition(p)>=0];
                     end
+
+                    if ~isempty(opts.allowed_levels) && ~opts.allowed_levels(m+1, n)
+                        curr_lsupp.X = [];
+                        curr_lsupp.X_term = [];
+                        curr_lsupp.X_init = [];
+                    end
+
+
                     cell_info = struct('mode', m, 'partition', p, 'level', n, 'L', opts.L(n), 'id', curr_id);
                     obj.levels{n, p} = opp_location(curr_lsupp, curr_f, curr_objective, cell_info);
 
@@ -98,6 +106,9 @@ classdef opp_mode
                     dp = double(p);
                     new_con = (vars.x(1:2)==[cos(dp*RotAngle); sin(dp*RotAngle)]);
                     curr_supp(1:2) = new_con;
+                    if ~isempty(opts.allowed_levels) && ~opts.allowed_levels(m+1, n)
+                        curr_supp = [];
+                    end
                     obj.transition{n, p} = guard(curr_trans_id, lsupp_base.vars, ...
                         obj.levels{n, p}, obj.levels{n, p+1}, curr_supp, vars.x);
                 end
