@@ -129,7 +129,7 @@ classdef opp_manager
             %solve the program
             sol = obj.solve(objective, mom_con,supp_con);
             
-            %process dual variables
+            %process dual variables            
             % obj = obj.dual_process(d, sol.dual_rec, len_dual);
         end
         
@@ -152,6 +152,12 @@ classdef opp_manager
             tic;
             [sol.status,sol.obj_rec, ~,sol.dual_rec]= msol(P);     
             sol.solver_time = toc;
+
+            sol.mass = obj.mass_summary();
+
+            [~, mom_harm] = obj.con_harmonics();
+            sol.harmonics = double(mom_harm);
+            
         end  
 
         %% form the constraints

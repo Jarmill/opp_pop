@@ -6,7 +6,8 @@ opts.L = [-1, 0, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
 opts.partition = 2;
-opp.Z_load = 1.0j;
+% opp.Z_load = 1.0j;
+opp.Z_load = 0;
 % opts.partition = 8;
 % opts.partition = 16;
 opts.TIME_INDEP = true;
@@ -43,7 +44,8 @@ opts.k = 4;
 
 %% test a manager
 MG = opp_manager(opts);
-order = 4;
+% order = 4;
+order = 2;
 d = 2*order;
 
 %k=4, full-wave symmetry
