@@ -5,7 +5,7 @@ opts.L = [-1, 0, 1];
 % opts.L = [-1, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
-opts.partition = 4;
+opts.partition = 1;
 % opp.Z_load = 1.0j;
 opp.Z_load = 0;
 % opts.partition = 8;
@@ -21,6 +21,10 @@ opts.Symmetry = 0;
 % opts.three_phase = "Balanced";
 % opts.k = 4;
 opts.k = 8;
+% opts.k = 12;
+modulation = 0.5;
+
+opts.harmonics.bound_sin = modulation*[1, 1];
 
 %k=4 example
 % opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
@@ -132,7 +136,7 @@ figure(1)
 clf
 hold on
 plot(th, x)
-plot(th, sin(th), 'k');
+plot(th, modulation*sin(th), 'k');
 xlim([0, 2*pi]) 
 title(sprintf('k=%d, Lower=%0.4f, Upper=%0.4f', opts.k, bound_lower, bound_upper), 'FontSize',16)
 iL = cumsum(x)/N;

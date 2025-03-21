@@ -1,0 +1,60 @@
+%quarter wave
+aq = [0.5764188652596557;
+     1.3;          
+     1.5];
+      uvq = [0 1 0  1]';
+
+aa_quad = [0; kron(aq, [1; 1]); pi/2];
+u_quad = kron(uvq, [1; 1]);
+aa_allq = [aa_quad; pi - (aa_quad(end:-1:1)); pi + aa_quad; 2*pi - aa_quad(end:-1:1)];
+u_allq = [u_quad; u_quad(end:-1:1); -u_quad; -u_quad(end:-1:1)];
+
+%half wave
+ah = [0.5;
+     0.55;
+     0.85;
+     1.2;
+     1.3;
+     1.5];
+      uvh = [0 1 0 -1 0 1 0]';
+
+
+
+aa_half = [0; kron(ah, [1; 1]); pi];
+u_half = kron(uvh, [1; 1]);
+aa_allh = [aa_half ; pi + aa_half];
+u_allh = [u_half; -u_half];
+
+%full wave
+af = 2*pi*[0.1; 0.15; 0.3; 0.4; 0.6; 0.8; 0.85; 0.9];
+uf = [0; 1; 0; 1; 0; -1; 0; 1; 0];
+a_full = [0; kron(af, [1; 1]); 2*pi];
+u_full = kron(uf, [1; 1]);
+figure(1)
+clf
+tiledlayout(3, 1)
+
+nexttile
+c = linspecer(7);
+plot(a_full, u_full, 'LineWidth',3, 'Color', c(6, :))
+xlim([0, 2*pi])
+axis off
+
+nexttile
+hold on
+plot([pi, pi], [-1, 1], ':k','LineWidth',2)
+plot(aa_allh, u_allh, 'LineWidth',3, 'Color', c(5, :))
+
+
+xlim([0, 2*pi])
+axis off
+
+nexttile
+hold on
+
+plot([pi, pi], [-1, 1], ':k','LineWidth',2)
+plot([pi/2, pi/2], [-1, 1], ':k','LineWidth',2)
+plot([pi*3/2, pi*3/2], [-1, 1], ':k','LineWidth',2)
+plot(aa_allq, u_allq, 'LineWidth',3, 'Color', c(7, :))
+xlim([0, 2*pi])
+axis off
