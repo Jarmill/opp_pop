@@ -692,19 +692,46 @@ classdef opp_manager
             end
         end
 
-        function load = recover_load(obj)
-            % Mc = obj.mmat_corner();
+        function [load, load_candidate] = recover_load(obj)
+            Mc = obj.mmat_corner();
+            ms = obj.mass_summary();
             [N, P] = size(obj.modes{1}.levels);
-            load_candidate = zeros(N)*NaN;
-            for i =1:N
-                Mcurr= obj.modes{1}.levels{i, 1}.mmat_corner();
+            Nmodes = length(obj.modes);
+            load_candidate = zeros(Nmodes+1, N)*NaN;
+            %get the initial current
+            for n =1:N
+                Mcurr= obj.modes{1}.levels{n, 1}.mmat_corner();
                 init_curr = Mcurr.init;
                 if ~isempty(init_curr) && (init_curr(1, 1) > 0.99)
-                    load_candidate = init_curr(5, 1)/init_curr(1, 1);
+                    load_candidate(1, n) = init_curr(5, 1)/init_curr(1, 1);
+                end
+            end
+            %track along the jumps
+            for m = 1:(Nmodes-1)
+                for n = 1:N-1
+                    mmat_curr = 0;
+                    for p = 1:P
+                        if ms.jump_up(m, n, p) > 0.99
+                            jump_curr = Mc.jump{m}.up{n, p};
+                            load_candidate(m+1, n+1) = jump_curr(5, 1)/jump_curr(1, 1);
+                        elseif ms.jump_down(m, n, p) > 0.99
+                            jump_curr = Mc.jump{m}.down{n, p};
+                            load_candidate(m+1, n) = jump_curr(5, 1)/jump_curr(1, 1);
+                        end
+                    end
                 end
             end
 
-            load = max(load_candidate(~isnan(load_candidate)));
+            %track the exit
+            %get the initial current
+                for n =1:N
+                    Mcurr= obj.modes{end}.levels{n, end}.mmat_corner();
+                    term_curr = Mcurr.term;
+                    if ~isempty(term_curr) && (term_curr(1, 1) > 0.99)
+                        load_candidate(end, n) = term_curr(5, 1)/term_curr(1, 1);
+                    end
+                end
+            load =load_candidate(1, ~isnan(load_candidate(1, :)));
 
 
         end
@@ -775,7 +802,7 @@ classdef opp_manager
             % I_val = mom(obj.levels{(length(obj.opts.L)-1)/2+1, 1});
             if obj.opts.Z_load == 1.0j
                 uf = pattern.u';
-                ah = [0; pattern.alpha'; 2*pi];               
+                ah = [0; pattern.alpha'; 2*pi]/(2*pi);               
                 da = diff(ah);
                             %compute the energy in a pure inductor
                 I_step = uf.*da;

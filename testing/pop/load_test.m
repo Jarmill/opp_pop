@@ -20,7 +20,8 @@ opts.Symmetry = 0;
 % opts.three_phase = "Balanced";
 opts.k = 4;
 
-modulation = 0.5;
+% modulation = 0.5;
+modulation = 1;
 % opts.Z_load = 0;
 opts.Z_load = 1.0j;
 
@@ -77,8 +78,8 @@ th = linspace(0, 2*pi, N);
 
 %function
 x = pulse_func(th, pattern.u, pattern.alpha);
-I0_rec = M.modes{1}{2}.init(1, 4);
-xi = cumsum(x)*(2*pi/N) + I0_rec;
+I0_rec = M.modes{1}{2}.init(1,5);
+xi = cumsum(x)/(N) + I0_rec;
 
 
 
@@ -99,7 +100,7 @@ figure(2)
 clf
 hold on
 plot(th, xi, 'linewidth', 3, 'color', cc(2, :));
-plot(th, -modulation*cos(th), 'k', 'linewidth', 3);
+% plot(th, -modulation*cos(th), 'k', 'linewidth', 3);
 
 figure(3)
 clf
