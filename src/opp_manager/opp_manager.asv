@@ -692,12 +692,11 @@ classdef opp_manager
         end
 
         function load = recover_load(obj)
-            % Mc = obj.mmat_corner();
+            Mc = obj.mmat_corner();
             [N, P] = size(obj.modes{1}.levels);
             load_candidate = zeros(N)*NaN;
             for i =1:N
-                Mcurr= obj.modes{1}.levels{i, 1}.mmat_corner();
-                init_curr = Mcurr.init;
+                init_curr = Mc.modes{1}.leve{i, 1}.init;
                 if ~isempty(init_curr) && (init_curr(1, 1) > 0.99)
                     load_candidate = init_curr(5, 1)/init_curr(1, 1);
                 end
@@ -742,6 +741,10 @@ classdef opp_manager
             ms.harm = double(mom_harm);
         end
 
+        function I0 = get_init_current(obj)
+            
+        end
+
         function [pattern] = recover_pattern(obj)
             %RECOVER_PATTERN recover a switching sequence from a solution 
             %(mass of occupation measures)
@@ -773,13 +776,12 @@ classdef opp_manager
 
             % I_val = mom(obj.levels{(length(obj.opts.L)-1)/2+1, 1});
             if obj.opts.Z_load == 1.0j
-                uf = pattern.u';
+                uf = pattern.u;
                 ah = [0; pattern.alpha'; 2*pi];               
                 da = diff(ah);
                             %compute the energy in a pure inductor
                 I_step = uf.*da;
-                I0 = obj.recover_load();
-                I_val = cumsum([I0; I_step]);
+                dI_val = cumsum([0; I_step]);
                 % I_val = I_step + 
                 energy_raw = 0;
                 for i = 1:length(da)

@@ -224,6 +224,19 @@ classdef opp_location < location_interface
             
         end
 
+        function m_out = mmat_corner(obj)
+            m_out = struct('init', [], 'term', [], 'occ', []);
+            if ~isempty(obj.init)
+                m_out.init = obj.init.mmat_corner();
+            end
+
+            if ~isempty(obj.term)
+                m_out.term = obj.term.mmat_corner();
+            end
+            
+            m_out.occ = obj.sys{1}.meas_occ.mmat_corner();
+            
+        end
 
         function [optimal, mom_out, corner] = recover(obj, tol)
             %RECOVER if top corner of the moment matrix is rank-1, then

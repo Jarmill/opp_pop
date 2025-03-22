@@ -404,13 +404,32 @@ classdef opp_mode
         end
 
         %% recovery
-        function m_out = mmat(obj)
+        function [m_out, tr_out] = mmat(obj)
             [N, P] = size(obj.levels);
             % obj_min = 0;
             m_out = cell(N, P);
+            tr_out = cell(N, P-1);
             for n=1:N
                 for p = 1:P               
                     m_out{n, p} = obj.levels{n, p}.mmat();
+                    if p < P
+                        tr_out{n, p} = obj.transition{n, p}.mmat();
+                    end
+                end
+            end
+        end
+
+        function [m_out, tr_out]= mmat_corner(obj)
+            [N, P] = size(obj.levels);
+            % obj_min = 0;
+            m_out = cell(N, P);
+            tr_out = cell(N, P-1);
+            for n=1:N
+                for p = 1:P               
+                    m_out{n, p} = obj.levels{n, p}.mmat_corner();
+                    if p < P
+                        tr_out{n, p} = obj.transition{n, p}.mmat_corner();
+                    end
                 end
             end
         end
