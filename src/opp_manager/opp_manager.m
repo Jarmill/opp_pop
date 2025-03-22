@@ -459,6 +459,7 @@ classdef opp_manager
             
             %iterate over all cells
             flow_con = [];
+            flow_con_cell = cell(Nmodes, N, P);
             for m = 1:Nmodes
                 liou_curr = liou_cell{m};
                 for n=1:N
@@ -474,10 +475,10 @@ classdef opp_manager
                             src_curr = jump_src{m}{n, p};
                         end
                         
-                        flow_curr = liou_curr{n, p} + src_curr + dst_curr==0;
+                        flow_con_cell{m, n, p} = liou_curr{n, p} + src_curr + dst_curr==0;
                         
                         %stack them into a giant vector: flow_con
-                        flow_con = [flow_con; flow_curr];
+                        flow_con = [flow_con; flow_con_cell{m, n, p}];
                     end
                 end
             end
