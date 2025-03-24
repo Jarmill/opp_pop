@@ -30,7 +30,7 @@ modulation = 1;
 opts.harmonics.bound_sin = modulation*[1, 1];
 
 %k=4 example
-% opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
+opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
 
 
 %k=8 pattern example
@@ -77,8 +77,8 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 %% test a manager
 MG = opp_manager(opts);
 % order = 4;
-% order = 2;
-order = 1;
+order = 2;
+% order = 1;
 d = 2*order;
 
 %k=4, full-wave symmetry
@@ -143,13 +143,13 @@ plot(th, modulation*sin(th), 'k');
 xlim([0, 2*pi]) 
 title(sprintf('k=%d, Lower=%0.4f, Upper=%0.4f', opts.k, bound_lower, bound_upper), 'FontSize',16)
 iL = cumsum(x)/N;
-nmax = 100;
+nmax = 20;
 [na, nb] = pulse_harmonics(nmax, pattern.u, pattern.alpha);
 % energy_L_h = pi*sum(((na(2:end).^2 + nb(2:end).^2)./(1:Nh)'.^2));
 % energy_L = sum(iL.^2)/N;
-
-figure(2)
-plot(th, iL);
+% 
+% figure(2)
+% plot(th, iL);
 
 figure(3)
 clf

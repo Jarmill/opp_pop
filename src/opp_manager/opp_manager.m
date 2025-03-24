@@ -125,12 +125,14 @@ classdef opp_manager
             d = 2*order;
             
             %formulate constraints
+            tic
             [mom_con, supp_con, len_dual] = obj.cons(d);
                         
             [objective, obj_con] = opp_objective(obj);
+            t_prep = toc;
             %solve the program
             sol = obj.solve(objective, mom_con,supp_con);
-            
+            sol.preprocess_time = t_prep;
             %process dual variables            
             % obj = obj.dual_process(d, sol.dual_rec, len_dual);
         end
@@ -194,12 +196,16 @@ classdef opp_manager
 
 
             %without harmonics
-            mom_con = [con_prob; con_preserve; con_leb; con_threephase; con_harm];
-            % mom_con = [con_prob; con_preserve; con_threephase; con_leb];
+            % mom_con = [con_prob; con_preserve; con_leb; con_threephase; con_harm];
+            
+            %only dynamics
+            % mom_con = [con_prob; con_preserve; con_liou];
 
+            %without dynamics
+            % mom_con = [con_prob; con_preserve; con_harm; con_leb; con_threephase];
 
-            %with harmonics
-            % mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb; con_threephase];
+            %with harmonics and dynamics
+            mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb; con_threephase];
 
 
             %TODO: objective constraints as well
@@ -220,14 +226,16 @@ classdef opp_manager
                 leb_circ = leb_sphere(pw,1);
     
                 %time is scaled, should be uniform moments
-                uni_circ = leb_circ/(2*pi)*double(2^obj.opts.Symmetry);
+                uni_circ = leb_circ/(2*pi);
     
                 %get moments of the (c, s)-marginal
                 trmon_sum = 0;
+                sym_scale = 2^double(-obj.opts.Symmetry);
                 %TODO: change the lebesgue constraint for symmetry
                 for m = 1:length(obj.modes)
                     tr_curr = obj.modes{m}.trig_occ_monom(d, obj.opts.Symmetry);
-                    trmon_sum = trmon_sum + cell_sum(tr_curr);
+                    trmon_sum = trmon_sum + sym_scale*cell_sum(tr_curr);
+                    % trmon_sum = madd_cell_mom(trmon_sum,tr_curr, sym_scale);
                 end
     
                 uni_con = (trmon_sum == uni_circ);
@@ -479,22 +487,24 @@ classdef opp_manager
             for m = 1:Nmodes
                 liou_curr = liou_cell{m};
                 for n=1:N
-                    for p = 1:P
-                        if m==1
-                            dst_curr = 0;
-                        else
-                            dst_curr = jump_dst{m-1}{n, p};
+                    if isempty(obj.opts.allowed_levels) || obj.opts.allowed_levels(m, n)
+                        for p = 1:P
+                            if m==1
+                                dst_curr = 0;
+                            else
+                                dst_curr = jump_dst{m-1}{n, p};
+                            end
+                            if m==Nmodes
+                                src_curr = 0;
+                            else
+                                src_curr = jump_src{m}{n, p};
+                            end
+                            
+                            flow_con_cell{m, n, p} = liou_curr{n, p} + src_curr + dst_curr==0;
+                            
+                            %stack them into a giant vector: flow_con
+                            flow_con = [flow_con; flow_con_cell{m, n, p}];
                         end
-                        if m==Nmodes
-                            src_curr = 0;
-                        else
-                            src_curr = jump_src{m}{n, p};
-                        end
-                        
-                        flow_con_cell{m, n, p} = liou_curr{n, p} + src_curr + dst_curr==0;
-                        
-                        %stack them into a giant vector: flow_con
-                        flow_con = [flow_con; flow_con_cell{m, n, p}];
                     end
                 end
             end
@@ -652,13 +662,16 @@ classdef opp_manager
                 [~, mass_init_sum] = obj.modes{1}.initial_mass();
                 objective = mass_init_sum;
             else
+                objective_jump = 0;
                 for i = 1:length(obj.jumps)
-                    objective = objective + obj.jumps{i}.objective();
+                    objective_jump = objective_jump + obj.jumps{i}.objective();
                 end
                 
+                objective_mode = 0;
                 for i = 1:length(obj.modes)
-                    objective = objective + obj.modes{i}.objective();
+                    objective_mode = objective_mode + obj.modes{i}.objective();
                 end
+                objective = objective_jump + objective_mode;
             end
 
         end
