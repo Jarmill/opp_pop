@@ -15,7 +15,7 @@ classdef opp_options < handle
         harmonics_load = [];
         null_objective = true;
 
-
+        
 
         %TODO:
         %power budget (and allocation of switching device parameters)
@@ -37,6 +37,7 @@ classdef opp_options < handle
         %polynomial optimization parameters
         partition(1, 1)int32 = 4; %number of partitions of the disc c^2+s^2=1
         solver = 'mosek';
+        verbose(1, 1)logical = true; %log output
         TIME_INDEP(1, 1)logical = false; %include time as an explicit state
 
     end

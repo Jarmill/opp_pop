@@ -140,7 +140,7 @@ classdef opp_manager
             
             %TODO: incorporate minquery into maximin (minimax) formulation
 
-            mset('yalmip',true, 'verbose', false);
+            mset('yalmip',true, 'verbose', obj.opts.verbose);
             %make sure the solution is precise
             mset(obj.sdp_settings);
             % https://docs.mosek.com/9.2/pythonfusion/parameters.html
@@ -587,7 +587,7 @@ classdef opp_manager
             elseif (imag(opts.Z_load) >= 0)
                 
                 if real(opts.Z_load)==0
-                    objective = (2*pi)*vars.x(4)^2*ones(size(opts.L));
+                    objective = pi^2 * (2*pi)*vars.x(4)^2*ones(size(opts.L));
                 else
                     %inductive load
                     %i' = -(R/L)i + (1/L) v
@@ -802,12 +802,12 @@ classdef opp_manager
             % I_val = mom(obj.levels{(length(obj.opts.L)-1)/2+1, 1});
             if obj.opts.Z_load == 1.0j
                 uf = pattern.u';
-                ah = [0; pattern.alpha'; 2*pi]/(2*pi);               
+                ah = [0; pattern.alpha'; 2*pi];               
                 da = diff(ah);
                             %compute the energy in a pure inductor
                 I_step = uf.*da;
-                I0 = obj.recover_load();
-                I_val = cumsum([I0; I_step]);
+                [I0, Ic] = obj.recover_load();
+                I_val = cumsum([pi*I0; I_step]);
                 % I_val = I_step + 
                 energy_raw = 0;
                 for i = 1:length(da)

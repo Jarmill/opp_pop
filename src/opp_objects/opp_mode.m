@@ -143,7 +143,7 @@ classdef opp_mode
             %n: level of the inverter
 
             %scaled inverter value
-            Lscale = opts.L/max(abs(opts.L));
+            Lscale = 2*opts.L/max(abs(opts.L));
             % u_curr = opts.L(n)/max(abs(opts.L));           
 
             %dynamics of the load
