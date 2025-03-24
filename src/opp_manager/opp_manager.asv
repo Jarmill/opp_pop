@@ -74,12 +74,10 @@ classdef opp_manager
                 X_load = [];
             else
                 X_load = 1-x(4)^2;                
-            end
+                        end
 
-            Delta_scale = Delta*2^(-double(obj.opts.Symmetry));
-
-            X_clock_mode = x(3)*(1-2*Delta_scale- x(3));    
-            X_clock_jump = (x(3)-Delta_scale)*(1-2*Delta_scale- x(3));    
+            X_clock_mode = x(3)*(1-2*Delta - x(3));    
+            X_clock_jump = (x(3)-Delta)*(1-2*Delta - x(3));    
             X = [X_trig==0; X_clock_mode>=0; X_load>=0];             
             X_jump = [X_trig==0; X_clock_jump>=0; X_load>=0];
             
@@ -192,10 +190,15 @@ classdef opp_manager
             % 
             con_threephase = obj.con_balance(d);
 
+            % mom_con = [con_prob; con_preserve; con_leb];
+            % mom_con = [con_prob; con_preserve; con_leb; con_harm];
+            % mom_con = [con_prob; con_preserve; con_leb(1:end)];
+            % mom_con = [con_prob; con_leb];
 
+            % mom_con = [con_prob; con_preserve; con_harm; con_leb; con_threephase];
+            
             %without harmonics
-            % mom_con = [con_prob; con_preserve; con_leb; con_threephase];
-            % mom_con = [con_prob; con_preserve; con_threephase; con_leb];
+            % mom_con = [con_prob; con_liou; con_leb; con_preserve; con_threephase];
 
 
             %with harmonics
@@ -220,7 +223,7 @@ classdef opp_manager
                 leb_circ = leb_sphere(pw,1);
     
                 %time is scaled, should be uniform moments
-                uni_circ = leb_circ/(2*pi)*double(2^obj.opts.Symmetry);
+                uni_circ = leb_circ/(2*pi);
     
                 %get moments of the (c, s)-marginal
                 trmon_sum = 0;
@@ -425,11 +428,11 @@ classdef opp_manager
     
                     switch obj.opts.Symmetry
                         case 0
-                            sin_scale = 1;                        
+                            cos_scale = 1;                        
                         case 1
-                            sin_scale = 2*mod(harm_in.index_sin, 2);
+                            cos_scale = 2*mod(harm_in.index_cos, 2);
                         case 2
-                            sin_scale= 4*mod(harm_in.index_sin, 2);
+                            sin_scale= 4;
                     end
 
                     harm_sin = sin_scale .* s*U(harm_in.index_sin);

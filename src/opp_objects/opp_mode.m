@@ -11,6 +11,7 @@ classdef opp_mode
         transition;    %guard measures for the partition staying within the level (no switching)
         vars;          %basic variable type
         Z_load;
+        Symmetry; 
         f0;
     end
     
@@ -21,6 +22,7 @@ classdef opp_mode
             obj.mode = m;
             obj.L = opts.L;
             obj.f0 = opts.f0;
+            obj.Symmetry = opts.Symmetry;
             obj.Z_load = opts.Z_load;
             
             N = length(opts.L);
@@ -38,12 +40,23 @@ classdef opp_mode
             %terminate
             %ignore the trig constraint (beginning) and support arc
             %constraint (end)
-            Xstop = [vars.x(1)==1; vars.x(2)==0; lsupp_base.X(2:end-1)];
+            switch obj.Symmetry
+                case 0
+                    %full-wave symmetry: end at 2pi
+                    trig_pt = [vars.x(1)==1; vars.x(2)==0];
+                case 1
+                    %half-wave symmetry: end at pi
+                    trig_pt = [vars.x(1)==-1; vars.x(2)==0];
+                case 2
+                    %quarter-wave symmetry: end at pi/2
+                    trig_pt = [vars.x(1)==0; vars.x(2)==1];
+            end
+            Xstop = [trig_pt; lsupp_base.X(2:end-1)];
 
             mode_end = opts.k/(2^opts.Symmetry);
             if m==0                
                lsupp_base.X_init = Xstop;
-            elseif m==mode_end || opts.Symmetry || (opts.early_stop && (mod(m, 2)==0))
+            elseif m==mode_end || (opts.early_stop && (mod(m, 2)==0))
                 lsupp_base.X_term = Xstop;
             end
 
@@ -120,12 +133,13 @@ classdef opp_mode
             %create the dynamics as a matrix f
             %row: each level
             %column: each state
-            f_trig = 2*pi*[-vars.x(2); vars.x(1)];
+            f_trig = 2*pi*[-vars.x(2); vars.x(1)] / (2^double(obj.Symmetry));
             % f_phi = vars.x(3);
             f_clock = 1;
-            % f_clock = 0; %TODO: BUG: TEST: 
-            f_load = load_dynamics(obj, vars, opts);
 
+            %TODO: check for symmetry scaling in the load
+            f_load = load_dynamics(obj, vars, opts);
+            
             % f = [f_trig; f_phi; f_load];
             N = length(opts.L);
             f_basic = [f_trig; f_clock] * ones(1, N);
@@ -314,9 +328,12 @@ classdef opp_mode
             end
         end
 
-        function [trmon, trmon_sum] = trig_occ_monom(obj, d)
+        function [trmon, trmon_sum] = trig_occ_monom(obj, d, sym)
             %get moments of the occupation measure
             %for the (c, s) marginal
+            if nargin < 3
+                sym = 0;
+            end
             [N, P] = size(obj.levels);
             trmon = cell(N, P);    
             trmon_sum = 0;
@@ -325,7 +342,22 @@ classdef opp_mode
                 for p = 1:P                    
                     %TODO: the trig monom can be reduced by the algebraic
                     %dependence (c^2+s^2=1)
-                    [~, tr_curr] = obj.levels{n, p}.trig_monom(d);
+                    [~, tr_base] = obj.levels{n, p}.trig_monom(d);
+                    switch obj.Symmetry                                                    
+                        case 0
+                            tr_curr = tr_base;
+                        case 1
+                            %half-wave
+                            [~, tr_alt] = obj.levels{N-n, p}.trig_monom(d, [-1, -1]);
+                            tr_curr = (tr_base+ tr_alt)*0.5;
+
+                        case 2
+                            %quarter wave
+                            [~, tr_refl] = obj.levels{n, p}.trig_monom(d, [-1, 1]);
+                            [~, tr_alt] = obj.levels{N-n+1, p}.trig_monom(d, [-1, -1]);
+                            [~, tr_alt_refl] = obj.levels{N-n+1, p}.trig_monom(d, [1, -1]);
+                            tr_curr = (tr_base+ tr_alt+ tr_refl+ tr_alt_refl)*0.25;
+                    end
                     trmon{n, p} = tr_curr;
                     trmon_sum = trmon_sum + tr_curr;
                 end

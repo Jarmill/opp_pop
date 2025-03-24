@@ -1,4 +1,5 @@
 mset clear
+yalmip('clear')
 
 opts = opp_options;
 opts.L = [-1, 0, 1];
@@ -8,21 +9,23 @@ opts.harmonics = opp_harmonics();
 opts.partition = 1;
 % opp.Z_load = 1.0j;
 opp.Z_load = 0;
+opts.Ts = 1e-4;
 % opts.partition = 8;
 % opts.partition = 16;
+opts.TIME_INDEP = false;
 % opts.TIME_INDEP = true;
-opts.TIME_INDEP = true;
-opts.start_level = 0;
+% opts.start_level = 0;
 opts.early_stop = 0;
 % opts.null_objective = true;
 opts.null_objective = false;
-opts.Symmetry = 0;
 % opts.Symmetry = 1;
-% opts.three_phase = "Balanced";
-% opts.k = 4;
-opts.k = 8;
+% opts.Symmetry = 2;
+opts.Symmetry = 0;
+opts.k = 4;
+% opts.k = 8;
 % opts.k = 12;
-modulation = 0.5;
+% modulation = 0.5;
+modulation = 1;
 
 opts.harmonics.bound_sin = modulation*[1, 1];
 
@@ -33,7 +36,7 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 %k=8 pattern example
 %optima of 3.2006, 
 %
-opts.allowed_levels = sparse(1:9, [2, 3, 2, 3, 2, 1, 2, 1, 2], ones(1, 9), 9, 3);
+% opts.allowed_levels = sparse(1:9, [2, 3, 2, 3, 2, 1, 2, 1, 2], ones(1, 9), 9, 3);
 %
 %
 %
