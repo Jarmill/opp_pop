@@ -194,12 +194,12 @@ classdef opp_manager
 
 
             %without harmonics
-            % mom_con = [con_prob; con_preserve; con_leb; con_threephase];
+            mom_con = [con_prob; con_preserve; con_leb; con_threephase; con_harm];
             % mom_con = [con_prob; con_preserve; con_threephase; con_leb];
 
 
             %with harmonics
-            mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb; con_threephase];
+            % mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb; con_threephase];
 
 
             %TODO: objective constraints as well
@@ -257,17 +257,18 @@ classdef opp_manager
 
             %TODO: grid side filters
 
+            %TODO: symmetries with harmonics on load side
             %harmonics on the load side
-            if ~isempty(harm_load_data)          
-                harm_load = 0;
-                for m = 0:length(obj.modes)     
-                    harm_mom_load = obj.modes{m}.load_harmonics_mom(obj.vars, harm_load, obj.opts.harmonics_load);
-                    harm_load = harm_load + harm_mom_load;
-                end
-                harm_load_con = harmonics_process(obj.opts.harmonics_load, harm_load);
-            else
+            % if ~isempty(harm_load_data)          
+            %     harm_load = 0;
+            %     for m = 0:length(obj.modes)     
+            %         harm_mom_load = obj.modes{m}.load_harmonics_mom(obj.vars, harm_load, obj.opts.harmonics_load);
+            %         harm_load = harm_load + harm_mom_load;
+            %     end
+            %     harm_load_con = harmonics_process(obj.opts.harmonics_load, harm_load);
+            % else
                 harm_load_con = [];
-            end
+            % end
             
             harm_con = [harm_load_con; harm_source_con];
 

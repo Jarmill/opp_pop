@@ -170,7 +170,12 @@ classdef opp_location < location_interface
             mom_out = mom(v_sub);            
         end
 
-        function [harm_poly, harm_mom] = voltage_harmonics_mom(obj, vars, harm_mon)
+        function [harm_poly, harm_mom] = voltage_harmonics_mom(obj, vars, harm_mon, signs)
+            if nargin < 4
+                signs = [1, 1];
+            end
+            
+            harm_mon = subs(harm_mon, vars.x(1:2), diag(signs)*vars.x(1:2));
             %voltage harmonics evaluation 
             %equivalent to a resistive load
             if obj.L ~= 0 && ~isempty(obj.supp.X)

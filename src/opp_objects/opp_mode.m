@@ -221,7 +221,23 @@ classdef opp_mode
 
             for n=1:N
                 for p = 1:P            
-                    [~, harm_mom] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon);       
+                    [~, harm_base] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon);                           
+                    
+                    switch obj.Symmetry                            
+                        case 0
+                            harm_mom = harm_base;
+                        case 1
+                            %half-wave
+                            [~, tr_alt] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon, [-1, -1]);
+                            harm_mom = (harm_base- tr_alt)*0.5;
+                        case 2
+                            %quarter wave
+                            [~, tr_refl] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon, [-1, 1]);
+                            [~, tr_alt] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon, [-1, -1]);
+                            [~, tr_alt_refl] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon, [1, -1]);
+                            harm_mom = (harm_base + tr_refl- tr_alt- tr_alt_refl)*0.25;
+                    end
+                    
                     harm = harm+harm_mom;                    
                 end
             end
@@ -348,15 +364,15 @@ classdef opp_mode
                             tr_curr = tr_base;
                         case 1
                             %half-wave
-                            [~, tr_alt] = obj.levels{N-n, p}.trig_monom(d, [-1, -1]);
-                            tr_curr = (tr_base+ tr_alt)*0.5;
+                            [~, tr_alt] = obj.levels{N-n+1, p}.trig_monom(d, [-1, -1]);
+                            tr_curr = (tr_base+ tr_alt);
 
                         case 2
                             %quarter wave
                             [~, tr_refl] = obj.levels{n, p}.trig_monom(d, [-1, 1]);
                             [~, tr_alt] = obj.levels{N-n+1, p}.trig_monom(d, [-1, -1]);
                             [~, tr_alt_refl] = obj.levels{N-n+1, p}.trig_monom(d, [1, -1]);
-                            tr_curr = (tr_base+ tr_alt+ tr_refl+ tr_alt_refl)*0.25;
+                            tr_curr = (tr_base+ tr_alt+ tr_refl+ tr_alt_refl);
                     end
                     trmon{n, p} = tr_curr;
                     trmon_sum = trmon_sum + tr_curr;
