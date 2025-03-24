@@ -8,8 +8,8 @@ opts.L = [-1, -0.5, 0, 0.5, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
 % opts.partition = 1;
-% % opts.partition = 2;
-% opts.partition = 4;
+% opts.partition = 2;
+opts.partition = 4;
 % opts.partition = 8;
 % opts.partition = 16;
 % opts.TIME_INDEP = true;
@@ -24,7 +24,8 @@ opts.Symmetry = 0;
 % opts.Symmetry = 1;
 % opts.three_phase = "Balanced";
 % opts.k = 4;
-opts.k = 8;
+% opts.k = 8;
+opts.k = 16;
 % opts.k = 12;
 % opts.k = 24;
 
@@ -38,19 +39,19 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 %k=4 example
 % opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
 
-% modulation = 1;
-% opts.harmonics.index_cos = [opts.harmonics.index_cos; 2; 3; 4];
-% opts.harmonics.bound_cos = [opts.harmonics.bound_cos; 0, 0; 0, 0; -0.1, 0.1];
-% opts.harmonics.index_sin= [1; 2; 3; 4];
-% opts.harmonics.bound_sin = [modulation, modulation; 0, 0; 0, 0; -0.1, 0.1];
+modulation = 1;
+opts.harmonics.index_cos = [opts.harmonics.index_cos; 2; 3; 4; 5; 6];
+opts.harmonics.bound_cos = [opts.harmonics.bound_cos; 0, 0; 0, 0; 0, 0; 0, 0; 0, 0];
+opts.harmonics.index_sin= [1; 2; 3; 4; 5; 6];
+opts.harmonics.bound_sin = [modulation, modulation; 0, 0; 0, 0; 0, 0; 0, 0; -0.1, 0.1];
 
 
 %% test a manager
 MG = opp_manager(opts);
 % order = 4;
 % order = 2;
-% order = 3;
-order = 1;
+order = 3;
+% order = 1;
 d = 2*order;
 
 sol = MG.run(order);
