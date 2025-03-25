@@ -26,6 +26,12 @@ classdef opp_manager
                 'mosek.MSK_DPAR_BASIS_TOL_X', 1e-8, 'mosek.MSK_DPAR_INTPNT_CO_TOL_MU_RED', 1e-9, ...
                 'mosek.MSK_DPAR_INTPNT_TOL_PATH', 1e-6);            
 
+            N = length(opts.L);
+            if opts.Symmetry==2
+                %quarter-wave symmetry starts at 0
+                opts.start_level = int32((N+1)/2);
+            end
+
             [obj.vars, obj.jumps, obj.modes] = obj.create_system(opts);
         end
 
@@ -43,6 +49,7 @@ classdef opp_manager
             %x = [c; s; phi; l] -> [cos(theta), sin(theta), clock, load
             %state (current of load inductor/voltage of load capacitor)
 
+            
             
             %create the basic location structure
             if ~opts.TIME_INDEP
@@ -856,6 +863,7 @@ classdef opp_manager
                 [I0, Ic] = obj.recover_load();
                 I_val = cumsum([pi*I0; I_step]);
                 % I_val = I_step + 
+                pattern.I = I_val;
                 energy_raw = 0;
                 for i = 1:length(da)
                     slope = uf(i);

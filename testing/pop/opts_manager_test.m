@@ -32,6 +32,7 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 
 %k=4 example
 % opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
+opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, 1, 0], ones(5, 1));
 
 
 %k=8 pattern example

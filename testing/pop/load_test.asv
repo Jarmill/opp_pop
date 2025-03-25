@@ -2,14 +2,13 @@ mset clear
 yalmip('clear')
 
 opts = opp_options;
-opts.L = [-1, 0, 1];
-% opts.L = [-1, -0.5, 0, 0.5, 1];
+% opts.L = [-1, 0, 1];
+opts.L = [-1, -0.5, 0, 0.5, 1];
 % opts.L = [-1, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
-opts.partition = 1;
-% opts.partition = 2;
-% opts.partition = 3;
+% opts.partition = 1;
+% % opts.partition = 2;
 % opts.partition = 4;
 % opts.partition = 8;
 % opts.partition = 16;
@@ -19,16 +18,14 @@ opts.TIME_INDEP = true;
 % opts.start_level = 2;
 % opts.start_level = 3;
 opts.early_stop = 0;
-% opts.start_level = 0;
-opts.start_level = 2;
 % opts.null_objective = true;
 opts.null_objective = false;
-opts.Symmetry = 0;
+% opts.Symmetry = 0;
 % opts.Symmetry = 1;
-% opts.Symmetry = 2;
+opts.Symmetry = 2;
 % opts.three_phase = "Balanced";
-opts.k = 4;
-% opts.k = 8;
+% opts.k = 4;
+opts.k = 8;
 % opts.k = 12;
 % opts.k = 24;
 
@@ -66,17 +63,17 @@ disp(sol)
 if sol.status==0
     % m_out = MG.mmat();
     ms = MG.mass_summary();
-    pattern_rec = MG.recover_pattern();
+    pattern = MG.recover_pattern();
 
     Mc = MG.mmat_corner();
     M = MG.mmat();
     bound_lower = sol.obj_rec;
     if opts.Z_load==1.0j
-        bound_upper = pattern_rec.energy_I;
+        bound_upper = pattern.energy_I;
     else
-        bound_upper = pattern_rec.energy;
+        bound_upper = pattern.energy;
     end
-save('experiments/k_16_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern_rec', 'ms', 'order')
+save('experiments/k_16_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern', 'ms', 'order')
 % save('experiments/k_8_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern', 'ms', 'order')
 
 % M = MG.mmat();
@@ -90,10 +87,10 @@ save('experiments/k_16_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern_rec', 'ms',
 th = linspace(0, 2*pi, N);
 
 %function
-pu = pattern_rec.u;
-pa = pattern_rec.alpha;
+% pu = pattern.u;
+% pa = pattern.alpha;
 x = pulse_func(th, pu, pa);
-I0_rec = M.modes{1}{2}.init(1,5);
+I0_rec = M.modes{1}{3}.init(1,5);
 %need to perform appropriate scaling
 xi = pi*(cumsum(2*x)/(N) + I0_rec);
 
@@ -109,7 +106,7 @@ plot(th, modulation*sin(th), 'k', 'linewidth', 3);
 xlim([0, 2*pi]) 
 title(sprintf('k=%d, Lower=%0.4f, Upper=%0.4f', opts.k, bound_lower, bound_upper), 'FontSize',16)
 nmax = 100;
-[na, nb] = pulse_harmonics(nmax, pu, pa);
+[na, nb] = pulse_harmonics(nmax, pu, pattern.alpha);
 % energy_L_h = pi*sum(((na(2:end).^2 + nb(2:end).^2)./(1:Nh)'.^2));
 % energy_L = sum(iL.^2)/N;
 
