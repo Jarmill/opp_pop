@@ -18,19 +18,20 @@ opts.TIME_INDEP = true;
 opts.early_stop = 0;
 % opts.null_objective = true;
 opts.null_objective = false;
-opts.Symmetry = 1;
-% opts.Symmetry = 2;
+% opts.Symmetry = 1;
+opts.Symmetry = 2;
 % opts.Symmetry = 0;
-opts.k = 4;
+% opts.k = 4;
 % opts.k = 8;
 % opts.k = 12;
-% modulation = 0.5;
-modulation = 1;
+opts.k = 16;
+modulation = 0.5;
+% modulation = 1;
 
 opts.harmonics.bound_sin = modulation*[1, 1];
 
 %k=4 example
-opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
+% opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
 
 
 %k=8 pattern example
@@ -125,16 +126,19 @@ if sol.status==0
     bound_upper = pattern.energy;
 
 
+
+M = MG.mmat();
+
+%% plotting 
+
     %plot the signal
     N = 1000;
 th = linspace(0, 2*pi, N);
 
 %function
-x = pulse_func(th, pattern.u, pattern.alpha);
+uout = pattern.u;
+x = pulse_func(th, uout, pattern.alpha);
 
-M = MG.mmat();
-
-%% plotting 
 figure(1)
 clf
 hold on

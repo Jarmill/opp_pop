@@ -821,9 +821,27 @@ classdef opp_manager
 
             %TODO: recovery for early stopping
             [~, ind] = max(mocc, [], 2);
-            ang = sum(mocc, 2);
-            pattern.alpha = 2*pi*cumsum(ang(1:end-1))';
-            pattern.u = obj.opts.L(ind);
+            ang = sum(mocc, 2);                        
+            alpha_pre = cumsum(ang(1:end-1));
+            u_base = obj.opts.L(ind)';
+            switch obj.opts.Symmetry
+                case 0
+                    alpha_base= 2*pi*alpha_pre;
+                    af = alpha_base;
+                    uf = u_base;
+                case 1
+                    alpha_base= pi*alpha_pre;
+                    af = [alpha_base; alpha_base + pi];
+                    uf = [u_base; -u_base(2:end)];
+                case 2
+                    alpha_base= (pi/2)*alpha_pre;
+                    arev = alpha_base(end:-1:1);
+                    af = [alpha_base; pi-arev; pi+alpha_base; 2*pi-arev];
+                    uf = [u_base; u_base(end-1:-1:2); -u_base; -u_base(end-1:-1:1)];
+            end
+
+            pattern.alpha = af';
+            pattern.u = uf';
             pattern.energy = (obj.opts.L(ind).^2)*(2*pi*ang)/(2*pi);
 
 

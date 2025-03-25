@@ -74,10 +74,12 @@ classdef opp_manager
                 X_load = [];
             else
                 X_load = 1-x(4)^2;                
-                        end
+            end
 
-            X_clock_mode = x(3)*(1-2*Delta - x(3));    
-            X_clock_jump = (x(3)-Delta)*(1-2*Delta - x(3));    
+            Delta_scale = Delta*2^(-double(obj.opts.Symmetry));
+
+            X_clock_mode = x(3)*(1-2*Delta_scale- x(3));    
+            X_clock_jump = (x(3)-Delta_scale)*(1-2*Delta_scale- x(3));    
             X = [X_trig==0; X_clock_mode>=0; X_load>=0];             
             X_jump = [X_trig==0; X_clock_jump>=0; X_load>=0];
             
@@ -123,12 +125,14 @@ classdef opp_manager
             d = 2*order;
             
             %formulate constraints
+            tic
             [mom_con, supp_con, len_dual] = obj.cons(d);
                         
             [objective, obj_con] = opp_objective(obj);
+            t_prep = toc;
             %solve the program
             sol = obj.solve(objective, mom_con,supp_con);
-            
+            sol.preprocess_time = t_prep;
             %process dual variables            
             % obj = obj.dual_process(d, sol.dual_rec, len_dual);
         end
@@ -190,18 +194,17 @@ classdef opp_manager
             % 
             con_threephase = obj.con_balance(d);
 
-            % mom_con = [con_prob; con_preserve; con_leb];
-            % mom_con = [con_prob; con_preserve; con_leb; con_harm];
-            % mom_con = [con_prob; con_preserve; con_leb(1:end)];
-            % mom_con = [con_prob; con_leb];
 
-            % mom_con = [con_prob; con_preserve; con_harm; con_leb; con_threephase];
-            
             %without harmonics
-            % mom_con = [con_prob; con_liou; con_leb; con_preserve; con_threephase];
+            % mom_con = [con_prob; con_preserve; con_leb; con_threephase; con_harm];
+            
+            %only dynamics
+            % mom_con = [con_prob; con_preserve; con_liou];
 
+            %without dynamics
+            % mom_con = [con_prob; con_preserve; con_harm; con_leb; con_threephase];
 
-            %with harmonics
+            %with harmonics and dynamics
             mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb; con_threephase];
 
 
@@ -227,10 +230,12 @@ classdef opp_manager
     
                 %get moments of the (c, s)-marginal
                 trmon_sum = 0;
+                sym_scale = 2^double(-obj.opts.Symmetry);
                 %TODO: change the lebesgue constraint for symmetry
                 for m = 1:length(obj.modes)
                     tr_curr = obj.modes{m}.trig_occ_monom(d, obj.opts.Symmetry);
-                    trmon_sum = trmon_sum + cell_sum(tr_curr);
+                    trmon_sum = trmon_sum + sym_scale*cell_sum(tr_curr);
+                    % trmon_sum = madd_cell_mom(trmon_sum,tr_curr, sym_scale);
                 end
     
                 uni_con = (trmon_sum == uni_circ);
@@ -260,17 +265,18 @@ classdef opp_manager
 
             %TODO: grid side filters
 
+            %TODO: symmetries with harmonics on load side
             %harmonics on the load side
-            if ~isempty(harm_load_data)          
-                harm_load = 0;
-                for m = 0:length(obj.modes)     
-                    harm_mom_load = obj.modes{m}.load_harmonics_mom(obj.vars, harm_load, obj.opts.harmonics_load);
-                    harm_load = harm_load + harm_mom_load;
-                end
-                harm_load_con = harmonics_process(obj.opts.harmonics_load, harm_load);
-            else
+            % if ~isempty(harm_load_data)          
+            %     harm_load = 0;
+            %     for m = 0:length(obj.modes)     
+            %         harm_mom_load = obj.modes{m}.load_harmonics_mom(obj.vars, harm_load, obj.opts.harmonics_load);
+            %         harm_load = harm_load + harm_mom_load;
+            %     end
+            %     harm_load_con = harmonics_process(obj.opts.harmonics_load, harm_load);
+            % else
                 harm_load_con = [];
-            end
+            % end
             
             harm_con = [harm_load_con; harm_source_con];
 
@@ -428,11 +434,11 @@ classdef opp_manager
     
                     switch obj.opts.Symmetry
                         case 0
-                            cos_scale = 1;                        
+                            sin_scale = 1;                        
                         case 1
-                            cos_scale = 2*mod(harm_in.index_cos, 2);
+                            sin_scale = 2*mod(harm_in.index_sin, 2);
                         case 2
-                            sin_scale= 4;
+                            sin_scale= 4*mod(harm_in.index_sin, 2);
                     end
 
                     harm_sin = sin_scale .* s*U(harm_in.index_sin);
@@ -481,22 +487,24 @@ classdef opp_manager
             for m = 1:Nmodes
                 liou_curr = liou_cell{m};
                 for n=1:N
-                    for p = 1:P
-                        if m==1
-                            dst_curr = 0;
-                        else
-                            dst_curr = jump_dst{m-1}{n, p};
+                    if isempty(obj.opts.allowed_levels) || obj.opts.allowed_levels(m, n)
+                        for p = 1:P
+                            if m==1
+                                dst_curr = 0;
+                            else
+                                dst_curr = jump_dst{m-1}{n, p};
+                            end
+                            if m==Nmodes
+                                src_curr = 0;
+                            else
+                                src_curr = jump_src{m}{n, p};
+                            end
+                            
+                            flow_con_cell{m, n, p} = liou_curr{n, p} + src_curr + dst_curr==0;
+                            
+                            %stack them into a giant vector: flow_con
+                            flow_con = [flow_con; flow_con_cell{m, n, p}];
                         end
-                        if m==Nmodes
-                            src_curr = 0;
-                        else
-                            src_curr = jump_src{m}{n, p};
-                        end
-                        
-                        flow_con_cell{m, n, p} = liou_curr{n, p} + src_curr + dst_curr==0;
-                        
-                        %stack them into a giant vector: flow_con
-                        flow_con = [flow_con; flow_con_cell{m, n, p}];
                     end
                 end
             end
@@ -654,13 +662,16 @@ classdef opp_manager
                 [~, mass_init_sum] = obj.modes{1}.initial_mass();
                 objective = mass_init_sum;
             else
+                objective_jump = 0;
                 for i = 1:length(obj.jumps)
-                    objective = objective + obj.jumps{i}.objective();
+                    objective_jump = objective_jump + obj.jumps{i}.objective();
                 end
                 
+                objective_mode = 0;
                 for i = 1:length(obj.modes)
-                    objective = objective + obj.modes{i}.objective();
+                    objective_mode = objective_mode + obj.modes{i}.objective();
                 end
+                objective = objective_jump + objective_mode;
             end
 
         end
@@ -810,9 +821,21 @@ classdef opp_manager
 
             %TODO: recovery for early stopping
             [~, ind] = max(mocc, [], 2);
-            ang = sum(mocc, 2);
+            ang = sum(mocc, 2);                        
+            alpha_base 
+            u_base = obj.opts.L(ind)
+            switch obj.opts.Symmetry
+                case 0
+                    af = 2*pi*[0; cumsum(alpha_base)];
+                    uf = u_base;
+                case 1
+
+
+                case 2
+            end
+
             pattern.alpha = 2*pi*cumsum(ang(1:end-1))';
-            pattern.u = obj.opts.L(ind);
+            pattern.u = ;
             pattern.energy = (obj.opts.L(ind).^2)*(2*pi*ang)/(2*pi);
 
 
