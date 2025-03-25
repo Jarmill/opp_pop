@@ -1,4 +1,5 @@
-% get the signal
+
+% get  the signal
 %original signal
 SYM = 2;
 

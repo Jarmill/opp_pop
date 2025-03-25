@@ -116,18 +116,26 @@ classdef opp_location < location_interface
         
 
         
-        function [v_trig, mon_trig] = trig_monom(obj, d)
+            function [v_trig, mom_trig] = trig_monom(obj, d, signs)
             %moments of [c, s] (trigonometric lift, used for Lebesgue
             %constraint)
+            if nargin < 3
+                signs = [1; 1];
+            end
             if isempty(obj.supp.X)
                 v_trig = 0;
-                mon_trig = 0;
+                mom_trig = 0;
             else
                 x_curr = obj.sys{1}.meas_occ.vars.x;
                 x_trig = x_curr(1:2);
+                             
                 v_trig = mmon(x_trig, 0, d);
+                
+                v_trig =  subs(v_trig, x_trig, diag(signs)*x_trig);                
+                               
+
     
-                mon_trig = mom(v_trig);
+                mom_trig = mom(v_trig);
             end
 
         end
@@ -162,7 +170,12 @@ classdef opp_location < location_interface
             mom_out = mom(v_sub);            
         end
 
-        function [harm_poly, harm_mom] = voltage_harmonics_mom(obj, vars, harm_mon)
+        function [harm_poly, harm_mom] = voltage_harmonics_mom(obj, vars, harm_mon, signs)
+            if nargin < 4
+                signs = [1, 1];
+            end
+            
+            harm_mon = subs(harm_mon, vars.x(1:2), diag(signs)*vars.x(1:2));
             %voltage harmonics evaluation 
             %equivalent to a resistive load
             if obj.L ~= 0 && ~isempty(obj.supp.X)

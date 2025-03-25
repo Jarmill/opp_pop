@@ -40,11 +40,10 @@ classdef opp_mode
             %terminate
             %ignore the trig constraint (beginning) and support arc
             %constraint (end)
-            start_pt = [vars.x(1)==1; vars.x(2)==0];
             switch obj.Symmetry
                 case 0
                     %full-wave symmetry: end at 2pi
-                    trig_pt = start_pt;
+                    trig_pt = [vars.x(1)==1; vars.x(2)==0];
                 case 1
                     %half-wave symmetry: end at pi
                     trig_pt = [vars.x(1)==-1; vars.x(2)==0];
@@ -53,11 +52,10 @@ classdef opp_mode
                     trig_pt = [vars.x(1)==0; vars.x(2)==1];
             end
             Xstop = [trig_pt; lsupp_base.X(2:end-1)];
-            Xstart = [start_pt; lsupp_base.X(2:end-1)];
 
             mode_end = opts.k/(2^opts.Symmetry);
             if m==0                
-               lsupp_base.X_init = Xstart;
+               lsupp_base.X_init = Xstop;
             elseif m==mode_end || (opts.early_stop && (mod(m, 2)==0))
                 lsupp_base.X_term = Xstop;
             end
@@ -100,18 +98,15 @@ classdef opp_mode
                         flag = false;
                         if ~opts.allowed_levels(m+1, n)
                             flag = true;
-                        elseif m>0
-                            can_down = (n<N) && opts.allowed_levels(m, n+1);
-                            can_up = (n>1) && opts.allowed_levels(m, n-1);
-
-                            flag = ~(can_up || can_down);
+                        else
+                            can_up = (n<N) && opts.allowed_levels()
                         end
 
 
-                        % 
-                        % 
-                        % && ~opts.allowed_levels(m+1, n) ...
-                        % || ((m>0) && (((n>1)&& ~opts.allowed_levels(m, n-1)) || ((n<N)&& ~opts.allowed_levels(m, n+1))))
+                        
+                        
+                        && ~opts.allowed_levels(m+1, n) ...
+                        || ((m>0) && (((n>1)&& ~opts.allowed_levels(m, n-1)) || ((n<N)&& ~opts.allowed_levels(m, n+1))))
 
                         if flag
                             curr_lsupp.X = [];
@@ -250,13 +245,13 @@ classdef opp_mode
                         case 1
                             %half-wave
                             [~, tr_alt] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon, [-1, -1]);
-                            harm_mom = (harm_base- tr_alt)*(1/4);
+                            harm_mom = (harm_base- tr_alt)*0.5;
                         case 2
                             %quarter wave
                             [~, tr_refl] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon, [-1, 1]);
                             [~, tr_alt] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon, [-1, -1]);
                             [~, tr_alt_refl] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon, [1, -1]);
-                            harm_mom = (harm_base + tr_refl- tr_alt- tr_alt_refl)*(1/16);
+                            harm_mom = (harm_base + tr_refl- tr_alt- tr_alt_refl)*0.25;
                     end
                     
                     harm = harm+harm_mom;                    
@@ -447,11 +442,10 @@ classdef opp_mode
             %fetch the objective (THD) from all of the mode locations
             [N, P] = size(obj.levels);
             obj_min = 0;
-            sym_scale = 2^(-2*double(obj.Symmetry));
             for n=1:N
                 for p = 1:P               
                     [om_curr, ~, ~] = obj.levels{n, p}.objective_con();
-                      obj_min = obj_min + sym_scale*om_curr;
+                      obj_min = obj_min + om_curr;
                 end
             end
         end

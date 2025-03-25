@@ -1,4 +1,5 @@
 mset clear
+yalmip('clear')
 
 opts = opp_options;
 opts.L = [-1, 0, 1];
@@ -8,32 +9,36 @@ opts.harmonics = opp_harmonics();
 opts.partition = 1;
 % opp.Z_load = 1.0j;
 opp.Z_load = 0;
+opts.Ts = 1e-4;
 % opts.partition = 8;
 % opts.partition = 16;
-% opts.TIME_INDEP = true;
+% opts.TIME_INDEP = false;
 opts.TIME_INDEP = true;
-opts.start_level = 0;
+% opts.start_level = 0;
 opts.early_stop = 0;
 % opts.null_objective = true;
 opts.null_objective = false;
-opts.Symmetry = 0;
 % opts.Symmetry = 1;
-% opts.three_phase = "Balanced";
+opts.Symmetry = 2;
+% opts.Symmetry = 0;
 % opts.k = 4;
-opts.k = 8;
+% opts.k = 8;
 % opts.k = 12;
+opts.k = 16;
 modulation = 0.5;
+% modulation = 1;
 
 opts.harmonics.bound_sin = modulation*[1, 1];
 
 %k=4 example
 % opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
+opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, 1, 0], ones(5, 1));
 
 
 %k=8 pattern example
 %optima of 3.2006, 
 %
-opts.allowed_levels = sparse(1:9, [2, 3, 2, 3, 2, 1, 2, 1, 2], ones(1, 9), 9, 3);
+% opts.allowed_levels = sparse(1:9, [2, 3, 2, 3, 2, 1, 2, 1, 2], ones(1, 9), 9, 3);
 %
 %
 %
@@ -122,16 +127,19 @@ if sol.status==0
     bound_upper = pattern.energy;
 
 
+
+M = MG.mmat();
+
+%% plotting 
+
     %plot the signal
     N = 1000;
 th = linspace(0, 2*pi, N);
 
 %function
-x = pulse_func(th, pattern.u, pattern.alpha);
+uout = pattern.u;
+x = pulse_func(th, uout, pattern.alpha);
 
-M = MG.mmat();
-
-%% plotting 
 figure(1)
 clf
 hold on
@@ -140,13 +148,13 @@ plot(th, modulation*sin(th), 'k');
 xlim([0, 2*pi]) 
 title(sprintf('k=%d, Lower=%0.4f, Upper=%0.4f', opts.k, bound_lower, bound_upper), 'FontSize',16)
 iL = cumsum(x)/N;
-nmax = 100;
+nmax = 20;
 [na, nb] = pulse_harmonics(nmax, pattern.u, pattern.alpha);
 % energy_L_h = pi*sum(((na(2:end).^2 + nb(2:end).^2)./(1:Nh)'.^2));
 % energy_L = sum(iL.^2)/N;
-
-figure(2)
-plot(th, iL);
+% 
+% figure(2)
+% plot(th, iL);
 
 figure(3)
 clf
