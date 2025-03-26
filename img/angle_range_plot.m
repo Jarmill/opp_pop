@@ -37,7 +37,8 @@ cc = linspecer(4);
 
 tshift = -0.4;
 clf
-tiledlayout(2, 2)
+% tiledlayout(2, 2)
+tiledlayout(1, 4)
 nexttile
 hold on
 plot(c(arc0>=0), s(arc0>=0), 'linewidth', 3, 'color', cc(1, :))
@@ -46,7 +47,7 @@ ylim([-1, 1])
 scatter(1, 0, 100, 'k', 'filled')
 xlabel('$\cos(\theta)$', 'Interpreter', 'latex')
 ylabel('$\sin(\theta)$', 'Interpreter', 'latex')
-text(tshift , 0, '$m$ = 0', 'Interpreter', 'latex', 'fontsize', 16)
+text(tshift , 0, '$i$ = 0', 'Interpreter', 'latex', 'fontsize', 16)
 axis square
 axis off
 
@@ -59,7 +60,7 @@ ylim([-1, 1])
 scatter(1, 0, 100, 'k', 'filled')
 xlabel('$\cos(\theta)$', 'Interpreter', 'latex')
 % ylabel('$\sin(\theta)$', 'Interpreter', 'latex')
-text(tshift , 0, '$m$ = 1', 'Interpreter', 'latex', 'fontsize', 16)
+text(tshift , 0, '$i$ = 1', 'Interpreter', 'latex', 'fontsize', 16)
 axis square
 axis off
 
@@ -71,7 +72,7 @@ ylim([-1, 1])
 scatter(1, 0, 100, 'k', 'filled')
 xlabel('$\cos(\theta)$', 'Interpreter', 'latex')
 % ylabel('$\sin(\theta)$', 'Interpreter', 'latex')
-text(tshift , 0, sprintf('$m$ = %d', kt), 'Interpreter', 'latex', 'fontsize', 16)
+text(tshift , 0, sprintf('$i$ = %d', kt), 'Interpreter', 'latex', 'fontsize', 16)
 axis square
 axis off
 
@@ -83,6 +84,6 @@ scatter(1, 0, 100, 'k', 'filled')
 ylim([-1, 1])
 xlabel('$\cos(\theta)$', 'Interpreter', 'latex')
 % ylabel('$\sin(\theta)$', 'Interpreter', 'latex')
-text(tshift , 0, sprintf('$m$ = %d', k), 'Interpreter', 'latex', 'fontsize', 16)
+text(tshift , 0, sprintf('$i$ = %d', k), 'Interpreter', 'latex', 'fontsize', 16)
 axis square
 axis off

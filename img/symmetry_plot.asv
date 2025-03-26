@@ -40,22 +40,20 @@ tiledlayout(3, 2)
 
 nexttile
 c = linspecer(7);
-plot([0, 2*pi], [0, 0], 'k')
 plot(a_full, u_full, 'LineWidth',3, 'Color', c(6, :))
-title('Voltage $u(\theta)$ \\', 'interpreter', 'latex', 'fontsize', 16)
+title('Voltage', 'interpreter', 'latex', 'fontsize', 16)
 xlim([0, 2*pi])
 axis off
 
 nexttile
 plot(outf.alpha, outf.current, 'LineWidth',3, 'Color', c(6, :))
-title('Current $I(\theta)$ \\', 'interpreter', 'latex', 'fontsize', 16)
 xlim([0, 2*pi])
 axis off
 
 nexttile
 hold on
 plot(aa_allh, u_allh, 'LineWidth',3, 'Color', c(5, :))
-plot([pi, pi], max(abs(u_allh))*[-1, 1], ':k','LineWidth',2)
+
 xlim([0, 2*pi])
 axis off
 

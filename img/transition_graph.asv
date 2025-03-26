@@ -1,0 +1,36 @@
+k = 4;
+N = 3;
+R = 0.3;
+
+NT = 200;
+th = linspace(0, 2*pi, NT);
+c = R*cos(th);
+s = R*sin(th);
+
+figure(12)
+clf
+hold on
+dx = 1;
+dy = 1;
+
+for i = 0:k
+    for n = 1:N
+        plot(c+dx*i, s+dy*n, 'k', 'linewidth', 3)
+    end    
+end
+
+for i = 0:k
+    text(dx*i, (N+1)*dy, sprintf('$i=%d$', i), 'fontsize', 16, 'interprets')
+end
+
+for n = N:-1:1
+    text(-dx, dy*n, sprintf('$n=%d$', n), 'fontsize', 16)
+end
+
+xlim([-2*dx, (k+1)*dx])
+ylim([-2*dy, (N+1)*dy])
+% xl = xlim;
+% yl = ylim;
+% pbaspect([diff(xl), diff(yl), 1])
+
+
