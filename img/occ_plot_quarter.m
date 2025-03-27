@@ -58,14 +58,16 @@ clim([0, 1])
 % axis off
 xlabel('$n$', 'interpreter', 'latex')
 ylabel('$i$', 'interpreter', 'latex')
+xticklabels({'0', '1', '2', '3'})
 
 subplot(2, 2, 4)
 imagesc(mass_mixed)
 title('Mixed ($0.6U_1 + 0.4U_2$) Mass', 'interpreter', 'latex')
 % colorbar
 clim([0, 1])
-xlabel('$n$', 'interpreter', 'latex')
-ylabel('$i$', 'interpreter', 'latex')
+ylabel('$n$', 'interpreter', 'latex')
+xlabel('$i$', 'interpreter', 'latex')
+xticklabels({'0', '1', '2', '3'})
 % /axis off
 
 
