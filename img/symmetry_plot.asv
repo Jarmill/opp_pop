@@ -40,20 +40,22 @@ tiledlayout(3, 2)
 
 nexttile
 c = linspecer(7);
+plot([0, 2*pi], [0, 0], 'k')
 plot(a_full, u_full, 'LineWidth',3, 'Color', c(6, :))
-title('Voltage', 'interpreter', 'latex', 'fontsize', 16)
+title('Voltage $u(\theta)$ \\', 'interpreter', 'latex', 'fontsize', 16)
 xlim([0, 2*pi])
 axis off
 
 nexttile
 plot(outf.alpha, outf.current, 'LineWidth',3, 'Color', c(6, :))
+title('Current $I(\theta)$ \\', 'interpreter', 'latex', 'fontsize', 16)
 xlim([0, 2*pi])
 axis off
 
 nexttile
 hold on
 plot(aa_allh, u_allh, 'LineWidth',3, 'Color', c(5, :))
-
+plot([pi, pi], max(abs(u_allh))*[-1, 1], ':k','LineWidth',2)
 xlim([0, 2*pi])
 axis off
 
@@ -87,6 +89,30 @@ plot([pi*3/2, pi*3/2], max(abs(outq.current))*[-1, 1], ':k','LineWidth',2)
 plot(outq.alpha, outq.current, 'LineWidth',3, 'Color', c(7, :))
 axis off
 
-%% plot the current
-% figure(2)
-% clf
+%% plot only the quarter-wave
+figure(2)
+clf
+tiledlayout(2, 1)
+
+nexttile
+hold on
+plot([pi, pi], [-1, 1], ':k','LineWidth',2)
+plot([pi/2, pi/2], [-1, 1], ':k','LineWidth',2)
+plot([pi*3/2, pi*3/2], [-1, 1], ':k','LineWidth',2)
+plot(aa_allq, u_allq, 'LineWidth',3, 'Color', c(2, :))
+xlim([0, 2*pi])
+ylabel('$u(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
+% axis off
+
+nexttile
+hold on
+
+xlim([0, 2*pi])
+
+plot([pi, pi], [-1, 1], ':k','LineWidth',2)
+plot([pi/2, pi/2], [-1, 1], ':k','LineWidth',2)
+plot([pi*3/2, pi*3/2], [-1, 1], ':k','LineWidth',2)
+plot([pi*3/2, pi*3/2], [-1, 1], '-k','LineWidth',2)
+plot(outq.alpha, outq.current, 'LineWidth',3, 'Color', c(4, :))
+ylabel('$I(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
+xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);

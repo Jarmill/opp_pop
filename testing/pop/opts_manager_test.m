@@ -6,9 +6,10 @@ opts.L = [-1, 0, 1];
 % opts.L = [-1, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
-opts.partition = 1;
-% opp.Z_load = 1.0j;
-opp.Z_load = 0;
+% opts.partition = 2;
+opts.partition = 4;
+opts.Z_load = 1.0j;
+% opts.Z_load = 0;
 opts.Ts = 1e-4;
 % opts.partition = 8;
 % opts.partition = 16;
@@ -25,14 +26,17 @@ opts.Symmetry = 2;
 % opts.k = 8;
 % opts.k = 12;
 opts.k = 16;
-modulation = 0.5;
+% modulation = 0.5;
+modulation = 0.75;
 % modulation = 1;
 
 opts.harmonics.bound_sin = modulation*[1, 1];
 
 %k=4 example
 % opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
-opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, 1, 0], ones(5, 1));
+% opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, 1, 0], ones(5, 1));
+
+% opts.allowed_levels = sparse(1:4, 2+[0, 1, 0, 1], ones(4, 1));
 
 
 %k=8 pattern example
