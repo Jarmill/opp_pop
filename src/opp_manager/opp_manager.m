@@ -448,7 +448,7 @@ classdef opp_manager
                             sin_scale= 4*mod(harm_in.index_sin, 2);
                     end
 
-                    harm_sin = sin_scale .* s*U(harm_in.index_sin);
+                    harm_sin = sin_scale .* (s*U(harm_in.index_sin));
                 else
                     harm_sin = [];
                 end

@@ -44,15 +44,23 @@ classdef opp_mode
             switch obj.Symmetry
                 case 0
                     %full-wave symmetry: end at 2pi
-                    trig_pt = start_pt;
+                    stop_pt = start_pt;
                 case 1
                     %half-wave symmetry: end at pi
-                    trig_pt = [vars.x(1)==-1; vars.x(2)==0];
+                    stop_pt = [vars.x(1)==-1; vars.x(2)==0];
                 case 2
                     %quarter-wave symmetry: end at pi/2
-                    trig_pt = [vars.x(1)==0; vars.x(2)==1];
+                    Delta_scale = opts.f0*opts.Ts*2^(-double(opts.Symmetry));
+
+                    stop_pt= [vars.x(1)==0; vars.x(2)==1; ...
+                        vars.x(3)>=Delta_scale/2];
+                    if imag(opts.Z_load)>0 && real(opts.Z_load)==0
+                        stop_pt = [stop_pt; vars.x(4)==0];
+                    end
+
+                    
             end
-            Xstop = [trig_pt; lsupp_base.X(2:end-1)];
+            Xstop = [stop_pt; lsupp_base.X(2:end-1)];
             Xstart = [start_pt; lsupp_base.X(2:end-1)];
 
             mode_end = opts.k/(2^opts.Symmetry);
@@ -87,7 +95,9 @@ classdef opp_mode
                     if p>1 || ((opts.start_level~=0) && (n~= opts.start_level))
                         curr_lsupp.X_init = [];
                     end
-                    if p<P
+                    if p<P || (opts.start_level~=0) && ...
+                            ((opts.Symmetry==0) && (n~= opts.start_level) ||...
+                            (opts.Symmetry==1) && ((N-n+1)~= opts.start_level))
                         curr_lsupp.X_term = [];
                     end
 
@@ -159,7 +169,7 @@ classdef opp_mode
             f_clock = 1;
 
             %TODO: check for symmetry scaling in the load
-            f_load = load_dynamics(obj, vars, opts);
+            f_load = load_dynamics(obj, vars, opts) / (2^double(obj.Symmetry));
             
             % f = [f_trig; f_phi; f_load];
             N = length(opts.L);
