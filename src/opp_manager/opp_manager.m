@@ -621,7 +621,7 @@ classdef opp_manager
             elseif (imag(opts.Z_load) >= 0)
                 
                 if real(opts.Z_load)==0
-                    objective = pi^2 * (2*pi)*vars.x(4)^2*ones(size(opts.L));
+                    objective = pi^2 * (2*pi)^2*vars.x(4)^2*ones(size(opts.L));
                 else
                     %inductive load
                     %i' = -(R/L)i + (1/L) v
@@ -878,7 +878,8 @@ classdef opp_manager
                         pt_start = (offset)^3/(3*slope);
                         energy_curr = pt_end - pt_start;
                     end
-                    energy_raw = energy_raw + energy_curr/(2*pi);
+                    % energy_raw = energy_raw + energy_curr/(2*pi);
+                    energy_raw = energy_raw + energy_curr;
                 end
                 pattern.energy_I = energy_raw;
             else
