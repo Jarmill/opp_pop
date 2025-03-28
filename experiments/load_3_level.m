@@ -7,26 +7,32 @@ opts.L = [-1, 0, 1];
 % opts.L = [-1, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
-% opts.partition = 1;
-opts.partition = 2;
-% opts.partition = 3;
-% opts.partition = 4;
-% opts.partition = 8;
-% opts.partition = 16;
-% opts.TIME_INDEP = true;
+opts.partition = 1;
 opts.TIME_INDEP = true;
+% opts.start_level = 0;
+% opts.start_level = 2;
+% opts.start_level = 3;
 opts.early_stop = 0;
+% opts.start_level = 0;
+opts.start_level = 2;
+% opts.null_objective = true;
+opts.null_objective = false;
+% opts.Symmetry = 0;
+% opts.Symmetry = 1;
 opts.Symmetry = 2;
-opts.k = 4;
+% opts.three_phase = "Balanced";
+% opts.k = 4;
 % opts.k = 8;
 % opts.k = 12;
-% opts.k=16
+% opts.k = 16;
+% opts.k=20;
 % opts.k = 24;
+opts.k = 36;
 
-% modulation = 0.7;
-modulation = 1;
+modulation = 0.6;
+% modulation = 1;
 % opts.Z_load = 0;
-% opts.Z_load = 1.0j;
+opts.Z_load = 1.0j;
 
 opts.harmonics.bound_sin = modulation*[1, 1];
 
@@ -36,14 +42,18 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 % modulation = 1;
 % opts.harmonics.index_cos = [opts.harmonics.index_cos; 2; 3; 4];
 % opts.harmonics.bound_cos = [opts.harmonics.bound_cos; 0, 0; 0, 0; -0.1, 0.1];
-% opts.harmonics.index_sin= [1; 3];
-% opts.harmonics.bound_sin = [modulation, modulation; -0.1, 0.1];
+% opts.harmonics.index_sin= [1; 2; 3; 4];
+% opts.harmonics.bound_sin = [modulation, modulation; 0, 0; 0, 0; -0.1, 0.1];
+
 
 %% test a manager
+
+% k_range = 4:4:20;
+
 MG = opp_manager(opts);
 % order = 4;
-% order = 3;
 order = 2;
+% order = 3;
 % order = 1;
 d = 2*order;
 
@@ -66,7 +76,7 @@ if sol.status==0
     else
         bound_upper = pattern_rec.energy;
     end
-% save('experiments/k_16_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern_rec', 'ms', 'order')
+save('experiments/k_16_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern_rec', 'ms', 'order')
 % save('experiments/k_8_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern', 'ms', 'order')
 
 % M = MG.mmat();
@@ -85,8 +95,7 @@ pa = pattern_rec.alpha;
 x = pulse_func(th, pu, pa);
 I0_rec = M.modes{1}{2}.init(1,5);
 %need to perform appropriate scaling
-% xi = pi*(cumsum(2*x)/(N) + I0_rec);
-xi = pi*(cumsum(2*x)/(N)) + I0_rec;
+xi = pi*(cumsum(2*x)/(N) + I0_rec);
 
 % [t, y] = ode45(@(t, th) pulse_func(th, pattern.u, pattern.alpha), [0, 2*pi], I0_rec*pi);
 
@@ -124,37 +133,3 @@ title('Sine Harmonics')
 xlabel('n')
 ylabel('b_n')
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

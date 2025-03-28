@@ -609,14 +609,15 @@ classdef opp_manager
             %
             N = length(opts.L);
             Lmax = max(abs(opts.L));
-            sym_factor = double(2^opts.Symmetry);
+            % sym_factor = double(2^opts.Symmetry);
+            sym_factor = 1;
             %Another TODO: quarter-wave symmetry may break the
              %characterization of the current in the inductor/capacitor
             if (length(vars.x)==3) || (imag(opts.Z_load) == 0)                      
                 %purely resistive
                 %sym_factor: replicate the square according to the symmetry
                 %2*pi: because time is normalized to [0, 1]
-                objective = sym_factor * (2*pi)*(opts.L.^2);
+                objective = (2*pi)*(opts.L.^2);
             elseif (imag(opts.Z_load) >= 0)
                 
                 if real(opts.Z_load)==0

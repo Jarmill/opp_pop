@@ -27,9 +27,10 @@ opts.null_objective = false;
 % opts.Symmetry = 1;
 opts.Symmetry = 2;
 % opts.three_phase = "Balanced";
-opts.k = 4;
+% opts.k = 4;
 % opts.k = 8;
 % opts.k = 12;
+opts.k = 16;
 % opts.k = 24;
 
 modulation = 0.6;

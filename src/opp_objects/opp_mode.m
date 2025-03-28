@@ -457,7 +457,8 @@ classdef opp_mode
             %fetch the objective (THD) from all of the mode locations
             [N, P] = size(obj.levels);
             obj_min = 0;
-            sym_scale = 2^(-2*double(obj.Symmetry));
+            % sym_scale = 2^(-2*double(obj.Symmetry));
+            sym_scale = 1;
             for n=1:N
                 for p = 1:P               
                     [om_curr, ~, ~] = obj.levels{n, p}.objective_con();
