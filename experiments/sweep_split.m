@@ -27,7 +27,10 @@
     out_resolve_3 = (out_resolve(:, :, 3));
     objective_std_3 = objective_std(:, :, 3);
     objective_resolve_3 = objective_resolve(:, :, 3);
-    save('experiments/experiment_N_5_sweep_3.mat', 'k_list', 'mod_list', ...
-        'out_std_3', "out_resolve_3", "objective_resolve_3", "objective_std_3");
+    save('experiments/experiment_N_5_sweep_3_std.mat', 'k_list', 'mod_list', ...
+        'out_std_3', "objective_std_3");
+
+    save('experiments/experiment_N_5_sweep_3_resolve.mat', 'k_list', 'mod_list', ...
+        "out_resolve_3", "objective_resolve_3");
 % end
 % save()
