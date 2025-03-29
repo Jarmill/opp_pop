@@ -141,17 +141,18 @@ classdef opp_mode
             %when advancing the angle theta
             
             % gtop =    guard(1, vars, loc1, loc2, Xgtop, x);
+            
             for n=1:N
                 for p=1:P-1
                     curr_trans_id = sprintf('trans_m%d_n%d_p%d', m, n, p);
-                    
-                    curr_supp = Xstop;
-                    RotAngle = 2*pi/double(P*2^opts.Symmetry);
-                    dp = double(p);
-                    new_con = (vars.x(1:2)==[cos(dp*RotAngle); sin(dp*RotAngle)]);
-                    curr_supp(1:2) = new_con;
-                    if ~isempty(opts.allowed_levels) && ~opts.allowed_levels(m+1, n)
-                        curr_supp = [];
+                     if ~isempty(opts.allowed_levels) && ~opts.allowed_levels(m+1, n)
+                         curr_supp = [];
+                     else
+                        curr_supp = lsupp_base.X(2:end-1);
+                        RotAngle = 2*pi/double(P*2^opts.Symmetry);
+                        dp = double(p);
+                        new_con = (vars.x(1:2)==[cos(dp*RotAngle); sin(dp*RotAngle)]);
+                        curr_supp= [new_con; curr_supp];
                     end
                     obj.transition{n, p} = guard(curr_trans_id, lsupp_base.vars, ...
                         obj.levels{n, p}, obj.levels{n, p+1}, curr_supp, vars.x);
