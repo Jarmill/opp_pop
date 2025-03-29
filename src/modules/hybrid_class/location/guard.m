@@ -127,9 +127,13 @@ classdef guard < meas_base
             %LIOU_RESET Liouville expressions from the transition
             %mom_src:  from the source location
             %mom_dest: to the destination location
-            mom_src = -obj.mom_monom(d);
-            mom_dest = obj.reset_push(d);
-            
+            if isempty(obj.supp)
+                mom_src = 0;
+                mom_dest = 0;
+            else
+                mom_src = -obj.mom_monom(d);
+                mom_dest = obj.reset_push(d);
+            end
         end
         
         function reset_out = reset_eval(obj, x)

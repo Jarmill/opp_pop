@@ -50,10 +50,10 @@ classdef opp_mode
                     stop_pt = [vars.x(1)==-1; vars.x(2)==0];
                 case 2
                     %quarter-wave symmetry: end at pi/2
-                    Delta_scale = opts.f0*opts.Ts*2^(-double(opts.Symmetry));
+                    Theta_scale = opts.f0*opts.Ts*2^(double(opts.Symmetry));
 
                     stop_pt= [vars.x(1)==0; vars.x(2)==1; ...
-                        vars.x(3)>=Delta_scale/2];
+                        vars.x(3)>=Theta_scale/2];
                     if imag(opts.Z_load)>0 && real(opts.Z_load)==0
                         stop_pt = [stop_pt; vars.x(4)==0];
                     end

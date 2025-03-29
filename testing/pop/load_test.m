@@ -2,8 +2,8 @@ mset clear
 yalmip('clear')
 
 opts = opp_options;
-opts.L = [-1, 0, 1];
-% opts.L = [-1, -0.5, 0, 0.5, 1];
+% opts.L = [-1, 0, 1];
+opts.L = [-1, -0.5, 0, 0.5, 1];
 % opts.L = [-1, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
@@ -20,17 +20,17 @@ opts.TIME_INDEP = true;
 % opts.start_level = 3;
 opts.early_stop = 0;
 % opts.start_level = 0;
-opts.start_level = 2;
+opts.start_level = 5;
 % opts.null_objective = true;
 opts.null_objective = false;
-% opts.Symmetry = 0;
+opts.Symmetry = 0;
 % opts.Symmetry = 1;
-opts.Symmetry = 2;
+% opts.Symmetry = 2;
 % opts.three_phase = "Balanced";
 % opts.k = 4;
 % opts.k = 8;
-% opts.k = 12;
-opts.k = 16;
+opts.k = 12;
+% opts.k = 16;
 % opts.k = 24;
 
 modulation = 0.6;
@@ -53,7 +53,7 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 %% test a manager
 MG = opp_manager(opts);
 % order = 4;
-order = 2;
+order = 1;
 % order = 3;
 % order = 1;
 d = 2*order;
@@ -77,7 +77,7 @@ if sol.status==0
     else
         bound_upper = pattern_rec.energy;
     end
-save('experiments/k_16_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern_rec', 'ms', 'order')
+% save('experiments/k_16_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern_rec', 'ms', 'order')
 % save('experiments/k_8_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern', 'ms', 'order')
 
 % M = MG.mmat();
@@ -94,7 +94,7 @@ th = linspace(0, 2*pi, N);
 pu = pattern_rec.u;
 pa = pattern_rec.alpha;
 x = pulse_func(th, pu, pa);
-I0_rec = M.modes{1}{2}.init(1,5);
+I0_rec = M.modes{1}{3}.init(1,5);
 %need to perform appropriate scaling
 xi = pi*(cumsum(2*x)/(N) + I0_rec);
 

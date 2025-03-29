@@ -27,10 +27,33 @@ classdef opp_manager
                 'mosek.MSK_DPAR_INTPNT_TOL_PATH', 1e-6);            
 
             N = length(opts.L);
-            if opts.Symmetry==2
-                %quarter-wave symmetry starts at 0
+            %quarter-wave symmetry starts at 0
+            if opts.Symmetry==2                
                 opts.start_level = int32((N+1)/2);
             end
+
+            %if the start level is declared, then restrict the switching
+            %structure
+            pulse_length = 2^(-double(opts.Symmetry)) * opts.k;
+            if isempty(opts.allowed_levels)
+                opts.allowed_levels = ones( pulse_length+1, N);
+            end
+
+            if opts.start_level ~= 0
+                for m = 1:pulse_length+1
+                    for n = 1:N
+                        if (mod(m+n+opts.start_level, 2)==0) || (abs(n-opts.start_level) > (m-1))
+                            opts.allowed_levels(m, n) = 0;
+                        end
+
+                        if opts.unipolar && n < (N+1)/2
+                            opts.allowed_levels(m, n) = 0;
+                        end
+                    end
+                end
+            end
+
+
 
             [obj.vars, obj.jumps, obj.modes] = obj.create_system(opts);
         end
@@ -70,7 +93,7 @@ classdef opp_manager
 
             %create the support set
 
-            Delta = opts.f0*opts.Ts;
+            Theta = opts.f0*opts.Ts;
 
             %BUG HERE BUG HERE BUG HERE
             %X_trig = 1-x(1)^2 + x(2)^2;
@@ -83,10 +106,10 @@ classdef opp_manager
                 X_load = 1-x(4)^2;                
             end
 
-            Delta_scale = Delta*2^(-double(obj.opts.Symmetry));
+            Theta_scale = Theta*2^(double(obj.opts.Symmetry));
 
-            X_clock_mode = x(3)*(1-2*Delta_scale- x(3));    
-            X_clock_jump = (x(3)-Delta_scale)*(1-2*Delta_scale- x(3));    
+            X_clock_mode = x(3)*(1-2*Theta_scale- x(3));    
+            X_clock_jump = (x(3)-Theta_scale)*(1-2*Theta_scale- x(3));    
             X = [X_trig==0; X_clock_mode>=0; X_load>=0];             
             X_jump = [X_trig==0; X_clock_jump>=0; X_load>=0];
             
@@ -114,7 +137,7 @@ classdef opp_manager
             
             for m=0:k
                 lsupp_curr = lsupp_base;
-                arc_curr = support_arc(m, x, Delta, opts.Symmetry);
+                arc_curr = support_arc(m, x, Theta, opts.Symmetry);
                 lsupp_curr.X = [lsupp_curr.X; arc_curr>=0];
                 modes{m+1} = opp_mode(m, lsupp_curr, objective_mode, opts);
 
@@ -820,6 +843,7 @@ classdef opp_manager
             % L = obj.L;
             
             mocc = sum(ms.mode, 3);
+            [d, N] = size(mocc);
             
 
             pattern = struct;
@@ -832,6 +856,8 @@ classdef opp_manager
             ang = sum(mocc, 2);                        
             alpha_pre = cumsum(ang(1:end-1));
             u_base = obj.opts.L(ind)';
+
+            pattern.levels = sparse(1:d, ind, ones(1, d));
             switch obj.opts.Symmetry
                 case 0
                     alpha_base= 2*pi*alpha_pre;

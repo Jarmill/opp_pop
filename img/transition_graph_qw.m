@@ -1,5 +1,5 @@
-d = 7;
-N = 5;
+d = 9;
+N = 7;
 R = 0.6;
 
 NT = 200;
@@ -31,11 +31,11 @@ for i=0:d-1
             du = up_dst - up_src;
             dd = down_dst - down_src;
     
-            if n < N && (mod(i+n, 2)==1) && (start_level==0 || i >= (N-1)/2 || abs(n-start_level)<=i)
+            if n < N && (mod(i+n, 2)==1) && (start_level==0 ||  abs(n-start_level)<=i)
                 quiver(up_src(1), up_src(2), du(1), du(2), 'autoscale', 1, ...
                     'Color', cc(1, :), 'linewidth', 5, 'maxheadsize', 3)
             end
-            if n > 1 &&  (mod(i+n, 2)==1) &&(start_level==0 || i >= (N-1)/2 || abs(n-start_level)<=i)
+            if n > 1 &&  (mod(i+n, 2)==1) &&(start_level==0 ||  abs(n-start_level)<=i)
                 quiver(down_src(1), down_src(2), dd(1), dd(2), 'autoscale', 1, ...
                     'Color', cc(2, :), 'linewidth', 5, 'maxheadsize', 3)
             end
@@ -46,7 +46,7 @@ end
 
 for i = 0:d
     for n = 1:N
-        if  (mod(i+n, 2)==1) && (start_level==0 || i >= (N-1)/2 || abs(n-start_level)<=i)
+        if  (mod(i+n, 2)==1) && (start_level==0  || abs(n-start_level)<=i)
             plot(c+dx*i, s+dy*n, 'k', 'linewidth', 3)
         end
     end    
