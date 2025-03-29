@@ -1,6 +1,15 @@
 d = 9;
 N = 7;
 R = 0.6;
+Nc = (N+1)/2;
+
+unipolar = true;
+if unipolar
+    nstart = Nc;
+else
+    nstart = 1;
+end
+
 
 NT = 200;
 th = linspace(0, 2*pi, NT);
@@ -14,12 +23,12 @@ dx = 2;
 dy = 2;
 
 
-start_level =3;
+start_level =4;
 
 cc = linspecer(2);
 
 for i=0:d-1
-    for n=1:N
+    for n=nstart:N
         % if start_level==0 || i >= (N-1)/2 || 
         if true
             up_src = [dx*i; dy*n] + R*[1; 1]*(sqrt(2)/2);
@@ -35,7 +44,7 @@ for i=0:d-1
                 quiver(up_src(1), up_src(2), du(1), du(2), 'autoscale', 1, ...
                     'Color', cc(1, :), 'linewidth', 5, 'maxheadsize', 3)
             end
-            if n > 1 &&  (mod(i+n, 2)==1) &&(start_level==0 ||  abs(n-start_level)<=i)
+            if n > nstart &&  (mod(i+n, 2)==1) &&(start_level==0 ||  abs(n-start_level)<=i)
                 quiver(down_src(1), down_src(2), dd(1), dd(2), 'autoscale', 1, ...
                     'Color', cc(2, :), 'linewidth', 5, 'maxheadsize', 3)
             end
@@ -45,7 +54,7 @@ end
 
 
 for i = 0:d
-    for n = 1:N
+    for n = nstart:N
         if  (mod(i+n, 2)==1) && (start_level==0  || abs(n-start_level)<=i)
             plot(c+dx*i, s+dy*n, 'k', 'linewidth', 3)
         end
@@ -56,7 +65,7 @@ for i = 0:d
     text(dx*i-0.5, (N+0.65)*dy, sprintf('$i=%d$', i), 'fontsize', 12, 'interpreter', 'latex')
 end
 
-for n = N:-1:1
+for n = N:-1:nstart
     text(-1.15*dx, dy*n, sprintf('$n=%d$', n), 'fontsize', 12, 'interpreter','latex')
 end
 

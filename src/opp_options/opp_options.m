@@ -16,7 +16,7 @@ classdef opp_options
         null_objective = false;
         
         %numerical check afterwards
-        harm_tol = 1e-4; 
+        harm_tol = 5e-4; 
 
         
 
@@ -42,7 +42,7 @@ classdef opp_options
         solver = 'mosek';
         verbose(1, 1)logical = true; %log output
         TIME_INDEP(1, 1)logical = false; %include time as an explicit state
-
+        precise = false; %true: use sdpa-gmp instead
     end
 
 end

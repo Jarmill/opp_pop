@@ -14,7 +14,8 @@ ind_ineq = bnd(:, 1) ~= bnd(:, 2);
 if tol==0
     con_eq = harm_moments(ind_eq)==bnd(ind_eq, 1);
 else
-    con_eq = [(harm_moments(ind_eq)<=bnd(ind_eq, 1) + tol);  (harm_moments(ind_eq)>=bnd(ind_eq, 1) - tol)];
+    %one-sided, the modulation cannot be missed from below.
+    con_eq = [(harm_moments(ind_eq)<=bnd(ind_eq, 1) + tol);  (harm_moments(ind_eq)>=bnd(ind_eq, 1))];
 end
 % else
     % con_eq = [];

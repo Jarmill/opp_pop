@@ -1,0 +1,14 @@
+load('experiment_N_5_order_2.mat', 'out_std');
+
+osc = out_std{1, 2};
+osc.pattern
+L = osc.opts.L;
+
+[dd, N] = size(osc.pattern.levels);
+d = dd-1;
+u = osc.pattern.u(1:dd);
+u = [u, u(end)];
+
+a = sdpvar(1, )
+
+
