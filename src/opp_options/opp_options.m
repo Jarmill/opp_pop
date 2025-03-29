@@ -1,4 +1,4 @@
-classdef opp_options < handle
+classdef opp_options
     %OPP_OPTIONS Options data structure for the optimal pulse pattern task
     %   Detailed explanation goes here
 
@@ -13,7 +13,10 @@ classdef opp_options < handle
         %harmonics constraints
         harmonics = [];
         harmonics_load = [];
-        null_objective = true;
+        null_objective = false;
+        
+        %numerical check afterwards
+        harm_tol = 1e-4; 
 
         
 

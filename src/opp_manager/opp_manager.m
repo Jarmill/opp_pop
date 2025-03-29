@@ -28,26 +28,26 @@ classdef opp_manager
 
             N = length(opts.L);
             %quarter-wave symmetry starts at 0
-            if opts.Symmetry==2                
-                opts.start_level = int32((N+1)/2);
+            if obj.opts.Symmetry==2                
+                obj.opts.start_level = int32((N+1)/2);
             end
 
             %if the start level is declared, then restrict the switching
             %structure
             pulse_length = 2^(-double(opts.Symmetry)) * opts.k;
             if isempty(opts.allowed_levels)
-                opts.allowed_levels = ones( pulse_length+1, N);
+                obj.opts.allowed_levels = ones( pulse_length+1, N);
             end
 
-            if opts.start_level ~= 0
+            if obj.opts.start_level ~= 0
                 for m = 1:pulse_length+1
                     for n = 1:N
-                        if (mod(m+n+opts.start_level, 2)==0) || (abs(n-opts.start_level) > (m-1))
-                            opts.allowed_levels(m, n) = 0;
+                        if (mod(m+n+obj.opts.start_level, 2)==0) || (abs(n-obj.opts.start_level) > (m-1))
+                            obj.opts.allowed_levels(m, n) = 0;
                         end
 
-                        if opts.unipolar && n < (N+1)/2
-                            opts.allowed_levels(m, n) = 0;
+                        if obj.opts.unipolar && n < (N+1)/2
+                            obj.opts.allowed_levels(m, n) = 0;
                         end
                     end
                 end
@@ -55,7 +55,7 @@ classdef opp_manager
 
 
 
-            [obj.vars, obj.jumps, obj.modes] = obj.create_system(opts);
+            [obj.vars, obj.jumps, obj.modes] = obj.create_system(obj.opts);
         end
 
         %% construct everything
@@ -163,6 +163,8 @@ classdef opp_manager
             %solve the program
             sol = obj.solve(objective, mom_con,supp_con);
             sol.preprocess_time = t_prep;
+            sol.order = order;
+            
             %process dual variables            
             % obj = obj.dual_process(d, sol.dual_rec, len_dual);
         end
@@ -707,10 +709,39 @@ classdef opp_manager
 
         end
 
-        function opp_out = recover(obj)
+        function opp_out = recover(obj, sol)
             %process and recover the solution
 
-            opp_out = [];
+            % ms = obj.mass_summary();
+            pattern_rec = obj.recover_pattern();
+            M = obj.mmat();
+
+            bound_lower = sol.obj_rec;
+            if obj.opts.Z_load==1.0j
+                bound_upper = pattern_rec.energy_I;
+            else
+                bound_upper = pattern_rec.energy;
+            end
+
+            %assuming that the b1 coefficient is pinned
+            modulation = obj.opts.harmonics.bound_sin(1);
+
+            bn_lower = sqrt(bound_lower/pi - modulation^2);
+            bn_upper = sqrt(bound_upper/pi - modulation^2);
+
+            opp_out = struct;
+            opp_out.pattern = pattern_rec;
+            opp_out.M = M;
+            opp_out.sol = sol;
+            opp_out.energy_lower = bound_lower;
+            opp_out.energy_upper = bound_upper;
+
+            opp_out.tdd_lower = bn_lower;            
+            opp_out.tdd_upper = bn_upper;
+            opp_out.valid_upper = pattern_rec.harm_valid;
+
+            opp_out.opts = obj.opts;
+                        
         end
 
         function [m_out] = mmat(obj)
@@ -912,12 +943,11 @@ classdef opp_manager
                 pattern.energy_I = 0;
             end
 
-            %harmonics
-            nmax = max(max(obj.opts.harmonics.index_cos), max(obj.opts.harmonics.index_sin));
-            [na, nb] = pulse_harmonics(nmax, pattern.u, pattern.alpha);
+            %harmonics           
+            harm_tol = obj.opts.harm_tol;
+            [pattern.harmonics, pattern.harm_valid] = pulse_harmonics_evaluate(pattern, obj.opts.harmonics, harm_tol);
 
-            pattern.harmonics = [na(obj.opts.harmonics.index_cos+1); 
-                nb(obj.opts.harmonics.index_sin+1)]';
+            %check if the harmonics are valid
 
         end
 
