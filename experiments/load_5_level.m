@@ -1,24 +1,15 @@
 mset clear
 yalmip('clear')
 
-RESOLVE = 1;
+RESOLVE = 0;
 
 opts = opp_options;
-% opts.L = [-1, 0, 1];
 opts.L = [-1, -0.5, 0, 0.5, 1];
-% opts.L = [-1, 1];
-% opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
 opts.partition = 1;
 % opts.partition = 2;
 opts.TIME_INDEP = true;
-% opts.start_level = 0;
-% opts.start_level = 2;
-% opts.start_level = 3;
 opts.early_stop = 0;
-% opts.start_level = 0;
-% opts.start_level = 2;
-% opts.null_objective = true;
 opts.null_objective = false;
 % opts.Symmetry = 0;
 % opts.Symmetry = 1;
@@ -26,47 +17,32 @@ opts.Symmetry = 2;
 opts.unipolar = 1;
 % opts.three_phase = "Balanced";
 % opts.k = 4;
-% opts.k = 8;
+opts.k = 8;
 % opts.k = 12;
-opts.k = 16;
+% opts.k = 16;
 % opts.k=20;
 % opts.k = 24;
+% opts.k= 28;
 % opts.k = 36;
 
-% modulation = 0.6;
-% modulation = 1;
-% modulation = 0.7;
-% modulation = 0.1;
-% modulation = 1.1;
-modulation = 1;
-% opts.Z_load = 0;
+
+modulation = 1.1;
 opts.Z_load = 1.0j;
 opts.verbose = 0;
-
-
-% opts.precise = true;
-
-% opts.harmonics.bound_sin = modulation*[1, 1];
 
 %k=4 example
 % opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
 
 % modulation = 1;
-% opts.harmonics.index_cos = [opts.harmonics.index_cos; 2; 3; 4];
-% opts.harmonics.bound_cos = [opts.harmonics.bound_cos; 0, 0; 0, 0; -0.1, 0.1];
 opts.harmonics.index_sin= [1;  3];
 opts.harmonics.bound_sin = [modulation, modulation; -0.01, 0.01];
 
 
 %% test a manager
 
-% k_range = 4:4:20;
 
 MG = opp_manager(opts);
-% order = 4;
 order = 2;
-% order = 3;
-% order = 1;
 d = 2*order;
 
 sol = MG.run(order);
@@ -84,7 +60,7 @@ if sol.status==0
     % M = MG.mmat();
     out = MG.recover(sol);
 
-    harm_valid = out.pattern.harm_valid;
+    % harm_valid = out.pattern.harm_valid;
     bound_upper = out.tdd_upper;
     %solve again
     if RESOLVE
@@ -96,16 +72,24 @@ if sol.status==0
 
         bound_lower2 = sol2.obj_rec;
         bound_upper2 = out2.tdd_upper;
-        bound_upper = out2.tdd_upper;
-        harm_valid = out.pattern.harm_valid;
+        bound_upper = out2.tdd_upper;        
+        out_polish = opp_polish_qw(out2);
+    else
+        out_polish = opp_polish_qw(out);
+        
     end
+    bound_upper = out_polish.warm.tdd;
+
+    harm_valid = ~isempty(out_polish.warm);
     
     if harm_valid
         validstr = ' Valid';
     else
         validstr = ' Invalid';
     end
-summary_str = strcat(sprintf('M=%0.1f, k=%d, Lower=%0.3e, Upper=%0.3e ', ...
+
+
+    summary_str = strcat(sprintf('M=%0.1f, k=%d, Lower=%0.3e, Upper=%0.3e ', ...
     modulation, opts.k, out.tdd_lower, bound_upper), ' ', validstr);
 
 
@@ -113,9 +97,6 @@ summary_str = strcat(sprintf('M=%0.1f, k=%d, Lower=%0.3e, Upper=%0.3e ', ...
 fprintf(strcat(summary_str, '\n'));
 
 %% plotting 
-
-
-
     %plot the signal
     N = 1000;
 th = linspace(0, 2*pi, N);

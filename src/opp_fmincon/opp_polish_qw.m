@@ -98,8 +98,10 @@ if sol_cold.problem ==0
     I_cold = value(I);    
     E_cold = value(objective);
     b_cold = value(b);
+    a_cold_full = [a_cold; pi-a_cold(end:-1:1); a_cold+pi; 2*pi - a_cold(end:-1:1)];    
+    I_cold_full = [I_cold(1:end-1); -I_cold(end-1:-1:2); -I_cold(2:end-1); I_cold(end-1:-1:1)];
     tdd_cold = sqrt(E_cold/pi - modulation^2);
-    out.cold = struct('alpha', a_cold, 'u', u,'I', I_cold, 'b', b_cold, 'objective', E_cold,  'tdd', tdd_cold);
+    out.cold = struct('alpha', a_cold_full, 'alpha_q', a_cold, 'u', osc.pattern.u,'I', I_cold_full, 'I_q', I_cold, 'b', b_cold, 'objective', E_cold,  'tdd', tdd_cold);
 else
     out.cold = [];
 end
@@ -114,8 +116,10 @@ if sol.problem == 0
     I_warm = value(I);    
     E_warm = value(objective);
     b_warm = value(b);
+    a_warm_full = [a_warm; pi-a_warm(end:-1:1); a_warm+pi; 2*pi - a_warm(end:-1:1)];    
+    I_warm_full = [I_warm(1:end-1); -I_warm(end-1:-1:2); -I_warm(2:end-1); I_warm(end-1:-1:1)];
     tdd_warm = sqrt(E_warm/pi - modulation^2);
-    out.warm = struct('alpha', a_warm, 'u', u, 'I', I_warm, 'b', b_warm, 'objective', E_warm,  'tdd', tdd_warm);
+    out.warm = struct('alpha', a_warm_full, 'alpha_q', a_warm, 'u', osc.pattern.u, 'I', I_warm_full, 'I_q', I_warm, 'b', b_warm, 'objective', E_warm,  'tdd', tdd_warm);
 else
     out.warm= [];
 end
