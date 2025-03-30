@@ -1,7 +1,7 @@
 mset clear
 yalmip('clear')
 
-RESOLVE = true;
+RESOLVE = false;
 
 opts = opp_options;
 opts.L = [-1, -0.5, 0, 0.5, 1];
@@ -27,7 +27,7 @@ opts.harmonics.bound_sin = [modulation, modulation; -0.01, 0.01];
 %% iterate over the orders
 
 
-orderlist = 1:2;
+orderlist = 1:5;
 Norder = length(orderlist);
 
 %% now run the experiment
