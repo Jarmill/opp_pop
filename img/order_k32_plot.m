@@ -40,8 +40,8 @@ legend({'SDP (lower bound)', 'Recovered (upper bound)'}, 'Location','southeast',
 
 nexttile
 hold on
-semilogy(order_list, solver_time, '-o', 'Color',cc(4, :), 'MarkerFaceColor','auto', 'linewidth', 2)
 semilogy(order_list, preprocess_time, '-s', 'Color',cc(5, :), 'MarkerFaceColor','auto', 'linewidth', 2)
+semilogy(order_list, solver_time, '-o', 'Color',cc(4, :), 'MarkerFaceColor','auto', 'linewidth', 2)
 legend({'Preprocess', 'Solve'}, 'Location','southeast', 'interpreter', 'latex', 'fontsize', 14)
 xlabel('degree $\beta$', 'interpreter', 'latex', 'FontSize',14)
 ylabel('Time (seconds)', 'interpreter', 'latex', 'FontSize',14)
