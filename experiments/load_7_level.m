@@ -1,13 +1,16 @@
 mset clear
 yalmip('clear')
 
-RESOLVE = 0;
+RESOLVE = 1;
 
 opts = opp_options;
-opts.L = [-1, -0.75, -0.5, 0, 0.5, 0.75, 1];
+%inhomogenous
+% opts.L = [-1, -0.75, -0.5, 0, 0.5, 0.75, 1];
+opts.L = linspace(-1, 1, 7);
+
 opts.harmonics = opp_harmonics();
-% opts.partition = 1;
-opts.partition = 4;
+opts.partition = 1;
+% opts.partition = 4;
 % opts.partition = 2;
 opts.TIME_INDEP = true;
 opts.early_stop = 0;
@@ -41,12 +44,10 @@ opts.harmonics.bound_sin = [modulation, modulation; -0.01, 0.01];
 
 
 %% test a manager
-
-
 MG = opp_manager(opts);
-% order = 2;
 % order=3;
-order=1;
+order = 2;
+% order=1;
 d = 2*order;
 
 sol = MG.run(order);

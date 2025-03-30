@@ -51,7 +51,7 @@ classdef opp_mode
                 case 2
                     %quarter-wave symmetry: end at pi/2
                     Theta_scale = opts.f0*opts.Ts*2^(double(opts.Symmetry));
-
+                    start_pt = [start_pt; vars.x(3)>=Theta_scale/2];
                     stop_pt= [vars.x(1)==0; vars.x(2)==1; ...
                         vars.x(3)>=Theta_scale/2];
                     if imag(opts.Z_load)>0 && real(opts.Z_load)==0

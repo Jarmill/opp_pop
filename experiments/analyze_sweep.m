@@ -19,8 +19,6 @@ clf
 linecolors = parula(Nmod);
 hold on 
 for i=1:Nmod
-    % plot(x,x.^(i/3),'color',linecolors(i,:));
-    % hold on;
     semilogy(k_list/4, tdd(i, :), 'color',linecolors(i,:));
 end 
 set(gca, 'YScale', 'log')

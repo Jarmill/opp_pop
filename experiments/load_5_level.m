@@ -1,7 +1,7 @@
 mset clear
 yalmip('clear')
 
-RESOLVE = 0;
+RESOLVE = 1;
 
 opts = opp_options;
 opts.L = [-1, -0.5, 0, 0.5, 1];
@@ -17,16 +17,18 @@ opts.Symmetry = 2;
 opts.unipolar = 1;
 % opts.three_phase = "Balanced";
 % opts.k = 4;
-opts.k = 8;
+% opts.k = 8;
 % opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
 % opts.k = 24;
 % opts.k= 28;
+opts.k = 32;
 % opts.k = 36;
 
 
-modulation = 1.1;
+% modulation = 1.1;
+modulation = 0.9;
 opts.Z_load = 1.0j;
 opts.verbose = 0;
 
@@ -42,7 +44,13 @@ opts.harmonics.bound_sin = [modulation, modulation; -0.01, 0.01];
 
 
 MG = opp_manager(opts);
-order = 2;
+% order = 1;
+% order = 2;
+% order = 3;
+% order = 4;
+% order = 5;
+% order = 6;
+order = 7;
 d = 2*order;
 
 sol = MG.run(order);
@@ -137,8 +145,8 @@ plot([0, 2*pi], [0, 0], ':k')
 ylabel('$u(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
 
 xlim([0, 2*pi]) 
-title(summary_str, ...
-    'FontSize',16, 'Interpreter', 'latex')
+% title(summary_str, ...
+    % 'FontSize',16, 'Interpreter', 'latex')
 
 nexttile
 hold on
@@ -169,25 +177,25 @@ nmax = 20;
 % hold on
 % % plot(th, -modulation*cos(th), 'k', 'linewidth', 3);
 
-
-figure(3)
-clf
-if opts.Symmetry == 2
-    tiledlayout(1, 1)
-else
-    tiledlayout(2, 1)
-    nexttile
-% subplot(2, 1,  1)
-hold on
-stem(0:nmax, na)
-title('Cosine Harmonics')
-xlabel('n')
-ylabel('a_n')
-end
-% subplot(2, 1, 2)
-nexttile
-stem(0:nmax,nb)
-title('Sine Harmonics')
-xlabel('n')
-ylabel('b_n')
+% 
+% figure(3)
+% clf
+% if opts.Symmetry == 2
+%     tiledlayout(1, 1)
+% else
+%     tiledlayout(2, 1)
+%     nexttile
+% % subplot(2, 1,  1)
+% hold on
+% stem(0:nmax, na)
+% title('Cosine Harmonics')
+% xlabel('n')
+% ylabel('a_n')
+% end
+% % subplot(2, 1, 2)
+% nexttile
+% stem(0:nmax,nb)
+% title('Sine Harmonics')
+% xlabel('n')
+% ylabel('b_n')
 end
