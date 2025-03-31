@@ -86,9 +86,9 @@ E_start = replace(E_all, [I0; a], [I0_start; alpha_start]);
 cons = [con_harm; con_order; I<=0];
 
 sdpopts = sdpsettings('solver', 'fmincon', 'verbose', 1, 'usex0',1, ...
-    'fmincon.maxfunevals', 5e4, 'fmincon.MaxIter', 3e4);
+    'fmincon.maxfunevals', 5e4, 'fmincon.MaxIter', 3e4, 'fmincon.EnableFeasibilityMode', true);
 sdpopts_cold = sdpsettings('solver', 'fmincon', 'verbose', 0, ...
-    'fmincon.maxfunevals', 5e4, 'fmincon.MaxIter', 3e4);
+    'fmincon.maxfunevals', 5e4, 'fmincon.MaxIter', 3e4, 'fmincon.EnableFeasibilityMode', true);
 
 % sdpopts = sdpsettings('solver', 'fmincon','usex0',1);
 % sdpopts_cold = sdpsettings('solver', 'fmincon');

@@ -11,7 +11,8 @@ dt = 2;
 
 
 %parameters
-Delta = pi/12;
+% Delta = pi/12;
+Delta = pi/18;
 th10 = 0;
 th20 = pi/2 - (d)*Delta;
 
