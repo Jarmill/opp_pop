@@ -3,7 +3,7 @@ N = 7;
 R = 0.6;
 Nc = (N+1)/2;
 
-unipolar = false;
+unipolar = true;
 if unipolar
     nstart = Nc;
 else
@@ -61,15 +61,15 @@ for i = 0:d+1
     end    
 end
 % 
-text(dx*(1)-1, (N+0.65)*dy, '$i:$', 'fontsize', 12, 'interpreter', 'latex')
+text(dx*(1)-1, (N+0.65)*dy, '$i$', 'fontsize', 12, 'interpreter', 'latex')
 for i = 0:d
     text(dx*(i+1), (N+0.65)*dy, sprintf('$%d$', i), 'fontsize', 12, 'interpreter', 'latex')
 end
 
 for n = N:-1:nstart
-    text((d+2)*dx+0.3, dy*n, sprintf('$%d$', n), 'fontsize', 12, 'interpreter','latex')
+    text((d+2)*dx, dy*n, sprintf('$%d$', n), 'fontsize', 12, 'interpreter','latex')
 end
-text((d+2)*dx-0.75, dy*Nc, '$n:$', 'fontsize', 12, 'interpreter','latex')
+text((d+2)*dx-, dy*Nc, '$n$', 'fontsize', 12, 'interpreter','latex')
 % -0.5*dx
 
 xlim([-2*dx, (d+1.5)*dx])
