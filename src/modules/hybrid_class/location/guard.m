@@ -94,15 +94,18 @@ classdef guard < meas_base
             end
         end
         
-        function mom_out = reset_push(obj, d)
-            v = obj.monom(d);
+        function mom_out = reset_push(obj, d)            
 %             f_curr = obj.var_sub(vars_old, f_old);
             if obj.reset_identity
+                v = obj.monom(d);
                 %trivial reset map (local measures)
                 mom_out = mom(v);
             else
                 %reset only involves x, t stays the same
                 if any(obj.reset_null)
+                    %TODO: make this faster. Don't generate all monomials
+                    %if some of them are zero.
+                    v = obj.monom(d);
                     Rv = v;
                     for i = 1:length(v)
                         pv = get_representation(v(i), obj.vars.x);
@@ -116,6 +119,7 @@ classdef guard < meas_base
                         Rv = subs(Rv, obj.vars.x(~obj.reset_null), [obj.reset(~obj.reset_null)]);
                     end
                 else
+                    v = obj.monom(d);
                     Rv = subs(v, obj.vars.x, [obj.reset]);
                 end
                 

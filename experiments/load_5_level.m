@@ -46,11 +46,11 @@ opts.harmonics.bound_sin = [modulation, modulation; -0.01, 0.01];
 MG = opp_manager(opts);
 % order = 1;
 % order = 2;
-% order = 3;
+order = 3;
 % order = 4;
 % order = 5;
 % order = 6;
-order = 7;
+% order = 7;
 d = 2*order;
 
 sol = MG.run(order);
