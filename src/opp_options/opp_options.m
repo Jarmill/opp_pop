@@ -29,11 +29,12 @@ classdef opp_options
         %switching parameters
         k(1, 1)int32 = 4; %number of switches in the sequence
         Symmetry(1, 1)opp_symmetry = opp_symmetry.Full %symmetry type
-        three_phase(1, 1)opp_three_phase = opp_three_phase.Ignore; %how to deal with three-phase considerations
+        three_phase(1, 1)opp_three_phase = opp_three_phase.Ignore; %how to deal with three-phase considerations        
         unipolar(1, 1)logical = false %unipolar (in case of half-wave or quarter-wave)
         early_stop(1, 1)logical = true %stop at even pulse numbers (instead of k)
         start_level(1, 1)int32 = 0; %start at an initial level (if not zero)
-        uniform_arc(1, 1)logical=true
+        uniform_arc(1, 1)logical=true %impose that the (c, s) marginals of the occupation measure is the uniform distribution over an arc
+        common_mode(1, 1)double = Inf %common-mode voltage constraint
 
         allowed_levels = []; %which levels are allowed at which switching indices?
 

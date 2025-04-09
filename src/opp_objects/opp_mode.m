@@ -376,12 +376,9 @@ classdef opp_mode
             end
         end
 
-        function [trmon, trmon_sum] = trig_occ_monom(obj, d, sym)
+        function [trmon, trmon_sum] = trig_occ_monom(obj, d, level_mult)
             %get moments of the occupation measure
             %for the (c, s) marginal
-            if nargin < 3
-                sym = 0;
-            end
             [N, P] = size(obj.levels);
             trmon = cell(N, P);    
             trmon_sum = 0;
@@ -406,6 +403,9 @@ classdef opp_mode
                             [~, tr_alt_refl] = obj.levels{N-n+1, p}.trig_monom(d, [1, -1]);
                             tr_curr = (tr_base+ tr_alt+ tr_refl+ tr_alt_refl);
                     end
+                    % if level_mult
+                    %     tr_curr = obj.L(n);
+                    % end
                     trmon{n, p} = tr_curr;
                     trmon_sum = trmon_sum + tr_curr;
                 end
@@ -436,9 +436,12 @@ classdef opp_mode
         end
 
         %TODO: three phase balance constraint
-        function tmon = mom_sub(obj, vars, vref)
+        function tmon = mom_sub(obj, vars, vref, level_mult)
             %three-phase balanced symmetry in the current
             
+            if nargin < 4
+                level_mult = false;
+            end
             [N, P] = size(obj.levels);
             tmon = cell(N, P);
             for n=1:N
@@ -448,6 +451,11 @@ classdef opp_mode
                       else
                           tmon{n, p} = obj.levels{n, p}.mom_occ_sub(vars, vref);
                       end                                    
+
+                      if level_mult
+                          tmon{n, p} = tmon{n, p}*obj.L(n);
+                      end
+
                 end
             end
 

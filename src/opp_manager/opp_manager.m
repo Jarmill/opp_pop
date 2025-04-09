@@ -230,6 +230,8 @@ classdef opp_manager
             % %initial = sum of terminal measure
             con_preserve = obj.con_return(d);
 
+            con_common = obj.con_common_mode(d);
+
             %flow +jump continuity constraints
             % 
             con_liou = obj.con_flow(d);
@@ -240,6 +242,8 @@ classdef opp_manager
             con_leb = obj.con_uni_circ(d);
             % 
             con_threephase = obj.con_balance(d);
+
+            
 
 
             %without harmonics
@@ -252,7 +256,7 @@ classdef opp_manager
             % mom_con = [con_prob; con_preserve; con_harm; con_leb; con_threephase];
 
             %with harmonics and dynamics
-            mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb; con_threephase];
+            mom_con = [con_prob; con_preserve; con_liou; con_harm; con_leb; con_threephase; con_common];
 
 
             %TODO: objective constraints as well
@@ -280,7 +284,7 @@ classdef opp_manager
                 sym_scale = 2^double(-obj.opts.Symmetry);
                 %TODO: change the lebesgue constraint for symmetry
                 for m = 1:length(obj.modes)
-                    tr_curr = obj.modes{m}.trig_occ_monom(d, obj.opts.Symmetry);
+                    tr_curr = obj.modes{m}.trig_occ_monom(d);
                     trmon_sum = trmon_sum + sym_scale*cell_sum(tr_curr);
                     % trmon_sum = madd_cell_mom(trmon_sum,tr_curr, sym_scale);
                 end
@@ -330,6 +334,8 @@ classdef opp_manager
             %TODO: finish this. Sum up the harmonics over all components
         end
 
+
+        %% Three-phase considerations
         function bcon = con_balance(obj, d)
             %ensure that the inductive current is three-phase balanced
             %
@@ -368,11 +374,56 @@ classdef opp_manager
             end
         end
 
+        function ccon = con_common_mode(obj, d)
+            % constrain the common-mode voltage v(th) + v(th+2pi/3) +
+            % v(th+4pi/3) in [-vcm, vcm] for all th in [0, 2*pi]
 
-        function var_stack = get_vars(obj)
-            %return variables
-            var_stack = [obj.vars.t; obj.vars.x];
+            if obj.opts.common_mode ~= Inf
+                %form three-phase monomials
+                vars_trig = obj.vars.x([1, 2]);
+                p_in = mmon(vars_trig, d);
+
+                mon_3 = obj.three_phase_rotate(p_in, vars_trig);
+                width_3 = size(mon_3, 2);
+                mon_3_sum = mon_3*ones(width_3, 1)*(1/3);
+
+                %process the symmetry (if valid)
+                mon_3_sum = obj.symmetry_eval(mon_3_sum, obj.vars.x([1; 2]));
+
+                %substitute each entry
+                bmom = 0;
+                for m = 1:length(obj.modes)
+                    curr_mom = obj.modes{m}.mom_sub(obj.get_vars(), mon_3_sum, true); %level_mult
+                    bmom = madd_cell_mom(bmom, curr_mom, 1);
+                end
+
+                %take the sum to form the signed measure associated with
+                %the common-mode signal
+                bmom_all = 0*mom(mon_3_sum);
+                for i =1:size(bmom, 1)
+                    for j = 1:size(bmom, 2)
+                        bmom_all = bmom_all +  bmom{i, j};
+                    end
+                end
+
+                %form the upper and lower bounds
+                pw = genPowGlopti(2, d);
+                leb_circ = leb_sphere(pw,1);
+                % leb_circ = leb_sphere(d,1);
+                leb_cm = leb_circ * obj.opts.common_mode;
+
+
+                if obj.opts.common_mode == 0
+                    ccon = (bmom_all == 0);
+                else
+                    ccon = [bmom_all <= leb_cm ; bmom_all >= -leb_cm];
+                end
+
+            else
+                ccon = [];
+            end
         end
+
 
         function w_sym = symmetry_eval(obj, w_in, vars_trig)
             %compensate for the symmetry structure in the problem
@@ -428,6 +479,12 @@ classdef opp_manager
 
         end
 
+
+        %% Other Helpers
+        function var_stack = get_vars(obj)
+            %return variables
+            var_stack = [obj.vars.t; obj.vars.x];
+        end
     
         function harm_monom = harm_eval(obj, vars, harm_in)            
             % [vars.x(1).^harm_in.index_cos; vars.x(2).^harm_in.index_sin]/pi;
