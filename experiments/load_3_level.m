@@ -7,6 +7,7 @@ opts.L = [-1, 0, 1];
 % opts.L = [-1, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
+% opts.partition = 1;
 opts.partition = 1;
 opts.TIME_INDEP = true;
 % opts.start_level = 0;
@@ -21,8 +22,9 @@ opts.null_objective = false;
 % opts.Symmetry = 1;
 opts.Symmetry = 2;
 % opts.three_phase = "Balanced";
-% opts.k = 4;
-opts.k = 8;
+% opts.three_phase = "Floating";
+opts.k = 4;
+% opts.k = 8;
 % opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
@@ -30,12 +32,12 @@ opts.k = 8;
 % opts.k = 36;
 
 % opts.common_mode = 1;
-opts.common_mode = 1/3;
+% opts.common_mode = 1/3;
 
 % opts.common_mode = 1/3;
 
-modulation = 0.6;
-% modulation = 1;
+% modulation = 0.6;
+modulation = 1;
 % opts.Z_load = 0;
 opts.Z_load = 1.0j;
 
@@ -51,7 +53,7 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 % opts.harmonics.index_sin= [1; 2; 3; 4];
 % opts.harmonics.bound_sin = [modulation, modulation; 0, 0; 0, 0; -0.1, 0.1];
 
-opts.three_phase = "Floating";
+
 
 %% test a manager
 
@@ -59,8 +61,8 @@ opts.three_phase = "Floating";
 
 MG = opp_manager(opts);
 % order = 4;
-order = 2;
 % order = 3;
+order = 2;
 % order = 1;
 d = 2*order;
 
@@ -158,17 +160,25 @@ xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
 
 
 
-% figure(3)
-% clf
-% subplot(2, 1,  1)
-% hold on
-% stem(na)
-% title('Cosine Harmonics')
-% xlabel('n')
-% ylabel('a_n')
-% subplot(2, 1, 2)
-% stem(nb)
-% title('Sine Harmonics')
-% xlabel('n')
-% ylabel('b_n')
+figure(3)
+clf
+nmax = 21;
+[na, nb] = pulse_harmonics(nmax, pu, pa);
+
+
+di = 0:nmax;
+di = di(mod(di, 3) ~= 0);
+di = di(2:end); %drop the first harmonic
+energy_3 = sum((nb(di+1)./di').^2);
+subplot(2, 1,  1)
+hold on
+stem(0:nmax, na)
+title('Cosine Harmonics')
+xlabel('n')
+ylabel('a_n')
+subplot(2, 1, 2)
+stem(0:nmax, nb)
+title('Sine Harmonics')
+xlabel('n')
+ylabel('b_n')
 end

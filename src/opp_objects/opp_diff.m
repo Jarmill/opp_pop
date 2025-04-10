@@ -5,6 +5,7 @@ classdef opp_diff
         xtrig = [];
         tau = [];
         soc = {};
+        testing = 0;
     end
     
     methods
@@ -12,7 +13,7 @@ classdef opp_diff
             %OPP_DIFF Construct an instance of this class
             %   Detailed explanation goes here
             if nargin >= 1 || floating == false
-                mpol('x_tau', 2, 1);
+                mpol('x_tau', 2 + obj.testing, 1);
                 obj.tau = meas(x_tau);         
                 obj.xtrig = x_tau;
             end
@@ -33,6 +34,7 @@ classdef opp_diff
             %mom_diff: moments of I*(w(c, s)) across the measures
 
             Nsoc = size(mom_diff, 1);
+            
 
             tau_mom = mom(mmon(obj.xtrig, 0, d-1));
             
@@ -41,7 +43,7 @@ classdef opp_diff
             obj_con = [];
             for i = 1:Nsoc
                 xname= ['x_soc_', num2str(i)];                
-                mpol(xname, 2, 1);
+                mpol(xname, 2 + obj.testing, 1);
                 xcurr = eval(xname);
                 meas_curr = meas(xcurr);
                 obj.soc{i} = meas_curr;
@@ -60,6 +62,14 @@ classdef opp_diff
                     mom(xcurr(2)) == mom_diff(i, 2);
                     mom([xcurr(1)^2; xcurr(2)^2; xcurr(1)*xcurr(2)]) == [1; 1; 0];
                 ];
+
+                if obj.testing
+                    obj_con_curr = [obj_con_curr;
+                        mom(xcurr(3)) == mom_diff(i, 3);
+                        mom(xcurr(3)^2) == 1;
+                        mom(xcurr(3)*xcurr(1)) == 0;
+                        mom(xcurr(3)*xcurr(2)) == 0];
+                end
 
                 obj_con = [obj_con; obj_con_curr];
             end

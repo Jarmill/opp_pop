@@ -389,18 +389,39 @@ classdef opp_manager
             %figure out if this is possible to do without inductive current
             
             %Clarke coordinate transformation (to alpha-beta plane)
-            K = sqrt(2/3)*[1 -0.5 -0.5;
-            0 sqrt(3)/2 -sqrt(3)/2] /sqrt(3);
 
             if length(obj.vars.x)>3 && imag(obj.opts.Z_load)>0 ...
                     && obj.opts.three_phase == opp_three_phase.Floating
                 
+
+                bmom_all = obj.differential_mode_current_mom(d);
+                float_con = obj.diff.objective_diff(d, bmom_all);
+                
+            else
+                float_con = [];
+            end
+        
+        end
+
+        function bmom_all = differential_mode_current_mom(obj, d)
+                %get moments of the differntial-mode current
+
+                K = sqrt(2/3)*[1 -0.5 -0.5;
+                0 sqrt(3)/2 -sqrt(3)/2] /sqrt(3);
+
+
+                Kt = [K; ones(1, 3)/3];
+
                 vars_inv = obj.vars.x([1, 2, 4]);
                 p_in = mmon(vars_inv(1:2), d-1)*vars_inv(3);
 
                 mon_3 = obj.three_phase_rotate(p_in, vars_inv);
 
+                %TODO: testing only (do the whole current)
                 mon_3_diff = mon_3 * K';
+                % mon_3_diff = mon_3 * Kt';
+
+
                 width_3 = size(mon_3, 2);
                 mon_3_cm = mon_3*ones(width_3, 1)/3;
 
@@ -421,13 +442,6 @@ classdef opp_manager
                         bmom_all = bmom_all +  bmom{i, j};
                     end
                 end
-
-                float_con = obj.diff.objective_diff(d, bmom_all);
-                
-            else
-                float_con = [];
-            end
-        
         end
 
         function ccon = con_common_mode(obj, d)

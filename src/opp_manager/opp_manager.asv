@@ -395,6 +395,18 @@ classdef opp_manager
             if length(obj.vars.x)>3 && imag(obj.opts.Z_load)>0 ...
                     && obj.opts.three_phase == opp_three_phase.Floating
                 
+
+                bmom_all = obj.differential_mode_current_mom(d);
+                float_con = obj.diff.objective_diff(d, bmom_all);
+                
+            else
+                float_con = [];
+            end
+        
+        end
+
+        function bmom_all =      differential_mode_current_mom(obj, d)
+                %get moments of the differntial-mode current
                 vars_inv = obj.vars.x([1, 2, 4]);
                 p_in = mmon(vars_inv(1:2), d-1)*vars_inv(3);
 
@@ -421,13 +433,6 @@ classdef opp_manager
                         bmom_all = bmom_all +  bmom{i, j};
                     end
                 end
-
-                float_con = obj.diff.objective_diff(d, bmom_all);
-                
-            else
-                float_con = [];
-            end
-        
         end
 
         function ccon = con_common_mode(obj, d)
@@ -750,6 +755,8 @@ classdef opp_manager
             for i = 1:length(obj.modes)
                 supp_con_all = [supp_con_all; obj.modes{i}.supp_con()];
             end
+
+            supp_con_all = [supp_con_all; obj.diff.supp_con()];
           %cell of opp_mode(), contains initial/terminal/occupation measures           
         end
 
@@ -958,13 +965,7 @@ classdef opp_manager
 
         end
 
-        function ds = diff_summary(obj)
-            if obj.opts.three_phase == "Floating"
-                
-            else
-                ds = [];
-            end
-        end
+ 
 
         function ms = mass_summary(obj)
             %collect the masses of the occupation measure into a neat array
