@@ -750,8 +750,6 @@ classdef opp_manager
             for i = 1:length(obj.modes)
                 supp_con_all = [supp_con_all; obj.modes{i}.supp_con()];
             end
-
-            supp_con_all = [supp_con_all; obj.diff.supp_con()];
           %cell of opp_mode(), contains initial/terminal/occupation measures           
         end
 
@@ -960,7 +958,13 @@ classdef opp_manager
 
         end
 
- 
+        function ds = diff_summary(obj)
+            if obj.opts.three_phase == "Floating"
+                
+            else
+                ds = [];
+            end
+        end
 
         function ms = mass_summary(obj)
             %collect the masses of the occupation measure into a neat array

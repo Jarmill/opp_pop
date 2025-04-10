@@ -22,19 +22,20 @@ opts.null_objective = false;
 opts.Symmetry = 2;
 % opts.three_phase = "Balanced";
 % opts.k = 4;
-opts.k = 8;
-% opts.k = 12;
+% opts.k = 8;
+opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
 % opts.k = 24;
 % opts.k = 36;
 
-opts.common_mode = 
+% opts.common_mode = 1;
+opts.common_mode = 1/3;
 
 % opts.common_mode = 1/3;
 
-modulation = 0.6;
-% modulation = 1;
+% modulation = 0.6;
+modulation = 1;
 % opts.Z_load = 0;
 opts.Z_load = 1.0j;
 
@@ -56,8 +57,8 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 
 MG = opp_manager(opts);
 % order = 4;
-order = 2;
-% order = 3;
+% order = 2;
+order = 3;
 % order = 1;
 d = 2*order;
 
@@ -92,8 +93,8 @@ if sol.status==0
 
 
     %plot the signal
-    N = 1000;
-th = linspace(0, 2*pi, N);
+    N_interp = 900;
+th = linspace(0, 2*pi, N_interp);
 
 %function
 pu = pattern_rec.u;
@@ -102,15 +103,15 @@ x = pulse_func(th, pu, pa);
 I0_rec = M.modes{1}{2}.init(1,5);
 % I0_rec = M.modes{1}{3}.init(1,5);
 %need to perform appropriate scaling
-xi = pi*(cumsum(2*x)/(N) + I0_rec);
+xi = pi*(cumsum(2*x)/(N_interp) + I0_rec);
 
 % [t, y] = ode45(@(t, th) pulse_func(th, pattern.u, pattern.alpha), [0, 2*pi], I0_rec*pi);
 
 
-cc = linspecer(3);
+cc = linspecer(4);
 figure(1)
 clf
-tiledlayout(2, 1)
+tiledlayout(3, 1)
 nexttile
 hold on
 plot(th, modulation*sin(th), 'k', 'linewidth', 3);
@@ -128,6 +129,30 @@ plot(th, -modulation*cos(th), 'k', 'linewidth', 3);
 plot(th, xi, 'linewidth', 3, 'color', cc(2, :));
 ylabel('$I(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
 xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
+
+
+% th_interp = linspace(0, 2*pi, 900);
+% xi_interp = interp1(th,xi,th_interp);
+
+xa = x;
+xb = circshift(xa, N_interp/3);
+xc = circshift(xa, 2*N_interp/3);
+
+xcm = (xa + xb + xc)/3;
+
+nexttile
+hold on
+plot(th, xcm, 'linewidth', 3, 'color', cc(4, :))
+plot([0, 2*pi], [0, 0], ':k')
+if opts.common_mode < Inf
+    plot([0, 2*pi], [1, 1]*opts.common_mode, 'k')
+    plot([0, 2*pi], -[1, 1]*opts.common_mode, 'k')
+    ylim([-1, 1]*1.25*opts.common_mode)
+end
+xlim([0, 2*pi])
+ylabel('$v_{cm}(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
+xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
+
 
 % 
 % figure(3)

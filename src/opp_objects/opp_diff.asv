@@ -1,0 +1,53 @@
+classdef opp_diff
+    %OPP_DIFF processes the differential-mode tdd objective    
+    
+    properties
+        xtrig = [];
+        tau = [];
+        soc = {};
+    end
+    
+    methods
+        function obj = opp_diff(floating)
+            %OPP_DIFF Construct an instance of this class
+            %   Detailed explanation goes here
+            if nargin >= 1 || floating == false
+                mpol('x_tau', 2, 1);
+                obj.tau = meas(x_tau);         
+                obj.xtrig = x_tau;
+            end
+        end
+        
+        function [obj, objective, obj_con] = objective_diff(obj, d, mom_diff)
+            %create the objective for differential-mode distortion
+            %mom_diff: moments of I*(w(c, s)) across the measures
+
+            Nsoc = size(mom_diff, 1);
+
+            % pw = genPowGlopti(2, 3);
+
+            tau_mom = mom(mmon(obj.xtrig, 0, d));
+
+            objective = mass(obj.tau);
+            obj.soc = cell(Nsoc, 1);
+
+            obj_con = [];
+            for i = 1:Nsoc
+                xname= ['x_soc_', i];                
+                mpol(xname, 2);
+                xcurr = eval(xname);
+                meas_curr = meas(xname);
+                obj.soc{i} = meas_curr;
+
+                obj_con_curr = [mass(meas(xname))==tau_mom(i);
+                    mom(xcurr(1)) == mom_diff(i, 1); 
+                    mom(xcurr(2)) == mom_diff(i, 2);
+                    mom([xcurr(1)^2; xcurr(2)^2; xcurr(1)*xcurr(2)]) == [1; 1; 0];
+                ];
+
+                objobj_con_curr;
+            end
+        end
+    end
+end
+

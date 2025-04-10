@@ -14,7 +14,7 @@ opts.TIME_INDEP = true;
 % opts.start_level = 3;
 opts.early_stop = 0;
 % opts.start_level = 0;
-opts.start_level = 2;
+% opts.start_level = 2;
 % opts.null_objective = true;
 opts.null_objective = false;
 % opts.Symmetry = 0;
@@ -22,8 +22,8 @@ opts.null_objective = false;
 opts.Symmetry = 2;
 % opts.three_phase = "Balanced";
 % opts.k = 4;
-% opts.k = 8;
-opts.k = 12;
+opts.k = 8;
+% opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
 % opts.k = 24;
@@ -34,12 +34,13 @@ opts.common_mode = 1/3;
 
 % opts.common_mode = 1/3;
 
-% modulation = 0.6;
-modulation = 1;
+modulation = 0.6;
+% modulation = 1;
 % opts.Z_load = 0;
 opts.Z_load = 1.0j;
 
 opts.harmonics.bound_sin = modulation*[1, 1];
+% opts.harmonics.bound_cos = [0,  0; 0.5, 0.5];
 
 %k=4 example
 % opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
@@ -50,6 +51,7 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 % opts.harmonics.index_sin= [1; 2; 3; 4];
 % opts.harmonics.bound_sin = [modulation, modulation; 0, 0; 0, 0; -0.1, 0.1];
 
+opts.three_phase = "Floating";
 
 %% test a manager
 
@@ -57,8 +59,8 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 
 MG = opp_manager(opts);
 % order = 4;
-% order = 2;
-order = 3;
+order = 2;
+% order = 3;
 % order = 1;
 d = 2*order;
 
@@ -129,6 +131,7 @@ plot(th, -modulation*cos(th), 'k', 'linewidth', 3);
 plot(th, xi, 'linewidth', 3, 'color', cc(2, :));
 ylabel('$I(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
 xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
+xlim([0, 2*pi])
 
 
 % th_interp = linspace(0, 2*pi, 900);
@@ -142,13 +145,19 @@ xcm = (xa + xb + xc)/3;
 
 nexttile
 hold on
-plot(th_interp, xcm, 'linewidth', 3, 'color', cc(4, :))
+plot(th, xcm, 'linewidth', 3, 'color', cc(4, :))
 plot([0, 2*pi], [0, 0], ':k')
+if opts.common_mode < Inf
+    plot([0, 2*pi], [1, 1]*opts.common_mode, 'k')
+    plot([0, 2*pi], -[1, 1]*opts.common_mode, 'k')
+    ylim([-1, 1]*1.25*opts.common_mode)
+end
+xlim([0, 2*pi])
 ylabel('$v_{cm}(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
 xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
 
 
-% 
+
 % figure(3)
 % clf
 % subplot(2, 1,  1)
