@@ -73,7 +73,7 @@ classdef opp_manager
 
 
             [obj.vars, obj.jumps, obj.modes] = obj.create_system(obj.opts);
-            obj.diff = opp_diff(obj.opts.three_phase == "Floating");
+            obj.diff = opp_diff_current(obj.opts.three_phase == "Floating");
         end
 
         %% construct everything
@@ -362,7 +362,7 @@ classdef opp_manager
                 mon_3_sum = mon_3*ones(width_3, 1);
 
                 %process the symmetry (if valid)
-                mon_3_sum = obj.symmetry_eval(mon_3_sum, obj.vars.x([1; 2]));
+                mon_3_sum = obj.symmetry_eval_current(mon_3_sum, obj.vars.x([1; 2; 4]));
 
                 bmom = 0;
                 for m = 1:length(obj.modes)
@@ -394,49 +394,51 @@ classdef opp_manager
                     && obj.opts.three_phase == opp_three_phase.Floating
                 
 
-                bmom_all = obj.differential_mode_current_mom(d);
-                float_con = obj.diff.objective_diff(d, bmom_all);
+                bmom_all = obj.three_phase_current_mom(d);
+                % float_con = obj.diff.objective_diff(d, three_phase_current_mom);
+                float_con = obj.diff.con_diff(d, bmom_all);
                 
             else
                 float_con = [];
             end
         
-        end
+        end        
 
-        function bmom_all = differential_mode_current_mom(obj, d)
+        function bmom_all = three_phase_current_mom(obj, d)
                 %get moments of the differntial-mode current
 
-                K = sqrt(2/3)*[1 -0.5 -0.5;
-                0 sqrt(3)/2 -sqrt(3)/2] /sqrt(3);
+                % K = sqrt(2/3)*[1 -0.5 -0.5;
+                % 0 sqrt(3)/2 -sqrt(3)/2] /sqrt(3);
 
 
-                Kt = [K; ones(1, 3)/3];
+                % Kt = [K; ones(1, 3)/3];
 
                 vars_inv = obj.vars.x([1, 2, 4]);
-                p_in = mmon(vars_inv(1:2), d-1)*vars_inv(3);
+                % p_in = mmon(vars_inv(1:2), d-1)*vars_inv(3);
+                p_in = mmon(vars_inv, d);
 
-                mon_3 = obj.three_phase_rotate(p_in, vars_inv);
+                p_in_sym = obj.symmetry_eval_current(p_in, vars_inv);
+
+                mon_3 = obj.three_phase_rotate(p_in_sym, vars_inv);
 
                 %TODO: testing only (do the whole current)
-                mon_3_diff = mon_3 * K';
+                % mon_3_diff = mon_3 * K';
                 % mon_3_diff = mon_3 * Kt';
-
-
-                width_3 = size(mon_3, 2);
-                mon_3_cm = mon_3*ones(width_3, 1)/3;
-
-                %process the symmetry (if valid)
-                mon_3_diff = obj.symmetry_eval(mon_3_diff, obj.vars.x([1; 2]));
+                % width_3 = size(mon_3, 2);
+                % mon_3_cm = mon_3*ones(width_3, 1)/3;
+                % 
+                % %process the symmetry (if valid)
+                % mon_3_diff = obj.symmetry_eval(mon_3_diff, obj.vars.x([1; 2]));
 
                 bmom = 0;
                 %dispatch into the measures
                 for m = 1:length(obj.modes)
-                    curr_mom = obj.modes{m}.mom_sub(obj.get_vars(), mon_3_diff);
+                    curr_mom = obj.modes{m}.mom_sub(obj.get_vars(), mon_3);
                     bmom = madd_cell_mom(bmom, curr_mom, 1);
                 end
 
                 %collect all differential moments together
-                bmom_all = 0*mom(mon_3_diff);
+                bmom_all = 0*mom(mon_3);
                 for i =1:size(bmom, 1)
                     for j = 1:size(bmom, 2)
                         bmom_all = bmom_all +  bmom{i, j};
@@ -448,7 +450,8 @@ classdef opp_manager
             % constrain the common-mode voltage v(th) + v(th+2pi/3) +
             % v(th+4pi/3) in [-vcm, vcm] for all th in [0, 2*pi]
 
-            if obj.opts.common_mode ~= Inf
+            % if obj.opts.common_mode ~= Inf
+            if false %TODO: common-mode is incorrect. fix this.
                 %form three-phase monomials
                 vars_trig = obj.vars.x([1, 2]);
                 p_in = mmon(vars_trig, d);
@@ -517,6 +520,31 @@ classdef opp_manager
                     w_q_pos = subs(w_in, vars_trig, Rp*vars_trig);
                     w_q_neg = subs(w_in, vars_trig, -Rp*vars_trig);
                     w_sym = w_in + w_q_pos - w_q_neg - w_refl;
+                end
+            end
+        end
+
+        function w_sym = symmetry_eval_current(obj, w_in, vars_trig_I)
+            %compensate for the symmetry structure in the problem
+            %
+            %original: w(c, s, I) over the occupation measure
+            %
+            %Full-Wave w(c, s, I)
+            %Half-Wave w(c, s, I) + w(-c, -s, -I)
+            %Quarter-Wave w(c, s, I) + w(-c, s, I) + w(-c, -s, -I) - w(c, -s, -I)
+
+            if obj.opts.Symmetry==0
+                w_sym = w_in;
+            else
+                w_refl = subs(w_in, vars_trig_I, -vars_trig_I);
+                if obj.opts.Symmetry==1
+                    w_sym = w_in + w_refl;
+                else
+                    Rp_pos = diag([-1, 1, 1]);
+                    Rp_neg = diag([1, -1, -1]);
+                    w_q_pos = subs(w_in, vars_trig_I, Rp_pos*vars_trig_I);
+                    w_q_neg = subs(w_in, vars_trig_I, Rp_neg*vars_trig_I);
+                    w_sym = w_in + w_q_pos + w_q_neg + w_refl;
                 end
             end
         end
@@ -844,12 +872,17 @@ classdef opp_manager
                 end
                 
                 objective_mode = 0;
-                if obj.opts.three_phase == "Floating"
-                    objective_mode = obj.diff.mass();
-                else
+                % if obj.opts.three_phase == "Floating"
+                %     objective_mode = obj.diff.objective_diff();
+                % else
                     for i = 1:length(obj.modes)
                         objective_mode = objective_mode + obj.modes{i}.objective();
                     end
+                % end
+
+                if obj.opts.three_phase == "Floating"
+                    obj_cm = obj.diff.objective_diff();
+                    objective_mode = objective_mode - obj_cm;
                 end
                 objective = objective_jump + objective_mode;
             end
@@ -908,6 +941,8 @@ classdef opp_manager
             for i=1:(K-1)
                 m_out.jump{i} = obj.jumps{i}.mmat();
             end
+
+            m_out.diff = obj.diff.mmat();
         end
 
 
@@ -928,6 +963,8 @@ classdef opp_manager
             for i=1:(K-1)
                 m_out.jump{i} = obj.jumps{i}.mmat_corner();
             end
+
+            m_out.diff = obj.diff.mmat_corner();
         end
 
         function [load, load_candidate] = recover_load(obj)
