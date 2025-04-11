@@ -538,13 +538,13 @@ classdef opp_manager
             else
                 w_refl = subs(w_in, vars_trig_I, -vars_trig_I);
                 if obj.opts.Symmetry==1
-                    w_sym = w_in + w_refl;
+                    w_sym = (w_in + w_refl)*0.5;
                 else
                     Rp_pos = diag([-1, 1, 1]);
                     Rp_neg = diag([1, -1, -1]);
                     w_q_pos = subs(w_in, vars_trig_I, Rp_pos*vars_trig_I);
                     w_q_neg = subs(w_in, vars_trig_I, Rp_neg*vars_trig_I);
-                    w_sym = w_in + w_q_pos + w_q_neg + w_refl;
+                    w_sym = (w_in + w_q_pos + w_q_neg + w_refl)*0.25;
                 end
             end
         end
@@ -881,7 +881,7 @@ classdef opp_manager
                 % end
 
                 if obj.opts.three_phase == "Floating"
-                    obj_cm = obj.diff.objective_diff();
+                    obj_cm = obj.diff.objective_common_mode();
                     objective_mode = objective_mode - obj_cm;
                 end
                 objective = objective_jump + objective_mode;

@@ -31,8 +31,8 @@ classdef opp_diff_current
         end
        
 
-        function [objective] = objective_diff(obj)
-            %create the objective for the 
+        function [objective] = objective_common_mode(obj)
+            %create the common-mode current
 
             % Q = (eye(3) - ones(3)/3);
             
@@ -47,8 +47,28 @@ classdef opp_diff_current
                 quad = xi'*eye(3)*xi*(1/3);
             end
 
-            objective = (2*pi)*mom(quad);
-            objective = 0;
+            objective = pi^2 * (2*pi) * mom(quad);
+            % objective = 0;
+        end
+
+        function [objective] = objective_diff(obj)
+            %create the common-mode current
+
+            Q = (eye(3) - ones(3)/3);
+            
+            
+            xi = obj.x(3:5);
+            
+            % Q = ones(3);
+
+            if obj.testing==0
+                quad = (xi'*Q*xi)*(1/3);
+            else
+                quad = xi'*eye(3)*xi*(1/3);
+            end
+
+            objective = pi^2 * (2*pi)^2 * mom(quad);
+            % objective = 0;
         end
 
         function marg_con = con_diff(obj, d, three_phase_mom)
