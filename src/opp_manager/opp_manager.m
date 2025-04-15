@@ -872,18 +872,18 @@ classdef opp_manager
                 end
                 
                 objective_mode = 0;
-                if obj.opts.three_phase == "Floating"
-                    objective_mode = obj.diff.objective_diff();
-                else
+                % if obj.opts.three_phase == "Floating"
+                %     objective_mode = obj.diff.objective_diff();
+                % else
                     for i = 1:length(obj.modes)
                         objective_mode = objective_mode + obj.modes{i}.objective();
                     end
                 end
 
-                % if obj.opts.three_phase == "Floating"
-                %     obj_cm = obj.diff.objective_common_mode();
-                %     objective_mode = objective_mode - obj_cm;
-                % end
+                if obj.opts.three_phase == "Floating"
+                    obj_cm = obj.diff.objective_common_mode();
+                    objective_mode = objective_mode - obj_cm;
+                end
                 objective = objective_jump + objective_mode;
             end
 
