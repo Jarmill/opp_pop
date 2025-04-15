@@ -8,7 +8,7 @@ opts.L = [-1, 0, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
 % opts.partition = 1;
-opts.partition = 1;
+opts.partition = 2;
 opts.TIME_INDEP = true;
 % opts.start_level = 0;
 % opts.start_level = 2;
@@ -18,14 +18,14 @@ opts.early_stop = 0;
 % opts.start_level = 2;
 % opts.null_objective = true;
 opts.null_objective = false;
-% opts.Symmetry = 0;
+opts.Symmetry = 0;
 % opts.Symmetry = 1;
-opts.Symmetry = 2;
+% opts.Symmetry = 2;
 % opts.three_phase = "Balanced";
-% opts.three_phase = "Floating";
+opts.three_phase = "Floating";
 % opts.k = 4;
-% opts.k = 8;
-opts.k = 12;
+opts.k = 8;
+% opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
 % opts.k = 24;
@@ -60,9 +60,9 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 % k_range = 4:4:20;
 
 MG = opp_manager(opts);
-% order = 4;
+order = 4;
 % order = 3;
-order = 2;
+% order = 2;
 % order = 1;
 d = 2*order;
 
@@ -79,6 +79,14 @@ if sol.status==0
 
     Mc = MG.mmat_corner();
     M = MG.mmat();
+    
+    if opts.three_phase == "Floating"
+        Mcd = Mc.diff(4:6, 4:6);
+    else
+        Mcd = [];
+    end
+
+
     bound_lower = sol.obj_rec;
     if opts.Z_load==1.0j
         bound_upper = pattern_rec.energy_I;

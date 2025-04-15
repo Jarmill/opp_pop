@@ -5,7 +5,7 @@ classdef opp_diff_current
         x = [];
         tau = [];
         soc = {};        
-        testing = 0;
+        testing = 1;
     end
     
     methods
@@ -54,21 +54,23 @@ classdef opp_diff_current
         function [objective] = objective_diff(obj)
             %create the common-mode current
 
-            if obj.testing==0
-                Q = (eye(3) - ones(3)/3);
-            else
-                Q = eye(3);
-            end
+            Q = (eye(3) - ones(3)/3);
             
             
             xi = obj.x(3:5);
             
             % Q = ones(3);
 
-           
-            quad = (xi'*Q*xi)*(1/3);
+            if obj.testing==0
+                quad = (xi'*Q*xi)*(1/3);
+            else
+                % quad = xi'*eye(3)*xi*(1/3);
+                % quad = xi(1)^2;
+                % quad = xi(2)^2;
+                quad = sum(xi.^2)/3;
+            end
 
-            objective = (2*pi) * (pi)^2 * mom(quad);
+            objective = pi * (2*pi)^2 * mom(quad);
             % objective = 0;
         end
 
