@@ -18,9 +18,9 @@ opts.early_stop = 0;
 % opts.start_level = 2;
 % opts.null_objective = true;
 opts.null_objective = false;
-% opts.Symmetry = 0;
+opts.Symmetry = 0;
 % opts.Symmetry = 1;
-opts.Symmetry = 2;
+% opts.Symmetry = 2;
 % opts.three_phase = "Balanced";
 opts.three_phase = "Floating";
 opts.k = 4;
@@ -45,7 +45,7 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 % opts.harmonics.bound_cos = [0,  0; 0.5, 0.5];
 
 %k=4 example
-% opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
+opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
 
 % modulation = 1;
 % opts.harmonics.index_cos = [opts.harmonics.index_cos; 2; 3; 4];
@@ -62,8 +62,8 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 MG = opp_manager(opts);
 % order = 4;
 % order = 3;
-% order = 2;
-order = 1;
+order = 2;
+% order = 1;
 d = 2*order;
 
 sol = MG.run(order);
@@ -80,12 +80,13 @@ if sol.status==0
     Mc = MG.mmat_corner();
     M = MG.mmat();
     
-    Q = (eye(3) - ones(3)/3);
-    if opts.three_phase == "Floating"
-        Mcd = Mc.diff(4:6, 4:6);
-    else
-        Mcd = [];
-    end
+    % Q = (eye(3) - ones(3)/3);
+    % if opts.three_phase == "Floating"
+    %     % Mcd = Mc.diff(4:6, 4:6);
+    % 
+    % else
+    %     Mcd = [];
+    % end
 
 
     bound_lower = sol.obj_rec;

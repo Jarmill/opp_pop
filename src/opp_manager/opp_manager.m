@@ -73,7 +73,8 @@ classdef opp_manager
 
 
             [obj.vars, obj.jumps, obj.modes] = obj.create_system(obj.opts);
-            obj.diff = opp_diff_current(obj.opts.three_phase == "Floating");
+            % obj.diff = opp_diff_current(obj.opts.three_phase == "Floating");
+            obj.diff = opp_diff_current_split(obj.opts.three_phase == "Floating");
         end
 
         %% construct everything
@@ -417,9 +418,11 @@ classdef opp_manager
                 % p_in = mmon(vars_inv(1:2), d-1)*vars_inv(3);
                 p_in = mmon(vars_inv, d);
 
+                %TODO: Debug this
                 p_in_sym = obj.symmetry_eval_current(p_in, vars_inv);
 
                 mon_3 = obj.three_phase_rotate(p_in_sym, vars_inv);
+                
 
                 %TODO: testing only (do the whole current)
                 % mon_3_diff = mon_3 * K';
@@ -872,18 +875,15 @@ classdef opp_manager
                 end
                 
                 objective_mode = 0;
-                % if obj.opts.three_phase == "Floating"
-                %     objective_mode = obj.diff.objective_diff();
-                % else
+                if obj.opts.three_phase == "Floating"
+                    objective_mode = obj.diff.objective_diff();
+                else
                     for i = 1:length(obj.modes)
                         objective_mode = objective_mode + obj.modes{i}.objective();
                     end
                 end
 
-                if obj.opts.three_phase == "Floating"
-                    obj_cm = obj.diff.objective_common_mode();
-                    objective_mode = objective_mode - obj_cm;
-                end
+               
                 objective = objective_jump + objective_mode;
             end
 

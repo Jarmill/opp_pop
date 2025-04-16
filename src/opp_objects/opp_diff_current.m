@@ -1,10 +1,9 @@
 classdef opp_diff_current
-    %OPP_DIFF processes the differential-mode tdd objective    
+    %OPP_DIFF_CURRENT processes the differential-mode tdd objective    
     
     properties
         x = [];
-        tau = [];
-        soc = {};        
+        tau = [];        
         testing = 0;
     end
     
