@@ -80,7 +80,7 @@ classdef opp_diff_current_split
             % objective = (2*pi) * (pi)^2 * mom(Ia.^2);        
         end
 
-        function marg_con = con_diff(obj, d, three_phase_mom)
+        function marg_con_1 = con_diff(obj, d, three_phase_mom)
             %form the three-phase 
 
             % ind = [1 2; 1 3; 2 3];
@@ -106,7 +106,7 @@ classdef opp_diff_current_split
             % marg_v = [mom(va), mom(vb), mom(vc)];
             % 
             % marg_con = (marg_v == three_phase_mom);
-            marg_con = reshape(marg_con, [], 1);
+            marg_con_1 = reshape(marg_con, [], 1);
         end
     
         %fetch the recovered entries

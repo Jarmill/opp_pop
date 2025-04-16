@@ -446,7 +446,7 @@ classdef opp_mode
             tmon = cell(N, P);
             for n=1:N
                 for p = 1:P                    
-                      if isempty(obj.levels{n, p}.sys)
+                      if isempty(obj.levels{n, p}.sys{1}.supp)
                           tmon{n, p} = 0;
                       else
                           tmon{n, p} = obj.levels{n, p}.mom_occ_sub(vars, vref);

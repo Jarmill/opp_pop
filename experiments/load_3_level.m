@@ -7,15 +7,16 @@ opts.L = [-1, 0, 1];
 % opts.L = [-1, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
-opts.partition = 1;
-% opts.partition = 2;
+% opts.partition = 1;
+opts.partition = 2;
 opts.TIME_INDEP = true;
 % opts.start_level = 0;
 % opts.start_level = 2;
 % opts.start_level = 3;
 opts.early_stop = 0;
 % opts.start_level = 0;
-% opts.start_level = 2;
+opts.start_level = 2;
+% opts.start_level = 3;
 % opts.null_objective = true;
 opts.null_objective = false;
 opts.Symmetry = 0;
@@ -60,9 +61,9 @@ opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
 % k_range = 4:4:20;
 
 MG = opp_manager(opts);
-% order = 4;
-% order = 3;
-order = 2;
+% % order = 4;
+order = 3;
+% order = 2;
 % order = 1;
 d = 2*order;
 
@@ -114,7 +115,10 @@ th = linspace(0, 2*pi, N_interp);
 pu = pattern_rec.u;
 pa = pattern_rec.alpha;
 x = pulse_func(th, pu, pa);
-I0_rec = M.modes{1}{2}.init(1,5);
+
+
+
+I0_rec = pattern_rec.I(1);
 % I0_rec = M.modes{1}{3}.init(1,5);
 %need to perform appropriate scaling
 xi = pi*(cumsum(2*x)/(N_interp) + I0_rec);
