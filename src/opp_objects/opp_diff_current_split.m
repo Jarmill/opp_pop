@@ -16,7 +16,7 @@ classdef opp_diff_current_split
     properties
         x = {};
         tau = {};        
-        testing = 1;
+        testing = 0;
     end
     
     methods
@@ -96,21 +96,28 @@ classdef opp_diff_current_split
                 v2 = mmon(xcurr([1, 2, 4]), d);
 
 
-                if ind(i, 1)==1
-                    v1_rot = v1;
-                else
-                    v1_rot = subs(v1, xcurr([1, 2]), R{ind(i, 1)}*xcurr([1, 2]));
-                end                
-                v2_rot = subs(v2, xcurr([1, 2]), R{ind(i, 2)}*xcurr([1, 2]));
+                %rotate the occupation measures
+                marg_v = [mom(v1), mom(v2)];
+                three_phase_curr = p_current(:, ind(i, :));
+
+
+                marg_con = [marg_con, (marg_v == three_phase_curr)];
+
+                % %rotate the joint occupation measures
+
+                % if ind(i, 1)==1
+                %     v1_rot = v1;
+                % else
+                %     v1_rot = subs(v1, xcurr([1, 2]), R{ind(i, 1)}*xcurr([1, 2]));
+                % end                
+                % v2_rot = subs(v2, xcurr([1, 2]), R{ind(i, 2)}*xcurr([1, 2]));
 
 
                 %rotate the three-phase constraint
 
-                marg_v = [mom(v1_rot), mom(v2_rot)];
+                % marg_v = [mom(v1_rot), mom(v2_rot)];               
 
-                % three_phase_curr = three_phase_mom(:, ind(i, :));
-
-                marg_con = [marg_con, (marg_v == p_current*ones(1, 2))];
+                % marg_con = [marg_con, (marg_v == p_current*ones(1, 2))];
             end
             % 
             % va = mmon(obj.x([1, 2, 3]), d);

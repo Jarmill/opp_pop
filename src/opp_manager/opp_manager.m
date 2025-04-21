@@ -264,18 +264,18 @@ classdef opp_manager
             % mom_con = [con_prob; con_preserve; con_liou];
 
             %without dynamics
-            mom_con = [con_prob; con_leb;
-                con_floating;
-                con_harm;
-                con_liou; con_preserve
-                ];
+            % mom_con = [con_prob; con_leb;
+            %     con_floating;
+            %     con_harm;
+            %     con_liou; con_preserve
+            %     ];
 
             %with harmonics and dynamics
-            % mom_con = [con_prob; con_leb; %fixed probability/arc measures
-            %     con_floating; %con_balance; con_common; %three-phase
-            %     con_harm; %harmonics constraints                
-            %     con_preserve;  con_liou; %flow
-            %     ];
+            mom_con = [con_prob; con_leb; %fixed probability/arc measures
+                con_floating; %con_balance; con_common; %three-phase
+                con_harm; %harmonics constraints                
+                con_preserve;  con_liou; %flow
+                ];
 
 
             %TODO: objective constraints as well
@@ -408,15 +408,15 @@ classdef opp_manager
                 
 
                 %don't do the floating
-                % bmom_all = obj.three_phase_current_mom(d);
-                vars_inv = obj.vars.x([1, 2, 4]);
-                % p_in = mmon(vars_inv(1:2), d-1)*vars_inv(3);
-                p_in = mmon(vars_inv, d);
+                bmom_all = obj.three_phase_current_mom(d);
+                float_con = obj.diff.con_diff(d, bmom_all);
 
+                % vars_inv = obj.vars.x([1, 2, 4]);
+                % p_in = mmon(vars_inv(1:2), d-1)*vars_inv(3);
+                % p_in = mmon(vars_inv, d);               
+                % p_in_sym = obj.symmetry_eval_current(p_in, vars_inv);
                 
-                p_in_sym = obj.symmetry_eval_current(p_in, vars_inv);
-                % float_con = obj.diff.objective_diff(d, three_phase_current_mom);
-                float_con = obj.diff.con_diff(d, p_in_sym);
+                % float_con = obj.diff.con_diff(d, p_in_sym);
                 
             else
                 float_con = [];
@@ -575,34 +575,34 @@ classdef opp_manager
         end
 
 
-        % function mon_3 = three_phase_rotate(obj, p_in, vars_inv)            
-        %     %return a vector of polynomials in vars_inv
-        %     %rotated as [u(theta), u(theta-2pi/3), u(theta-4pi/3)]
-        %     %variable 1 and 2 are trigonometrically related (cos and sin)
-        %     %the others are along for the ride
-        % 
-        %     %TODO: use this in constructing three-phase symmetry
-        % 
-        %     R3 = [cos(2*pi/3), -sin(2*pi/3); sin(2*pi/3), cos(2*pi/3)];
-        % 
-        %     vars_inv_trig = vars_inv(1:2);
-        %     %monomials times the current
-        %     va = p_in;
-        %     vb = subs(va, vars_inv_trig, R3*vars_inv_trig);
-        %     vc = subs(va, vars_inv_trig, (R3*R3)*vars_inv_trig);
-        % 
-        %     mon_3 = [va, vb, vc];
-        % 
-        %     % if obj.opts.Symmetry==1
-        %     %     R2 = [-1, 0; 0, 1];
-        %     % 
-        %     % 
-        %     %     mon_3_flip = subs(mon_3, vars_inv_trig, R2*vars_inv_trig);
-        %     % 
-        %     %     mon_3 = [mon_3, -mon_3_flip];
-        %     % end
-        % 
-        % end
+        function mon_3 = three_phase_rotate(obj, p_in, vars_inv)            
+            %return a vector of polynomials in vars_inv
+            %rotated as [u(theta), u(theta-2pi/3), u(theta-4pi/3)]
+            %variable 1 and 2 are trigonometrically related (cos and sin)
+            %the others are along for the ride
+
+            %TODO: use this in constructing three-phase symmetry
+
+            R3 = [cos(2*pi/3), -sin(2*pi/3); sin(2*pi/3), cos(2*pi/3)];
+
+            vars_inv_trig = vars_inv(1:2);
+            %monomials times the current
+            va = p_in;
+            vb = subs(va, vars_inv_trig, R3*vars_inv_trig);
+            vc = subs(va, vars_inv_trig, (R3*R3)*vars_inv_trig);
+
+            mon_3 = [va, vb, vc];
+
+            % if obj.opts.Symmetry==1
+            %     R2 = [-1, 0; 0, 1];
+            % 
+            % 
+            %     mon_3_flip = subs(mon_3, vars_inv_trig, R2*vars_inv_trig);
+            % 
+            %     mon_3 = [mon_3, -mon_3_flip];
+            % end
+
+        end
 
 
         %% Other Helpers
@@ -782,15 +782,17 @@ classdef opp_manager
                 %unconstrained for quarter-wave symmetry (here at least)
                 flip_load = obj.opts.Symmetry==1;                
                 if flip_load
-                    stop_order = N:-1:1;                
+                    stop_order = N:-1:1;   
+                    stop_range = 2:length(obj.modes);
                 else
                     stop_order = 1:N;
+                    stop_range = 3:2:length(obj.modes);
                 end
 
                 
 
                 if obj.opts.early_stop                
-                    for m = 3:2:length(obj.modes)
+                    for m = stop_range
                         % mass_con = mass_con - obj.modes{m}.mass_term_mode();
                         stop_monom = obj.modes{m}.term_monom(d, true, flip_load);
                         return_mom = madd_cell_mom(return_mom, {stop_monom{stop_order, end}}, -1);
