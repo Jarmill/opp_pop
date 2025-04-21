@@ -142,6 +142,7 @@ classdef opp_location < location_interface
 
         function [v_ntrig, mon_ntrig] = non_trig_monom_init(obj, d)
             %moments of all other variables [phi, l] 
+            
             if isempty(obj.supp.X)
                 v_ntrig = 0;
                 mon_ntrig = 0;
@@ -149,17 +150,26 @@ classdef opp_location < location_interface
                 x_curr = obj.init.meas{1}.vars.x;
                 x_ntrig = x_curr(3:end);
                 v_ntrig = mmon(x_ntrig, 0, d);
+                
     
                 mon_ntrig = mom(v_ntrig);
             end
         end
 
-        function [v_ntrig, mon_ntrig] = non_trig_monom_term(obj, d)
+        function [v_ntrig, mon_ntrig] = non_trig_monom_term(obj, d, flip_load)
             %moments of all other variables [phi, l] 
+            if nargin < 3
+                flip_load = 0;
+            end
             x_curr = obj.term.meas{1}.vars.x;
             x_ntrig = x_curr(3:end);
             v_ntrig = mmon(x_ntrig, 0, d);
 
+            if flip_load && (length(x_ntrig) > 1)
+                %flip the load currents in case of half-wave symmetry
+                v_ntrig = subs(v_ntrig, x_ntrig, [1; -1*ones(length(x_ntrig)-1, 1)] .* x_ntrig);
+            end
+            
             mon_ntrig = mom(v_ntrig);
 
         end

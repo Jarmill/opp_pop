@@ -255,22 +255,26 @@ classdef opp_mode
                 for p = 1:P            
                     [~, harm_base] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon);                           
                     
-                    switch obj.Symmetry                            
-                        case 0
-                            harm_mom = harm_base;
-                        case 1
-                            %half-wave
-                            [~, tr_alt] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon, [-1, -1]);
-                            harm_mom = (harm_base- tr_alt)*(1/4);
-                        case 2
-                            %quarter wave
-                            [~, tr_refl] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon, [-1, 1]);
-                            [~, tr_alt] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon, [-1, -1]);
-                            [~, tr_alt_refl] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon, [1, -1]);
-                            harm_mom = (harm_base + tr_refl- tr_alt- tr_alt_refl)*(1/16);
-                    end
+                    %the symmetry is already handled in
+                    %opp_manager.harm_eval
+                    % switch obj.Symmetry                            
+                    %     case 0
+                    %         harm_mom = harm_base;
+                    %     case 1
+                    %         %half-wave
+                    %         [~, tr_alt] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon, [-1, -1]);
+                    %         harm_mom = (harm_base- tr_alt)*(1/4);
+                    %     case 2
+                    %         %quarter wave
+                    %         [~, tr_refl] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon, [-1, 1]);
+                    %         [~, tr_alt] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon, [-1, -1]);
+                    %         [~, tr_alt_refl] = obj.levels{n, p}.voltage_harmonics_mom(vars, harm_mon, [1, -1]);
+                    %         harm_mom = (harm_base + tr_refl- tr_alt- tr_alt_refl)*(1/16);
+                    % end
                     
-                    harm = harm+harm_mom;                    
+                    harm = harm + harm_base;
+
+                    % harm = harm+harm_mom;                    
                 end
             end
         end
@@ -412,11 +416,14 @@ classdef opp_mode
             end
         end
 
-        function tmon = term_monom(obj, d, NTRIG)
+        function tmon = term_monom(obj, d, NTRIG, flip_load)
             %moments of the terminal measure
                         %NTRIG: ignore trigonometric variables
             if nargin < 3
                 NTRIG = false;
+            end
+            if nargin < 4
+                flip_load = false;
             end
             [N, P] = size(obj.levels);
             tmon = cell(N, P);
@@ -426,11 +433,11 @@ classdef opp_mode
                           tmon{n, p} = 0;
                       else
                           if NTRIG
-                              [~, tmon{n, p}] = obj.levels{n, p}.non_trig_monom_term(d);
+                              [~, tmon{n, p}] = obj.levels{n, p}.non_trig_monom_term(d, flip_load);
                           else    
                             [~, tmon{n, p}] = obj.levels{n, p}.term.mom_monom(d);
                           end
-                      end                                    
+                      end                                                          
                 end
             end
         end

@@ -1,4 +1,4 @@
-classdef opp_diff_current_split
+\classdef opp_diff_current_split
     %OPP_DIFF_CURRENT_SPLIT processes the differential-mode tdd objective    
     %
     %
@@ -16,7 +16,7 @@ classdef opp_diff_current_split
     properties
         x = {};
         tau = {};        
-        testing = 1;
+        testing = 0;
     end
     
     methods
@@ -100,9 +100,9 @@ classdef opp_diff_current_split
                     v1_rot = v1;
                 else
                     v1_rot = subs(v1, xcurr([1, 2]), R{ind(i, 1)}*xcurr([1, 2]));
-                end                
+                end
+                
                 v2_rot = subs(v2, xcurr([1, 2]), R{ind(i, 2)}*xcurr([1, 2]));
-
 
                 %rotate the three-phase constraint
 
