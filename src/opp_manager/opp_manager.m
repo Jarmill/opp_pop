@@ -67,12 +67,15 @@ classdef opp_manager
                         if (mod(m+n+obj.opts.start_level, 2)==0) || (abs(n-obj.opts.start_level) > (m-1))
                             obj.opts.allowed_levels(m, n) = 0;
                         end
-
-                        if obj.opts.unipolar && n < (N+1)/2
-                            obj.opts.allowed_levels(m, n) = 0;
-                        end
+                        
                     end
                 end
+            end
+
+            if obj.opts.Symmetry ~= 0 && obj.opts.unipolar
+                
+                obj.opts.allowed_levels(:, 1:((N-1)/2)) = 0;
+                        
             end
 
 
@@ -541,7 +544,7 @@ classdef opp_manager
                 if obj.opts.Symmetry==1
                     w_sym = w_in - w_refl;
                 else
-                    Rp = [-1, 0; 0, 1];
+                    Rp = -[-1, 0; 0, 1];
                     w_q_pos = subs(w_in, vars_trig, Rp*vars_trig);
                     w_q_neg = subs(w_in, vars_trig, -Rp*vars_trig);
                     w_sym = w_in + w_q_pos - w_q_neg - w_refl;
@@ -565,8 +568,8 @@ classdef opp_manager
                 if obj.opts.Symmetry==1
                     w_sym = (w_in + w_refl)*0.5;
                 else
-                    Rp_pos = diag([-1, 1, 1]);
-                    Rp_neg = diag([1, -1, -1]);
+                    Rp_pos = diag([1, -1, 1]);
+                    Rp_neg = diag([-1, 1, -1]);
                     w_q_pos = subs(w_in, vars_trig_I, Rp_pos*vars_trig_I);
                     w_q_neg = subs(w_in, vars_trig_I, Rp_neg*vars_trig_I);
                     w_sym = (w_in + w_q_pos + w_q_neg + w_refl)*0.25;
