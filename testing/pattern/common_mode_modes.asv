@@ -1,0 +1,20 @@
+va = kron(kron([-1 0 1], [1, 1, 1]), [1, 1, 1]);
+vb = kron(kron([1 1 1], [-1, 0, 1]), [1, 1, 1]);
+vc = kron(kron([1 1 1], [1, 1, 1]), [-1, 0, 1]);
+
+V = [va; vb; vc];
+
+Vcm3 = sum(V, 1);
+ivalid = (abs(Vcm3) <= 1);
+
+V3 = V(:, ivalid);
+
+k2 = convhull(V(1, :), V(2, :), V(3, :),'Simplify',true);
+
+figure(1)
+clf
+trisurf(k2,x,y,z)
+scatter3(V(1, :), V(2, :), V(3, :),'Simplify',true);
+axis equal
+
+
