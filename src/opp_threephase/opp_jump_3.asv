@@ -1,0 +1,107 @@
+classdef opp_jump_3
+    %OPP_JUMP_3 describes jumps between the modes of a three-phase
+    %dynamical system.
+    % 
+    %this implementation ignores the clock
+    
+    properties
+       mode;          %the mode m (defines the id)
+       opts;          %relevant options for the mode
+       jumps;       %guards for transiting up a level       
+       src;           %source mode 
+       dst;           %destination mode
+       L;             %levels of the inverter  
+       L_single;      %three-phase levels of the inverter
+       vars;          %basic variable type       
+       G;             %switching graph
+    end
+    
+    methods
+        function obj = opp_jump_3(lsupp_ref, opts_3, G)
+            %OPP_JUMP_3 Construct an instance of this class
+            %   Detailed explanation goes here
+            obj.L = opts_3.L;
+            obj.L_single = opts_3.L_single;
+            obj.G = G;
+
+            obj.vars = lsupp_ref.vars;
+            
+            obj.jumps = obj.create_jumps(opts);
+
+        end
+        
+        function jumps = create_jumps(obj)
+            %CREATE_JUMPS fill in the cell of possible jumps
+            
+            reset_law = obj.vars.x;
+
+            P = obj.opts.partition;
+            N = size(obj.L, 2);
+
+            X_partition = support_partition(P, obj.vars.x);
+
+            % E = nnz(G);
+            [i, j] = find(obj.G);
+            E = length(i);
+
+            jumps = cell(E, P);
+            X_jump = lsupp_ref.X;
+
+            for e = 1:E
+                for p = 1:P
+                    if P > 1
+                        X_p = X_partition(p)>=0;
+                    else
+                        X_p = [];
+                    end
+
+                    supp_curr = [X_jump; X_p];
+
+                    name = sprintf('tau_jump_n_%d_%d_p_%d', i(e), j(e), p);
+
+                    jumps{e, p} = guard(name, obj.vars, [], [], ...
+                        supp_curr, reset_law);
+
+                end
+            end
+        end
+
+        function [mom_src, mom_dst] = liou_reset(obj, d)
+            %METHOD1 Summary of this method goes here
+            %   Detailed explanation goes here
+            [Np, P] = size(obj.jump_up);
+            N = Np+1;
+
+            %moments of the guards going up and down in the transition
+            mom_src = cell(N, P);
+            mom_dst = cell(N, P);
+
+
+            for n =1:N
+                for p=1:P
+                    mom_src{n, p} = 0;
+                    mom_dst{n, p} = 0;
+                end
+            end
+            
+            for p = 1:P
+                for n=1:Np
+                    [mom_src_up, mom_dst_up] = obj.jump_up{n, p}.liou_reset(d);
+                    [mom_src_down, mom_dst_down] = obj.jump_down{n, p}.liou_reset(d);
+                    
+                    % if n<Np
+                        mom_src{n, p} = mom_src{n, p} + mom_src_up;
+                        mom_dst{n+1, p} = mom_dst{n+1, p} + mom_dst_up;
+                    % end
+                    % if n>1
+                        mom_src{n+1, p} = mom_src{n+1, p} + mom_src_down;
+                        mom_dst{n, p} = mom_dst{n, p} + mom_dst_down;
+                    % end
+                end
+            end
+        end
+
+
+    end
+end
+
