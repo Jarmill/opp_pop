@@ -20,28 +20,29 @@ opts.early_stop = 0;
 % opts.null_objective = true;
 opts.null_objective = false;
 % opts.Symmetry = 0;
-% opts.Symmetry = 1;
-opts.Symmetry = 2;
+opts.Symmetry = 1;
+% opts.Symmetry = 2;
 % opts.unipolar = 0;
 opts.unipolar = 1;
 % opts.three_phase = "Balanced";
 % opts.three_phase = "Floating";
-opts.three_phase = "Ignore";
+% opts.three_phase = "Ignore";
 % opts.k = 4;
 % opts.k = 8;
-opts.k = 12;
-% opts.k = 16;
+% opts.k = 12;
+opts.k = 16;
 % opts.k=20;
 % opts.k = 24;
 % opts.k = 36;
 
 % opts.common_mode = 1;
 % opts.common_mode = 1/3;
+% opts.common_mode = 0;
 
-% opts.common_mode = 1/3;
+opts.common_mode = 1/3;
 
-% modulation = 0.6;
-modulation = 1;
+modulation = 0.6;
+% modulation = 1;
 % opts.Z_load = 0;
 opts.Z_load = 1.0j;
 
@@ -65,8 +66,8 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 
 MG = opp_manager(opts);
 % order = 4;
-order = 3;
-% order = 2;
+% order = 3;
+order = 2;
 % order = 1;
 d = 2*order;
 
@@ -82,7 +83,7 @@ if sol.status==0
     pattern_rec = MG.recover_pattern();
 
     Mc = MG.mmat_corner();
-    M = MG.mmat();
+    % M = MG.mmat();
     
     % Q = (eye(3) - ones(3)/3);
     % if opts.three_phase == "Floating"

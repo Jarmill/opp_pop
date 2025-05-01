@@ -6,8 +6,8 @@ classdef opp_diff_dyn
     properties
         t; 
         x;
-        mode;
-        jumps;
+        mode = [];
+        jumps = [];
         G;
         opts;
         testing = 0;
@@ -19,7 +19,7 @@ classdef opp_diff_dyn
         function obj = opp_diff_dyn(opts)
             %OPP_DIFF_DYN Construct an instance of this class
             %   Detailed explanation goes here
-            if opts.three_phase ~= "Ignore"
+            if (opts.three_phase ~= "Ignore") || (opts.common_mode < Inf)
                 % mpol('x_tau', 5, 1);        
                 mpol('c_tau', 1, 1)
                 mpol('s_tau', 1, 1)
@@ -34,16 +34,16 @@ classdef opp_diff_dyn
                     obj.t = t_tau;
                 end
                 
-            end           
-            obj.opts = opts;
-
-            obj.objective = obj.objective_diff();
-            [obj.mode, obj.jumps, obj.opts] = obj.create_system();
-
-            %which index (single-phase level at phase a) is the 
-            %three-phase level associated with?
-            obj.correspond = (1:length(obj.opts.L_single)) * (obj.opts.L_single' ==obj.opts.L(1, :));
-
+                       
+                obj.opts = opts;
+    
+                obj.objective = obj.objective_diff();
+                [obj.mode, obj.jumps, obj.opts] = obj.create_system();
+    
+                %which index (single-phase level at phase a) is the 
+                %three-phase level associated with?
+                obj.correspond = (1:length(obj.opts.L_single)) * (obj.opts.L_single' ==obj.opts.L(1, :));
+            end
 
             %generate the modes and jumps
         end
@@ -75,9 +75,14 @@ classdef opp_diff_dyn
         %% support constraints
         function sc = supp_con(obj)
             %support of all measures in the three-phase assembly
-            sc_mode = obj.mode.supp_con();
-            sc_jump = obj.jumps.supp_con();
-            sc = [sc_mode; sc_jump];
+
+            if isempty(obj.mode)
+                sc = [];
+            else                
+                sc_mode = obj.mode.supp_con();
+                sc_jump = obj.jumps.supp_con();
+                sc = [sc_mode; sc_jump];
+            end
         end
 
 
@@ -203,17 +208,23 @@ classdef opp_diff_dyn
         function [mom_con, supp_con] = cons(obj, d)
             %get all constraints involving only this structure
 
-            supp_con = obj.supp_con();
+            if isempty(obj.mode)
+                mom_con = [];
+                supp_con = [];
+            else
+                supp_con = obj.supp_con();
+    
+                con_liou = obj.con_flow(d);
+                con_preserve = obj.con_return(d);
+                con_prob = obj.con_prob_dist();
 
-            con_liou = obj.con_flow(d);
-            con_preserve = obj.con_return(d);
-            con_prob = obj.con_prob_dist();
-
-            %TODO: internal marginal constraints (ensure three-phase
-            %symmetry in the occupation and jump measures)
-
-            mom_con = [con_liou; con_preserve; con_prob];            
-
+                con_sym = obj.con_rotate_symmetry(d);
+    
+                %TODO: internal marginal constraints (ensure three-phase
+                %symmetry in the occupation and jump measures)
+    
+                mom_con = [con_liou; con_preserve; con_prob];            
+            end
         end
 
        function mass_con_eq = con_prob_dist(obj)
@@ -249,6 +260,15 @@ classdef opp_diff_dyn
             end
         end
            
+        function con_sym = con_rotate_symmetry(obj, d)
+            %ensure that the three-phase occupation measures satisfy
+            %symmetries under rotations
+
+            %TODO: figure out the math of this. then implement it.
+            %should hopefully reduce conservatism of the approach
+            
+            con_sym =[];
+        end
 
        function return_con = con_return(obj, d)
             %conservation of position between the initial and final measure
@@ -295,9 +315,39 @@ classdef opp_diff_dyn
 
             %TODO: liberate this
             con_align = ( mom_3 - bmom_all)==0;
+            con_align = reshape(con_align, [], 1);
 
         end
 
+
+        %% recovery
+        function [m_out, tr_out, j_out] = mmat_corner(obj)
+
+            if ~isempty(obj.mode)
+                [m_out, tr_out]= obj.mode.mmat_corner();
+    
+                mj = obj.jumps.mmat_corner();
+                j_out = mj.jumps();
+            else
+                m_out = [];
+                tr_out = [];
+                j_out = [];
+            end
+        end
+
+       function [m_out, tr_out, j_out] = mmat(obj)
+
+            if ~isempty(obj.mode)
+                [m_out, tr_out]= obj.mode.mmat();
+    
+                mj = obj.jumps.mmat();
+                j_out = mj.jumps();
+            else
+                m_out = [];
+                tr_out = [];
+                j_out = [];
+            end
+        end
 
     end
 end
