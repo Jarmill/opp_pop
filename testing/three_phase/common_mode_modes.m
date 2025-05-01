@@ -23,14 +23,20 @@ view(3)
 
 N3 = size(V3, 2);
 Eh = zeros(N3);
+Ep = zeros(N3);
 for i = 1:N3
     for j = 1:(i-1)
-        if max(abs(V3(:, i) - V3(:, j))) <= 1
+        dv = abs(V3(:, i) - V3(:, j));
+        if max(dv) <= 1
             Eh(i, j) = 1;
+        end
+        if nnz(dv)==1
+            Ep(i, j) = 1;
         end
     end
 end
 E = Eh + Eh';
+Et = Ep + Ep';
 
 E1 = E(V3(1, :)==-1, V3(1, :)==-1);
 E2 = E(V3(1, :)==0, V3(1, :)==0);
@@ -39,5 +45,9 @@ E3 = E(V3(1, :)==1, V3(1, :)==1);
 G = graph(E);
 figure(2);
 clf
+subplot(1, 2, 1)
 plot(G)
+subplot(1, 2, 2)
+Gt = graph(Et);
+plot(Gt)
 

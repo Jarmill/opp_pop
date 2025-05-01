@@ -11,7 +11,7 @@ classdef opp_manager
         jumps;  %cell of opp_switch
         modes;  %cell of opp_mode(), contains initial/terminal/occupation measures
 
-        diff;   %storage for the 
+        diff;   %storage for the three-phase terms
 
         sdp_settings;
         vars;
