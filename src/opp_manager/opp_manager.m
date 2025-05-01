@@ -82,7 +82,8 @@ classdef opp_manager
 
             [obj.vars, obj.jumps, obj.modes] = obj.create_system(obj.opts);
             % obj.diff = opp_diff_current(obj.opts.three_phase == "Floating");
-            obj.diff = opp_diff_current_split(obj.opts.three_phase == "Floating");
+            % obj.diff = opp_diff_current_split(obj.opts.three_phase == "Floating");
+            obj.diff = opp_diff_dyn(obj.opts);
         end
 
         %% construct everything
@@ -95,7 +96,15 @@ classdef opp_manager
 
             %declare the variables
             load_state = imag(opts.Z_load)~=0;
-            mpol('x', 3 + load_state);
+            % mpol('x', 3 + load_state);
+            mpol('c', 1, 1);
+            mpol('s', 1, 1)
+            mpol('phi', 1, 1)
+            mpol('I', 1, 1)
+            x = [c; s; phi];
+            if load_state
+                x = [x; I];
+            end
             %x = [c; s; phi; l] -> [cos(theta), sin(theta), clock, load
             %state (current of load inductor/voltage of load capacitor)
 
@@ -236,26 +245,28 @@ classdef opp_manager
             
               
 
-            % %mass of initial measure = 1
+            %dynamics constraints
+            %mass of initial measure = 1
             con_prob = obj.con_prob_dist();
-            % 
-            % %initial = sum of terminal measure
+             
+            %initial = sum of terminal measure
             con_preserve = obj.con_return(d);
 
-            con_common = obj.con_common_mode(d);
-
             %flow +jump continuity constraints
-            % 
             con_liou = obj.con_flow(d);
-            % 
-            % %harmonics constraints
-            [con_harm, ~] = obj.con_harmonics();
-            % 
+            
+            %trig is uniformly distributed over circle
             con_leb = obj.con_uni_circ(d);
-            % 
-            con_balance = obj.con_balance(d);
+            
 
-            con_floating = obj.con_floating(d);
+            %harmonics constraints
+            [con_harm, ~] = obj.con_harmonics();            
+            
+
+            %three-phase constraints
+            con_balance = obj.con_balance(d);
+            
+            con_three = obj.con_threephase(d);
 
             
 
@@ -275,7 +286,7 @@ classdef opp_manager
 
             %with harmonics and dynamics
             mom_con = [con_prob; con_leb; %fixed probability/arc measures
-                con_floating; %con_balance; con_common; %three-phase
+                con_three; %con_balance; con_common; %three-phase
                 con_harm; %harmonics constraints                
                 con_preserve;  con_liou; %flow
                 ];
@@ -357,72 +368,26 @@ classdef opp_manager
         end
 
 
-        %% Three-phase considerations
-        function bcon = con_balance(obj, d)
-            %ensure that the inductive current is three-phase balanced
-            %
-            %figure out if this is possible to do without inductive current
-            %
-            %TODO: implement later
 
-            bcon = [];
-            % if length(obj.vars.x)>3 && imag(obj.opts.Z_load)>0 ...
-            %         && obj.opts.three_phase == opp_three_phase.Balanced
-            % 
-            %     vars_inv = obj.vars.x([1, 2, 4]);
-            %     p_in = mmon(vars_inv(1:2), d-1)*vars_inv(3);
-            % 
-            %     mon_3 = obj.three_phase_rotate(p_in, vars_inv);
-            % 
-            %     width_3 = size(mon_3, 2);
-            %     mon_3_sum = mon_3*ones(width_3, 1);
-            % 
-            %     %process the symmetry (if valid)
-            %     mon_3_sum = obj.symmetry_eval_current(mon_3_sum, obj.vars.x([1; 2; 4]));
-            % 
-            %     bmom = 0;
-            %     for m = 1:length(obj.modes)
-            %         curr_mom = obj.modes{m}.mom_sub(obj.get_vars(), mon_3_sum);
-            %         bmom = madd_cell_mom(bmom, curr_mom, 1);
-            %     end
-            % 
-            % 
-            %     bcon = [];
-            %     for i =1:size(bmom, 1)
-            %         for j = 1:size(bmom, 2)
-            %             bcon = [bcon; bmom{i, j}==0];
-            %         end
-            %     end
-            % 
-            % else
-            %     bcon = [];
-            % end
-        end
-
-        function float_con = con_floating(obj, d)                   
+        function three_con = con_threephase(obj, d)                   
             %ensure that the inductive current is three-phase balanced
             %
             %figure out if this is possible to do without inductive current
             
-            %Clarke coordinate transformation (to alpha-beta plane)
-
-            if length(obj.vars.x)>3 && imag(obj.opts.Z_load)>0 ...
-                    && obj.opts.three_phase == opp_three_phase.Floating
+            if length(obj.vars.x)>3 && (obj.opts.Z_load ~= 0) ...
+                    && obj.opts.three_phase ~= opp_three_phase.Ignore
                 
-
-                %don't do the floating
+                
                 bmom_all = obj.three_phase_current_mom(d);
-                float_con = obj.diff.con_diff(d, bmom_all);
+                align_occ = obj.diff.con_clock_align(d, bmom_all);
 
-                % vars_inv = obj.vars.x([1, 2, 4]);
-                % p_in = mmon(vars_inv(1:2), d-1)*vars_inv(3);
-                % p_in = mmon(vars_inv, d);               
-                % p_in_sym = obj.symmetry_eval_current(p_in, vars_inv);
-                
-                % float_con = obj.diff.con_diff(d, p_in_sym);
-                
+                align_init = [];
+                align_term = [];
+
+
+                three_con = [align_occ; align_init; align_term];
             else
-                float_con = [];
+                three_con = [];
             end
         
         end        
@@ -469,64 +434,7 @@ classdef opp_manager
                         bmom_all = bmom_all +  bmom{i, j};
                     end
                 end
-        end
-
-        function ccon = con_common_mode(obj, d)
-            %TODO: fix the common-mode constraint
-            ccon = [];
-        end
-        %     % constrain the common-mode voltage v(th) + v(th+2pi/3) +
-        %     % v(th+4pi/3) in [-vcm, vcm] for all th in [0, 2*pi]
-        % 
-        %     % if obj.opts.common_mode ~= Inf
-        %     if false %TODO: common-mode is incorrect. fix this.
-        %         %form three-phase monomials
-        %         vars_trig = obj.vars.x([1, 2]);
-        %         p_in = mmon(vars_trig, d);
-        % 
-        %         mon_3 = obj.three_phase_rotate(p_in, vars_trig);
-        %         width_3 = size(mon_3, 2);
-        %         mon_3_sum = mon_3*ones(width_3, 1)*(1/3);
-        % 
-        %         %process the symmetry (if valid)
-        %         mon_3_sum = obj.symmetry_eval(mon_3_sum, obj.vars.x([1; 2]));
-        % 
-        %         %substitute each entry
-        %         bmom = 0;
-        %         for m = 1:length(obj.modes)
-        %             curr_mom = obj.modes{m}.mom_sub(obj.get_vars(), mon_3_sum, true); %level_mult
-        %             bmom = madd_cell_mom(bmom, curr_mom, 1);
-        %         end
-        % 
-        %         %take the sum to form the signed measure associated with
-        %         %the common-mode signal
-        %         bmom_all = 0*mom(mon_3_sum);
-        %         for i =1:size(bmom, 1)
-        %             for j = 1:size(bmom, 2)
-        %                 bmom_all = bmom_all +  bmom{i, j};
-        %             end
-        %         end
-        % 
-        %         bmom_circ = bmom_all * 2^(-double(obj.opts.Symmetry));
-        % 
-        %         %form the upper and lower bounds
-        %         pw = genPowGlopti(2, d);
-        %         leb_circ = leb_sphere(pw,1);
-        %         % leb_circ = leb_sphere(d,1);
-        %         dom_cm = leb_circ * obj.opts.common_mode / (2*pi);
-        % 
-        % 
-        %         if obj.opts.common_mode == 0
-        %             ccon = (bmom_circ == 0);
-        %         else
-        %             ccon = [bmom_circ <= dom_cm ; bmom_all >= -dom_cm];
-        %         end
-        % 
-        %     else
-        %         ccon = [];
-        %     end
-        % end
-        % 
+        end        
 
         function w_sym = symmetry_eval(obj, w_in, vars_trig)
             %compensate for the symmetry structure in the problem
@@ -755,11 +663,7 @@ classdef opp_manager
             %initial measure is a probability distribution (mass 1)
             
             [~, mass_init_sum] = obj.modes{1}.initial_mass();
-
-            % mass_init = 
-
-            % mass_init_summary = sum(sum(mass_init_all));
-
+        
             mass_con_eq = (mass_init_sum==1);
            
         end
@@ -926,6 +830,8 @@ classdef opp_manager
 
         end
 
+        %% recovery
+
         function opp_out = recover(obj, sol)
             %process and recover the solution
 
@@ -1021,7 +927,7 @@ classdef opp_manager
             %track along the jumps
             for m = 1:(Nmodes-1)
                 for n = 1:N-1
-                    mmat_curr = 0;
+                   
                     for p = 1:P
                         if ms.jump_up(m, n, p) > 0.99
                             jump_curr = Mc.jump{m}.up{n, p};

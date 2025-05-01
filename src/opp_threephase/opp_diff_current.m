@@ -71,7 +71,7 @@ classdef opp_diff_current
             % objective = 0;
         end
 
-        function marg_con = con_diff(obj, d, three_phase_mom)
+        function marg_con = con_clock_align(obj, d, three_phase_mom)
             %form the three-phase 
 
             va = mmon(obj.x([1, 2, 3]), d);

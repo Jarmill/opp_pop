@@ -16,6 +16,7 @@ classdef opp_jump_3
     end
     
     methods
+        %% constructor and related methods
         function obj = opp_jump_3(lsupp_ref, opts_3, G)
             %OPP_JUMP_3 Construct an instance of this class
             %   Detailed explanation goes here
@@ -67,6 +68,7 @@ classdef opp_jump_3
             end
         end
 
+        %% liouville constraints
         function [mom_src, mom_dst] = liou_reset(obj, d)
             %METHOD1 Summary of this method goes here
             %   Detailed explanation goes here

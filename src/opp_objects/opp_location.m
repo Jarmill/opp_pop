@@ -167,7 +167,13 @@ classdef opp_location < location_interface
 
             if flip_load && (length(x_ntrig) > 1)
                 %flip the load currents in case of half-wave symmetry
-                v_ntrig = subs(v_ntrig, x_ntrig, [1; -1*ones(length(x_ntrig)-1, 1)] .* x_ntrig);
+                if flip_load == 1
+                    %single phase (keep the clock)
+                    v_ntrig = subs(v_ntrig, x_ntrig, [1; -1*ones(length(x_ntrig)-1, 1)] .* x_ntrig);
+                else
+                    %three-phase (no clock)
+                    v_ntrig = subs(v_ntrig, x_ntrig, -x_ntrig);
+                end
             end
             
             mon_ntrig = mom(v_ntrig);

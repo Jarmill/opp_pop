@@ -12,6 +12,7 @@ classdef opp_diff_dyn
         opts;
         testing = 0;
         objective = 0;
+        correspond = [];
     end
     
     methods
@@ -19,7 +20,11 @@ classdef opp_diff_dyn
             %OPP_DIFF_DYN Construct an instance of this class
             %   Detailed explanation goes here
             if opts.three_phase ~= "Ignore"
-                mpol('x_tau', 5, 1);        
+                % mpol('x_tau', 5, 1);        
+                mpol('c_tau', 1, 1)
+                mpol('s_tau', 1, 1)
+                mpol('I_tau', 3, 1)
+                x_tau = [c_tau; s_tau; I_tau];
                 obj.x = x_tau;
 
                 if opts.TIME_INDEP
@@ -33,12 +38,18 @@ classdef opp_diff_dyn
             obj.opts = opts;
 
             obj.objective = obj.objective_diff();
-            [obj.mode, obj.jumps, obj.G] = obj.create_system();
+            [obj.mode, obj.jumps, obj.opts] = obj.create_system();
+
+            %which index (single-phase level at phase a) is the 
+            %three-phase level associated with?
+            obj.correspond = (1:length(obj.opts.L_single)) * (obj.opts.L_single' ==obj.opts.L(1, :));
+
+
             %generate the modes and jumps
         end
 
         %create the modes and jumps for the three-phase system
-        function [mode, jumps, G] = create_system(obj)
+        function [mode, jumps, opts_3] = create_system(obj)
             [L3, G] = obj.mode_switch_graph();
 
             %partitions of the three-phase system
@@ -63,10 +74,10 @@ classdef opp_diff_dyn
 
         %% support constraints
         function sc = supp_con(obj)
-            %
+            %support of all measures in the three-phase assembly
             sc_mode = obj.mode.supp_con();
             sc_jump = obj.jumps.supp_con();
-            sc = [sc_mode; sc_jumps];
+            sc = [sc_mode; sc_jump];
         end
 
 
@@ -183,11 +194,111 @@ classdef opp_diff_dyn
             % objective = 0;
         end
         
+
         
 
-        %% moment constraints
+        %% moment constraints (internal)
         %TODO: fill this in
+
+        function [mom_con, supp_con] = cons(obj, d)
+            %get all constraints involving only this structure
+
+            supp_con = obj.supp_con();
+
+            con_liou = obj.con_flow(d);
+            con_preserve = obj.con_return(d);
+            con_prob = obj.con_prob_dist();
+
+            %TODO: internal marginal constraints (ensure three-phase
+            %symmetry in the occupation and jump measures)
+
+            mom_con = [con_liou; con_preserve; con_prob];            
+
+        end
+
+       function mass_con_eq = con_prob_dist(obj)
+            %initial measure is a probability distribution (mass 1)
+            
+            [~, mass_init_sum] = obj.mode.initial_mass();
+
+            mass_con_eq = (mass_init_sum==1);
+           
+        end
+
+       function flow_con = con_flow(obj, d)
+            %the flow conservation constraint for dynamics
+
+            %compute all terms
+            [jump_src, jump_dst] = obj.jumps.liou_reset(d);
+            liou = obj.mode.flow(d);
+
+            %add the constraints
+            [N, P] = size(liou);
+            
+            %iterate over all cells
+            flow_con = [];
+            flow_con_cell = cell(N, P);
+            for n=1:N
+                    
+                for p = 1:P                                                       
+                    flow_con_cell{n, p} = liou{n, p} + jump_src{n, p} + jump_dst{n, p}==0;
+                    
+                    %stack them into a giant vector: flow_con
+                    flow_con = [flow_con; flow_con_cell{n, p}];
+                end                
+            end
+        end
+           
+
+       function return_con = con_return(obj, d)
+            %conservation of position between the initial and final measure
+            
+            % mass_con = obj.modes{1}.mass_init_mode();
+            init_monom = obj.mode.init_monom(d, true);
+            
+            %TODO:  fix the quarter-wave structure
+                                      
+                return_mom = init_monom;
+
+                %index the terminal destination levels based on the
+                %applied symmetry
+                %unconstrained for quarter-wave symmetry (here at least)
+                flip_load = 2*(obj.opts.Symmetry>0);  
+                              
+
+                stop_monom = obj.mode.term_monom(d, true, flip_load);
+                return_mom = madd_cell_mom(return_mom, stop_monom, -1);
         
+                [N, P] = size(return_mom);
+                return_con = [];
+                for n = 1:N
+                    for p = 1:P
+                        if ~isnumeric(return_mom{n, p})
+                            return_con = [return_con; return_mom{n, p}==0];
+                        end
+                    end
+                end
+
+            % return_con = (return_mom==0);
+        
+        end
+       
+        %% moment constraints (external)
+        %constraints to ensure alignment with the k-and-clock-constrained
+        %switching sequence
+        function con_align = con_clock_align(obj, d, bmom_all)
+            %Input:
+            %   d:  degree
+            %   bmom_all: three-phase rotated vector from the signal
+
+            mom_3 = obj.mode.get_I_marginals(d);
+
+            %TODO: liberate this
+            con_align = ( mom_3 - bmom_all)==0;
+
+        end
+
+
     end
 end
 

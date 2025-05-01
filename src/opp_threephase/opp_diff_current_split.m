@@ -80,7 +80,7 @@ classdef opp_diff_current_split
             % objective = (2*pi) * (pi)^2 * mom(Ia.^2);        
         end
 
-        function marg_con_1 = con_diff(obj, d, p_current)
+        function marg_con_1 = con_clock_align(obj, d, p_current)
             %form the three-phase 
 
             % ind = [1 2; 1 3; 2 3];

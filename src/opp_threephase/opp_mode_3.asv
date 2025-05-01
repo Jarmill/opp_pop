@@ -102,30 +102,30 @@ classdef opp_mode_3 < opp_mode_interface
 
 
         %% moment fetching
-        function mom_3 = get_I_marginals(obj, d)
-            %TODO: segment by level
-
+        function mom_3 = get_I_marginals(obj)
             %return the mass of the initial measure in this mode
-            va = mmon(obj.vars.x([1, 2, 3]), d);
-            vb = mmon(obj.vars.x([1, 2, 4]), d);
-            vc = mmon(obj.vars.x([1, 2, 5]), d);
+            va = mmon(obj.x([1, 2, 3]), d);
+            vb = mmon(obj.x([1, 2, 4]), d);
+            vc = mmon(obj.x([1, 2, 5]), d);
 
-            if obj.Symmetry            
-                va = obj.symmetry_eval_current(va, obj.vars.x(3));
-                vb = obj.symmetry_eval_current(vb, obj.vars.x(4));
-                vc = obj.symmetry_eval_current(vc, obj.vars.x(5));
+            if obj.opts.Symmetry            
+                va = obj.symmetry_eval_current(obj, va, obj.x(3));
+                vb = obj.symmetry_eval_current(obj, vb, obj.x(4));
+                vc = obj.symmetry_eval_current(obj, vc, obj.x(5));
             end
 
             v3 = [va, vb, vc];
 
             [N, P] = size(obj.levels);
-                      
-            mom_3_cell = obj.mom_sub(obj.vars.x, v3);
+            
             mom_3 = 0;
-            for e = 1:N
-                mom_3 = mom_3 + mom_3_cell{e};
+            for n=1:N
+                for p = 1:P
+                    curr_mom = obj.mom_sub.(obj.x, v3);
+                    m
+                    % mass_init_mode = mass_init_mode + obj.levels{n, p}.mass_init();
+                end
             end
-                    
         end
 
         function w_sym = symmetry_eval_current(obj, w_in, vars_trig_I)
@@ -137,7 +137,7 @@ classdef opp_mode_3 < opp_mode_interface
             %Half-Wave w(c, s, I) + w(-c, -s, -I)
             %NOT Quarter-Wave w(c, s, I) + w(-c, s, I) + w(-c, -s, -I) - w(c, -s, -I)
 
-            if obj.Symmetry==0
+            if obj.opts.Symmetry==0
                 w_sym = w_in;
             else
                 w_refl = subs(w_in, vars_trig_I, -vars_trig_I);
