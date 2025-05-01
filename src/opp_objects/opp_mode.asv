@@ -59,35 +59,65 @@ classdef opp_mode < opp_mode_interface
         end
  
 
-        function flag = cannot_start(obj, opts, n)
-            %can the sequence start at level n?
-            flag = ((opts.start_level~=0) && (n~= opts.start_level));
+        function start = can_start()
         end
 
 
-        function flag = cannot_end(obj, opts, n)
-            %can the sequence end at level n?
+        function levels =  make_level_locs(obj, m, opts, lsupp_base, objective_mode, f, prefix)
+            %create locations for each level
+            vars = lsupp_base.vars;       
             N = size(opts.L, 2);
-            flag = (opts.start_level~=0) && ...
+            P = opts.partition;
+            levels = cell(N, P);
+            X_partition = support_partition(opts.partition, vars.x, opts.Symmetry);
+            for n = 1:N
+                curr_f = f(:, n);
+                curr_objective = objective_mode(n, :);                
+                for p = 1:P
+                    % curr_id = loc_id(n, j);
+                    curr_id = strcat(prefix, sprintf('m%d_n%d_p%d', m, n, p));
+
+                    curr_lsupp = lsupp_base;
+
+                    if p>1 || ((opts.start_level~=0) && (n~= opts.start_level))
+                        curr_lsupp.X_init = [];
+                    end
+                    if p<P || (opts.start_level~=0) && ...
                             ((opts.Symmetry==0) && (n~= opts.start_level) ||...
-                            (opts.Symmetry==1) && ((N-n+1)~= opts.start_level));
-        end
+                            (opts.Symmetry==1) && ((N-n+1)~= opts.start_level))
+                        curr_lsupp.X_term = [];
+                    end
 
-        function flag = cannot_reach(obj, opts, m, n)            
-            %can the sequence reach at level n at mode m?
-            N = size(opts.L, 2);
-            flag = false;
-            if ~opts.allowed_levels(m+1, n)
-                flag = true;
-            elseif m>0
-                can_down = (n<N) && opts.allowed_levels(m, n+1);
-                can_up = (n>1) && opts.allowed_levels(m, n-1);
+                    if opts.partition > 1
+                        curr_lsupp.X = [curr_lsupp.X; X_partition(p)>=0];
+                    end
 
-                flag = ~(can_up || can_down);
+                    if ~isempty(opts.allowed_levels) 
+                        
+                        flag = false;
+                        if ~opts.allowed_levels(m+1, n)
+                            flag = true;
+                        elseif m>0
+                            can_down = (n<N) && opts.allowed_levels(m, n+1);
+                            can_up = (n>1) && opts.allowed_levels(m, n-1);
+
+                            flag = ~(can_up || can_down);
+                        end
+
+                        if flag
+                            curr_lsupp.X = [];
+                            curr_lsupp.X_term = [];
+                            curr_lsupp.X_init = [];
+                        end
+                    end
+
+
+                    cell_info = struct('mode', m, 'partition', p, 'level', n, 'L', opts.L(n), 'id', curr_id);
+                    levels{n, p} = opp_location(curr_lsupp, curr_f, curr_objective, cell_info);
+
+                end
             end
         end
-
-        
 
         function f = all_dynamics(obj, vars, opts)
             %create the dynamics as a matrix f

@@ -4,8 +4,9 @@ classdef opp_diff_dyn
     %   should hopefully reduce conservatism
     
     properties
+        t; 
         x;
-        modes;
+        mode;
         jumps;
         G;
         opts;
@@ -18,29 +19,74 @@ classdef opp_diff_dyn
             %OPP_DIFF_DYN Construct an instance of this class
             %   Detailed explanation goes here
             if opts.three_phase ~= "Ignore"
-                mpol('x_tau', 5, 1);                        
+                mpol('x_tau', 5, 1);        
                 obj.x = x_tau;
+
+                if opts.TIME_INDEP
+                    obj.t = [];
+                else
+                    mpol('t_tau', 1, 1)
+                    obj.t = t_tau;
+                end
+                
             end           
             obj.opts = opts;
 
-            [obj.modes, obj.jumps] = obj.create_modes();
+            obj.objective = obj.objective_diff();
+            [obj.mode, obj.jumps] = obj.create_system();
             %generate the modes and jumps
         end
 
         %create the modes and jumps for the three-phase system
-        function [modes, jumps] = create_modes(obj)
-            [levels, G] = obj.mode_switch_graph();
+        function [mode, jumps] = create_system(obj)
+            [L3, G] = obj.mode_switch_graph();
 
             %partitions of the three-phase system
             %if full-wave only, break up the symmetry structure
-            P = 1+(obj.opts.Symmetry==0);
+            
+            %create the mode
+            lsupp_base = obj.get_support();                                    
 
-            modes = [];
+            opts_3 = obj.opts;
+            opts_3.partition = 1 + (opts_3.Symmetry==0);   
+            opts_3.L_single = opts_3.L;
+            opts_3.L = L3;
+            N = size(L3, 2);
+
+            mode = opp_mode_3(lsupp_base, obj.objective*ones(N, 1), opts_3);
+           
+            %create the jump
             jumps = [];
-
 
         end
 
+        function lsupp_base = get_support(obj)
+            %get the generic support of the mode measures
+            lsupp_base = loc_support();
+            lsupp_base.vars.x = obj.x;
+            lsupp_base.vars.t = obj.t;
+            vars = lsupp_base.vars;
+
+            lsupp_base.TIME_INDEP = obj.opts.TIME_INDEP;
+            lsupp_base.FREE_TERM = 0;
+            lsupp_base.Tmax = 1;
+
+            lsupp_base.X = obj.supp_con(); 
+            
+        end
+
+
+        function sc = supp_con(obj)
+            %support constraint
+            sc = [sum(obj.x(1:2).^2) == 1; 
+                obj.x(3:5).^2 <= 1];
+
+            if obj.opts.three_phase == "Balanced"
+                %produce a balanced current
+                sc = [sc; obj.x(5) == (-obj.x(3) - obj.x(4))];
+            end
+        end
+        
         %determine the switching logic
         function [V, G] = mode_switch_graph(obj)
 
@@ -89,7 +135,12 @@ classdef opp_diff_dyn
                     %the three-phase signal w.r.t. switching on multiple
                     %phases at a time
 
-                    if nnz(dv)==1
+                    if obj.opts.common_mode == 0
+                        edge_con = max(dv) <= 1;
+                    else
+                        edge_con = nnz(dv)==1;
+                    end
+                    if edge_con
                         G(i, j) = 1;
                     end
                 end
@@ -117,7 +168,8 @@ classdef opp_diff_dyn
            
             quad = (xi'*Q*xi)*(1/3);
 
-            objective = (2*pi) * (pi)^2 * mom(quad);
+            % objective = (2*pi) * (pi)^2 * mom(quad);
+            objective = (2*pi) * (pi)^2 * quad;            
             % objective = 0;
         end
         
