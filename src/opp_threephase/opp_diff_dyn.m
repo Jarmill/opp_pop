@@ -306,19 +306,37 @@ classdef opp_diff_dyn
         %% moment constraints (external)
         %constraints to ensure alignment with the k-and-clock-constrained
         %switching sequence
-        function con_align = con_clock_align(obj, d, bmom_all)
-            %Input:
-            %   d:  degree
-            %   bmom_all: three-phase rotated vector from the signal
 
-            mom_3 = obj.mode.get_I_marginals(d);
-
-            %TODO: liberate this
-            con_align = ( mom_3 - bmom_all)==0;
-            con_align = reshape(con_align, [], 1);
-
+        function sel_out = sel_init_monom(obj, d, ind)
+            %used for alignment
+            sel_orig = obj.mode.sel_init_monom(d, ind);
+            N = length(obj.opts.L_single);
+            sel_out = cell(N, 1);            
+            for i = 1:N
+                sel_out{i} = 0;
+            end
+            NN = size(obj.opts.L, 2);
+            for v = 1:NN
+                corr_i = obj.correspond(v);
+                sel_out{corr_i} = sel_out{corr_i} + sel_orig{v};
+            end
         end
 
+
+        function sel_out = sel_term_monom(obj, d, ind)
+            %used for alignment
+            sel_orig = obj.mode.sel_term_monom(d, ind);
+            N = length(obj.opts.L_single);
+            sel_out = cell(N, 1);            
+            for i = 1:N
+                sel_out{i} = 0;
+            end
+            NN = size(obj.opts.L, 2);
+            for v = 1:NN
+                corr_i = obj.correspond(v);
+                sel_out{corr_i} = sel_out{corr_i} + sel_orig{v};
+            end
+        end
 
         %% recovery
         function [m_out, tr_out, j_out] = mmat_corner(obj)

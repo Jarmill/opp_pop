@@ -260,7 +260,15 @@ classdef opp_diff_dyn
             end
         end
            
-        function 
+        function con_sym = con_rotate_symmetry(obj, d)
+            %ensure that the three-phase occupation measures satisfy
+            %symmetries under rotations
+
+            %TODO: figure out the math of this. then implement it.
+            %should hopefully reduce conservatism of the approach
+            
+            con_sym =[];
+        end
 
        function return_con = con_return(obj, d)
             %conservation of position between the initial and final measure
@@ -298,16 +306,11 @@ classdef opp_diff_dyn
         %% moment constraints (external)
         %constraints to ensure alignment with the k-and-clock-constrained
         %switching sequence
-        function con_align = con_clock_align(obj, d, bmom_all)
-            %Input:
-            %   d:  degree
-            %   bmom_all: three-phase rotated vector from the signal
 
-            mom_3 = obj.mode.get_I_marginals(d);
-
-            %TODO: liberate this
-            con_align = ( mom_3 - bmom_all)==0;
-
+        function sel_out = sel_init_monom(obj, d)
+            %used for alignment
+            sel_orig = obj.mode.sel_init_monom(2, [1, 2, 3])
+            sel_out = 
         end
 
 

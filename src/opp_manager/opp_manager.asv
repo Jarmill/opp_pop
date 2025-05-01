@@ -381,7 +381,16 @@ classdef opp_manager
                 
                 
                 bmom_all = obj.three_phase_current_mom(d);
-                align_occ = obj.diff.con_clock_align(d, bmom_all);
+                mom_3 = obj.diff.mode.get_I_marginals(d);
+
+                align_occ_set = (bmom_all - mom_3);
+
+                % align_occ = reshape(align_occ_set, [], 1)==0;
+                align_occ = [];
+
+                
+                %align the initial measure
+                init_1 = obj.modes{1}.sel_init_monom(obj, d, [1, 2, 4])
 
                 align_init = [];
                 align_term = [];

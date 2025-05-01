@@ -380,11 +380,40 @@ classdef opp_manager
                 (obj.opts.common_mode < Inf))
                 
                 
-                bmom_all = obj.three_phase_current_mom(d);
-                align_occ = obj.diff.con_clock_align(d, bmom_all);
+                %TODO: the alignment is broken. fix this.
+                % bmom_all = obj.three_phase_current_mom(d);
+                % mom_3 = obj.diff.mode.get_I_marginals(d);
+                % align_occ_set = (bmom_all - mom_3);
 
+                % align_occ = reshape(align_occ_set, [], 1)==0;
+                % align_occ = align_occ_set(:, 1)==0;
+                align_occ = [];
+
+                
+                %align the initial measure
+                init_1 = obj.modes{1}.sel_init_monom(d, [1, 2, 4]);
+                init_3 = obj.diff.sel_init_monom(d, [1, 2, 3]);
+
+                
                 align_init = [];
+                for i = 1:length(init_1)
+                    if ~isnumeric(init_1{i}) || ~isnumeric(init_3{i}) 
+                        align_init= [align_init; init_1{i} - init_3{i} ==0];
+                    end
+                end
+
+                %align the terminal measure
+                term_1 = obj.modes{end}.sel_term_monom(d, [1, 2, 4]);
+                term_3 = obj.diff.sel_term_monom(d, [1, 2, 3]);
+
+                
+                %TODO: quarter-wave symmetry will destroy some of this
                 align_term = [];
+                for i = 1:length(init_1)
+                    if ~isnumeric(init_1{i}) || ~isnumeric(term_3{i}) 
+                        align_term= [align_term; term_1{i} - term_3{i} ==0];
+                    end
+                end
 
 
                 three_con = [align_occ; align_init; align_term];
