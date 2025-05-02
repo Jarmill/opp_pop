@@ -13,6 +13,7 @@ classdef opp_diff_dyn
         testing = 0;
         objective = 0;
         correspond = [];
+        DYNAMICS = true;
     end
     
     methods
@@ -46,6 +47,11 @@ classdef opp_diff_dyn
             end
 
             %generate the modes and jumps
+        end
+
+        function I_marg = get_I_marginals(obj, d)
+            %maybe this isn't needed?
+            I_marg = obj.mode.get_I_marginals(d)            
         end
 
         %create the modes and jumps for the three-phase system

@@ -17,6 +17,7 @@ classdef opp_diff_current_split
         x = {};
         tau = {};        
         testing = 0;
+        DYNAMICS = false;
     end
     
     methods
