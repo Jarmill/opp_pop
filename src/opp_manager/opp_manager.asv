@@ -81,9 +81,9 @@ classdef opp_manager
 
 
             [obj.vars, obj.jumps, obj.modes] = obj.create_system(obj.opts);
-            % obj.diff = opp_diff_current(obj.opts.three_phase == "Floating");
+            obj.diff = opp_diff_current(obj.opts.three_phase == "Floating");
             % obj.diff = opp_diff_current_split(obj.opts.three_phase == "Floating");
-            obj.diff = opp_diff_dyn(obj.opts);
+            % obj.diff = opp_diff_dyn(obj.opts);
         end
 
         %% construct everything
@@ -287,7 +287,7 @@ classdef opp_manager
             mom_con = [con_prob; con_leb; %fixed probability/arc measures
                 con_three; con_align; %con_balance; con_common; %three-phase
                 con_harm; %harmonics constraints                
-                con_preserve;  con_liou; %flow
+                con_preserve;  con_liou %flow
                 ];
 
             supp_con = [supp_single; supp_three];
@@ -378,30 +378,124 @@ classdef opp_manager
             if length(obj.vars.x)>3 && (obj.opts.Z_load ~= 0) ...
                     && ((obj.opts.three_phase ~= opp_three_phase.Ignore) ||...
                 (obj.opts.common_mode < Inf))
-                
-                
-                bmom_all = obj.three_phase_current_mom(d);
-                mom_3 = obj.diff.mode.get_I_marginals(d);
-
-                align_occ_set = (bmom_all - mom_3);
-
-                % align_occ = reshape(align_occ_set, [], 1)==0;
-                align_occ = [];
-
-                
-                %align the initial measure
-                init_1 = obj.modes{1}.sel_init_monom(obj, d, [1, 2, 4])
-
-                align_init = [];
-                align_term = [];
+                                
+               
+                % align_occ = [];
 
 
-                three_con = [align_occ; align_init; align_term];
+                occ_match = obj.align_occ(d);
+                init_match = obj.align_init(d);
+                term_match = obj.align_term(d);
+
+                three_con = [occ_match; init_match; term_match];
             else
                 three_con = [];
             end
         
-        end        
+        end         
+
+        function occ_mom_con = align_occ(obj, d)
+            %TODO: the alignment is broken. fix this.
+            %also reduce the number of alignment constraints
+
+            bmom_all = obj.three_phase_current_mom(d);
+            if obj.diff.DYNAMICS
+                %separate by levels in phase a
+                occ_mom_con = [];
+
+                bmom_all = obj.current_mom(d);
+
+                bmom = 0;
+                
+                mom_3 = obj.diff.get_I_marginal(d);
+
+                for i = 1:length(bmom)
+                    occ_mom_con = [occ_mom_con; bmom_all{i} - mom_3{i}==0];
+                end
+                % occ_mom_con = (bmom - mom_3)==0;
+            else
+                %put all levels together (add them up in phase a)
+                bmom_all = obj.current_mom(d);
+
+                bmom = 0;
+                for i = 1:length(bmom_all)
+                    bmom = bmom + bmom_all{i};
+                end
+                mom_3 = obj.diff.get_I_marginal(d);
+                % occ_mom_con = (bmom - mom_3)==0;
+                occ_mom_con = mom_3==bmom;
+            end
+
+            % bmom_all = obj.three_phase_current_mom(d);
+            % mom_3 = obj.diff.get_I_marginals(d);
+            % align_occ_set = (bmom_all - mom_3);
+
+            % occ_mom_con = reshape(align_occ_set, [], 1)==0;
+            % occ_mom_con = occ_mom_con(:, 1);
+        end
+
+        function init_mom_con = align_init(obj, d)
+            %align the initial measure single-three phase
+            if obj.diff.DYNAMICS            
+                init_1 = obj.modes{end}.sel_term_monom(d, [1, 2, 4]);
+                init_3 = obj.diff.sel_term_monom(d, [1, 2, 3]);
+
+                
+                %TODO: quarter-wave symmetry will destroy some of this
+                init_mom_con = [];
+                for i = 1:length(init_1)
+                    if ~isnumeric(init_1{i}) || ~isnumeric(init_3{i}) 
+                        init_mom_con= [init_mom_con; init_1{i} == init_3{i}];
+                    end
+                end
+            else
+                init_mom_con = [];
+            end
+        end
+
+        function term_mom_con = align_term(obj, d)
+            %align the terminal measure single-three phase
+            if obj.diff.DYNAMICS            
+                term_1 = obj.modes{end}.sel_term_monom(d, [1, 2, 4]);
+                term_3 = obj.diff.sel_term_monom(d, [1, 2, 3]);
+
+                
+                %TODO: quarter-wave symmetry will destroy some of this
+                term_mom_con = [];
+                for i = 1:length(term_1)
+                    if ~isnumeric(term_1{i}) || ~isnumeric(term_3{i}) 
+                        term_mom_con= [term_mom_con; term_1{i} == term_3{i}];
+                    end
+                end
+            else
+                term_mom_con = [];
+            end
+        end
+
+
+        function mom_I = current_mom(obj, d)
+            %get the marginals of (c, s, I) from the occupation measure
+            
+            vars_inv = obj.vars.x([1, 2, 4]);
+            p_in = mmon(vars_inv, d);
+            p_in_sym = obj.symmetry_eval_current(p_in, vars_inv);
+
+            bmom = 0;
+                %dispatch into the measures
+                for m = 1:length(obj.modes)
+                    curr_mom = obj.modes{m}.mom_sub(obj.get_vars(), p_in_sym);
+                    bmom = madd_cell_mom(bmom, curr_mom, 1);
+                end
+
+                %collect all differential moments together
+                % bmom_all = 0*mom(mon_3);
+                mom_I = bmom(:, 1);
+                for i =1:size(bmom, 1)
+                    for j = 2:size(bmom, 2)
+                        mom_I{i, j} = mom_I{i, j} +  bmom{i, j};
+                    end
+                end
+        end
 
         function bmom_all = three_phase_current_mom(obj, d)
                 %get moments of the differntial-mode current

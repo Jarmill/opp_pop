@@ -3,6 +3,8 @@ classdef opp_mode_3 < opp_mode_interface
     %   Detailed explanation goes here       
     properties
         L_single; 
+        correspond; 
+        orbits;
     end
 
     methods
@@ -13,6 +15,7 @@ classdef opp_mode_3 < opp_mode_interface
             obj@opp_mode_interface(0, lsupp_ref, objective_mode, opts_3)
             obj.L = opts_3.L;
             obj.L_single = opts_3.L_single;
+            obj.orbits = get_orbits(obj.L);
 
         end
 
@@ -102,6 +105,36 @@ classdef opp_mode_3 < opp_mode_interface
 
 
         %% moment fetching
+
+        function mom_I = get_I_marginal(obj, d)
+            %TODO: segment by level
+
+            %return the mass of the initial measure in this mode
+            va = mmon(obj.vars.x([1, 2, 3]), d);
+
+            if obj.Symmetry            
+                va = obj.symmetry_eval_current(va, obj.vars.x(3));               
+            end
+
+            % v3 = [va, vb, vc];
+
+            [N, P] = size(obj.levels);
+                      
+            N1 = length(obj.L_single);
+            mom_I = cell(N1, 1);
+            for i = 1:N1
+                mom_I{i} = 0;
+            end
+
+            m_a = obj.mom_sub(obj.vars.x, va);
+            % mom_3 = 0;
+            for e = 1:N
+                ind_I = obj.correspond(e);
+                mom_I{ind_I} = mom_I{ind_I} + m_a{e};
+            end
+                    
+        end
+
         function mom_3 = get_I_marginals(obj, d)
             %TODO: segment by level
 
@@ -155,6 +188,9 @@ classdef opp_mode_3 < opp_mode_interface
                 % end
             end
         end
+
+        %% orbits and marginal matching
+
     end
 end
 

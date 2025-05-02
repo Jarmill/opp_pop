@@ -12,7 +12,8 @@ classdef opp_jump_3
        dst;           %destination mode
        L;             %levels of the inverter  
        L_single;      %three-phase levels of the inverter
-       vars;          %basic variable type              
+       vars;          %basic variable type    
+       orbits;        %cyclic symmetry for the guards
     end
     
     methods
@@ -23,12 +24,19 @@ classdef opp_jump_3
             obj.L = opts_3.L;
             obj.L_single = opts_3.L_single;
             % obj.G = G;
-            [obj.src, obj.dst] = find(G);            
+            [obj.src, obj.dst] = find(G);     
+
+            
+
 
             obj.opts = opts_3;
             obj.vars = lsupp_ref.vars;
             
+            L_aug = [obj.L(:, obj.src); obj.L(:, obj.dst)];
+            obj.orbits = get_orbits(L_aug);
+
             obj.jump = obj.create_jumps(lsupp_ref);
+
 
             
         end

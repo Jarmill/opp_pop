@@ -44,6 +44,8 @@ classdef opp_diff_dyn
                 %which index (single-phase level at phase a) is the 
                 %three-phase level associated with?
                 obj.correspond = (1:length(obj.opts.L_single)) * (obj.opts.L_single' ==obj.opts.L(1, :));
+                obj.mode.correspond = obj.correspond;
+               
             end
 
             %generate the modes and jumps
@@ -51,7 +53,12 @@ classdef opp_diff_dyn
 
         function I_marg = get_I_marginals(obj, d)
             %maybe this isn't needed?
-            I_marg = obj.mode.get_I_marginals(d)            
+            I_marg = obj.mode.get_I_marginals(d);            
+        end
+
+        function I_marg = get_I_marginal(obj, d)
+            %maybe this isn't needed?
+            I_marg = obj.mode.get_I_marginal(d);            
         end
 
         %create the modes and jumps for the three-phase system
@@ -181,6 +188,8 @@ classdef opp_diff_dyn
 
         end
 
+
+        
 
         %% moment material
         function [objective] = objective_diff(obj)

@@ -422,7 +422,8 @@ classdef opp_manager
                     bmom = bmom + bmom_all{i};
                 end
                 mom_3 = obj.diff.get_I_marginal(d);
-                occ_mom_con = (bmom - mom_3)==0;
+                % occ_mom_con = (bmom - mom_3)==0;
+                occ_mom_con = mom_3==bmom;
             end
 
             % bmom_all = obj.three_phase_current_mom(d);
@@ -444,7 +445,7 @@ classdef opp_manager
                 init_mom_con = [];
                 for i = 1:length(init_1)
                     if ~isnumeric(init_1{i}) || ~isnumeric(init_3{i}) 
-                        init_mom_con= [init_mom_con; init_1{i} - init_3{i} ==0];
+                        init_mom_con= [init_mom_con; init_1{i} == init_3{i}];
                     end
                 end
             else
@@ -463,7 +464,7 @@ classdef opp_manager
                 term_mom_con = [];
                 for i = 1:length(term_1)
                     if ~isnumeric(term_1{i}) || ~isnumeric(term_3{i}) 
-                        term_mom_con= [term_mom_con; term_1{i} - term_3{i} ==0];
+                        term_mom_con= [term_mom_con; term_1{i} == term_3{i}];
                     end
                 end
             else

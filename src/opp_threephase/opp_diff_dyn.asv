@@ -13,6 +13,7 @@ classdef opp_diff_dyn
         testing = 0;
         objective = 0;
         correspond = [];
+        DYNAMICS = true;
     end
     
     methods
@@ -43,9 +44,20 @@ classdef opp_diff_dyn
                 %which index (single-phase level at phase a) is the 
                 %three-phase level associated with?
                 obj.correspond = (1:length(obj.opts.L_single)) * (obj.opts.L_single' ==obj.opts.L(1, :));
+                obj.mode.correspond = obj.correspond;
             end
 
             %generate the modes and jumps
+        end
+
+        function I_marg = get_I_marginals(obj, d)
+            %maybe this isn't needed?
+            I_marg = obj.mode.get_I_marginals(d);            
+        end
+
+        function I_marg = get_I_marginal(obj, d)
+            %maybe this isn't needed?
+            I_marg = obj.mode.get_I_marginal(d);            
         end
 
         %create the modes and jumps for the three-phase system
@@ -175,6 +187,15 @@ classdef opp_diff_dyn
 
         end
 
+
+        function orbit = get_orbits(obj)
+            %find the orbits associated with the cyclic symmetry
+
+            %TODO: half-wave symmetry
+            %start with full-wave symmetry
+            L = obj.L;
+            G3 = [0 0 1; 0]
+        end
 
         %% moment material
         function [objective] = objective_diff(obj)
@@ -307,12 +328,36 @@ classdef opp_diff_dyn
         %constraints to ensure alignment with the k-and-clock-constrained
         %switching sequence
 
-        function sel_out = sel_init_monom(obj, d)
+        function sel_out = sel_init_monom(obj, d, ind)
             %used for alignment
-            sel_orig = obj.mode.sel_init_monom(2, [1, 2, 3])
-            sel_out = 
+            sel_orig = obj.mode.sel_init_monom(d, ind);
+            N = length(obj.opts.L_single);
+            sel_out = cell(N, 1);            
+            for i = 1:N
+                sel_out{i} = 0;
+            end
+            NN = size(obj.opts.L, 2);
+            for v = 1:NN
+                corr_i = obj.correspond(v);
+                sel_out{corr_i} = sel_out{corr_i} + sel_orig{v};
+            end
         end
 
+
+        function sel_out = sel_term_monom(obj, d, ind)
+            %used for alignment
+            sel_orig = obj.mode.sel_term_monom(d, ind);
+            N = length(obj.opts.L_single);
+            sel_out = cell(N, 1);            
+            for i = 1:N
+                sel_out{i} = 0;
+            end
+            NN = size(obj.opts.L, 2);
+            for v = 1:NN
+                corr_i = obj.correspond(v);
+                sel_out{corr_i} = sel_out{corr_i} + sel_orig{v};
+            end
+        end
 
         %% recovery
         function [m_out, tr_out, j_out] = mmat_corner(obj)
