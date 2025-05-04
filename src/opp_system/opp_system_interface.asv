@@ -23,12 +23,8 @@ classdef (Abstract) opp_system_interface
         function objective_out = objective(obj)
             %objective in the single-phase setting
             objective_out = 0;
-            if iscell(obj.mode)
-                for i = 1:length(obj.mode)
-                    objective_out = objective_out + obj.mode{i}.objective();
-                end 
-            else
-                objective_out = obj.mode.objective();
+            for i = 1:length(obj.mode)
+                objective_out = objective_out + obj.mode{i}.objective();
             end
         end      
 
@@ -161,14 +157,10 @@ classdef (Abstract) opp_system_interface
                 sym_scale = 2^(-SYM);
                 %TODO: change the lebesgue constraint for symmetry
                 
-                if iscell(obj.mode)
-                    for m = 1:length(obj.mode)                    
-                        tr_curr = obj.mode{m}.trig_occ_monom(d, SYM);
-                        trmon_sum = trmon_sum + sym_scale*cell_sum(tr_curr);
-                        % trmon_sum = madd_cell_mom(trmon_sum,tr_curr, sym_scale);
-                    end
-                else
-                     trmon_sum = cell_sum(obj.mode.trig_occ_monom(d, SYM));
+                for m = 1:length(obj.mode)
+                    tr_curr = obj.mode{m}.trig_occ_monom(d, SYM);
+                    trmon_sum = trmon_sum + sym_scale*cell_sum(tr_curr);
+                    % trmon_sum = madd_cell_mom(trmon_sum,tr_curr, sym_scale);
                 end
     
                 uni_con = (trmon_sum == uni_circ);

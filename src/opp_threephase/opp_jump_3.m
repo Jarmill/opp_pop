@@ -123,6 +123,17 @@ classdef opp_jump_3
             end
         end
 
+        function mass_out = mass(obj)
+            %find the mass of all of the jump measures
+            mass_out = 0;
+            [E, P] = size(obj.jump);            
+            for e=1:E
+                for p = 1:P                                               
+                    mass_out= mass_out + obj.jump{e, p}.mass();
+                end
+            end
+        end
+
         %% recovery
          function m_out = mmat(obj)
             %get moment matrices of the jumps

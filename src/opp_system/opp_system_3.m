@@ -215,13 +215,15 @@ classdef opp_system_3 < opp_system_interface
                 con_preserve = obj.con_return(d);
                 con_prob = obj.con_prob_dist();
                 con_liou = obj.con_flow(d);
+                con_uni = obj.con_uni_circ(d);
+                con_jumpmass = obj.con_jump_bound();
 
                 con_sym = obj.con_rotate_symmetry(d);
     
                 %TODO: internal marginal constraints (ensure three-phase
                 %symmetry in the occupation and jump measures)
     
-                mom_con = [con_liou; con_preserve; con_prob];            
+                mom_con = [con_liou; con_preserve; con_prob; con_uni; con_jumpmass; con_sym];            
             end
         end
 
@@ -268,10 +270,18 @@ classdef opp_system_3 < opp_system_interface
             con_sym =[];
         end
 
+        function con_jumpmass = con_jump_bound(obj)
+            jlim = double(obj.opts.k)*3*(2^double(obj.opts.Symmetry));
+            con_jumpmass = (obj.jumps.mass() <= jlim);
+        end
+
        function return_con = con_return(obj, d)
             %conservation of position between the initial and final measure
             
             % mass_con = obj.modes{1}.mass_init_mode();
+            if obj.opts.Symmetry == 2
+                return_con = [];
+            else
             init_monom = obj.mode.init_monom(d, true);
             
             %TODO:  fix the quarter-wave structure
@@ -281,7 +291,7 @@ classdef opp_system_3 < opp_system_interface
                 %index the terminal destination levels based on the
                 %applied symmetry
                 %unconstrained for quarter-wave symmetry (here at least)
-                flip_load = 2*(obj.opts.Symmetry>0);  
+                flip_load = 2*(obj.opts.Symmetry==1);  
                               
 
                 stop_monom = obj.mode.term_monom(d, true, flip_load);
@@ -304,7 +314,7 @@ classdef opp_system_3 < opp_system_interface
                 end
 
             % return_con = (return_mom==0);
-        
+            end
         end
        
         %% moment constraints (external)
@@ -349,14 +359,18 @@ classdef opp_system_3 < opp_system_interface
                 [mode_out, tr_out]= obj.mode.mmat_corner();
     
                 mj = obj.jumps.mmat_corner();
-                j_out = mj.jumps();
+                jump_out = mj.jumps();
             else
                 mode_out = [];
                 tr_out = [];
-                j_out = [];
+                jump_out = [];
             end
 
-            m_out = struct('mode', mode_out, 'trans', tr_out, 'jump', j_out);
+            m_out = struct;
+            m_out.mode = mode_out;
+            m_out.trans = tr_out;
+            m_out.jump = jump_out;
+            % m_out = struct('mode', mode_out, 'trans', tr_out, 'jump', jump_out);
         end
 
         function [m_out] = mmat(obj)
@@ -365,13 +379,16 @@ classdef opp_system_3 < opp_system_interface
                 [mode_out, tr_out]= obj.mode.mmat();
     
                 mj = obj.jumps.mmat();
-                j_out = mj.jumps();
+                jump_out = mj.jumps();
             else
                 mode_out = [];
                 tr_out = [];
-                j_out = [];
+                jump_out = [];
             end
-            m_out = struct('mode', mode_out, 'trans', tr_out, 'jump', j_out);
+            m_out = struct;
+            m_out.mode = mode_out;
+            m_out.trans = tr_out;
+            m_out.jump = jump_out;
        end
 
         function ms = mass_summary(obj)

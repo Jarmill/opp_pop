@@ -180,8 +180,8 @@ classdef opp_manager
                
                 % align_occ = [];
 
-
-                occ_match = obj.align_occ(d);
+                occ_match = [];
+                % occ_match = obj.align_occ(d);
                 init_match = obj.align_init(d);
                 term_match = obj.align_term(d);
 
@@ -199,7 +199,7 @@ classdef opp_manager
                 %separate by levels in phase a
                 occ_mom_con = [];
 
-                bmom_all = obj.current_mom(d);
+                bmom_all = obj.sys1.current_mom(d);
                 
                 mom_3 = obj.sys3.get_I_marginal(d);
 
@@ -232,7 +232,7 @@ classdef opp_manager
         function init_mom_con = align_init(obj, d)
             %align the initial measure single-three phase
             if obj.sys3.DYNAMICS            
-                init_1 = obj.sys1.modes{1}.sel_init_monom(d, [1, 2, 4]);
+                init_1 = obj.sys1.mode{1}.sel_init_monom(d, [1, 2, 4]);
                 init_3 = obj.sys3.sel_init_monom(d, [1, 2, 3]);
 
                 
@@ -251,7 +251,7 @@ classdef opp_manager
         function term_mom_con = align_term(obj, d)
             %align the terminal measure single-three phase
             if obj.sys3.DYNAMICS            
-                term_1 = obj.sys1.modes{end}.sel_term_monom(d, [1, 2, 4]);
+                term_1 = obj.sys1.mode{end}.sel_term_monom(d, [1, 2, 4]);
                 term_3 = obj.sys3.sel_term_monom(d, [1, 2, 3]);
 
                 
@@ -282,7 +282,7 @@ classdef opp_manager
                 %for testing only
                 % m0 = obj.modes{1}.initial_mass();
                 % [~, mass_init_sum] = ones(1, length(obj.opts.L))*m0(:, 1);
-                [~, mass_init_sum] = obj.sys1.modes{1}.initial_mass();
+                [~, mass_init_sum] = obj.sys1.mode{1}.initial_mass();
                 objective = mass_init_sum;
             else
                 % objective_jump = 0;
