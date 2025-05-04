@@ -367,7 +367,8 @@ classdef opp_system_3 < opp_system_interface
                     sel_out{corr_i} = sel_out{corr_i} + sel_orig{v, p};
                 end
             end
-        end        
+        end
+        
 
         %% recovery
         function [m_out] = mmat_corner(obj)
