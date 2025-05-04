@@ -45,6 +45,7 @@ classdef opp_diff_dyn
                 %three-phase level associated with?
                 obj.correspond = (1:length(obj.opts.L_single)) * (obj.opts.L_single' ==obj.opts.L(1, :));
                 obj.mode.correspond = obj.correspond;
+               
             end
 
             %generate the modes and jumps
@@ -74,6 +75,7 @@ classdef opp_diff_dyn
             opts_3.partition = 1 + (opts_3.Symmetry==0);   
             opts_3.L_single = opts_3.L;
             opts_3.L = L3;
+            opts_3.allowed_levels = ones(1, size(L3, 2));
             N = size(L3, 2);
 
             mode = opp_mode_3(lsupp_base, obj.objective*ones(N, 1), opts_3);
@@ -188,14 +190,7 @@ classdef opp_diff_dyn
         end
 
 
-        function orbit = get_orbits(obj)
-            %find the orbits associated with the cyclic symmetry
-
-            %TODO: half-wave symmetry
-            %start with full-wave symmetry
-            L = obj.L;
-            G3 = [0 0 1; 0]
-        end
+        
 
         %% moment material
         function [objective] = objective_diff(obj)
@@ -235,8 +230,10 @@ classdef opp_diff_dyn
             else
                 supp_con = obj.supp_con();
     
-                con_liou = obj.con_flow(d);
+                % con_liou = obj.con_flow(d);
+                con_liou = [];
                 con_preserve = obj.con_return(d);
+                % con_preserve = [];
                 con_prob = obj.con_prob_dist();
 
                 con_sym = obj.con_rotate_symmetry(d);
@@ -309,14 +306,23 @@ classdef opp_diff_dyn
 
                 stop_monom = obj.mode.term_monom(d, true, flip_load);
                 return_mom = madd_cell_mom(return_mom, stop_monom, -1);
-        
+                
+                return_mom_1 = return_mom(:, 1);
                 [N, P] = size(return_mom);
                 return_con = [];
+
+                for n = 1:N
+                    for p = 2:P
+                        return_mom_1{1, p} = return_mom_1{1, , p} + 
+                    end
+                end
+
                 for n = 1:N
                     for p = 1:P
-                        if ~isnumeric(return_mom{n, p})
-                            return_con = [return_con; return_mom{n, p}==0];
-                        end
+                        return_mom_1 = madd_cell_mom(return_mom, stop_monom, -1);
+                    end
+                    if ~isnumeric(return_mom{n, p})
+                        return_con = [return_con; return_mom{n, p}==0];
                     end
                 end
 

@@ -81,9 +81,9 @@ classdef opp_manager
 
 
             [obj.vars, obj.jumps, obj.modes] = obj.create_system(obj.opts);
-            obj.diff = opp_diff_current(obj.opts.three_phase == "Floating");
+            % obj.diff = opp_diff_current(obj.opts.three_phase == "Floating");
             % obj.diff = opp_diff_current_split(obj.opts.three_phase == "Floating");
-            % obj.diff = opp_diff_dyn(obj.opts);
+            obj.diff = opp_diff_dyn(obj.opts);
         end
 
         %% construct everything
@@ -267,6 +267,11 @@ classdef opp_manager
             [con_three, supp_three] = obj.diff.cons(d);
             con_align = obj.con_threephase_align(d);
 
+            % con_align = [];
+            % supp_three = [];
+            % con_three = [];
+            % supp_three = obj.diff.supp_con();
+
             
 
 
@@ -384,6 +389,7 @@ classdef opp_manager
 
 
                 occ_match = obj.align_occ(d);
+                % occ_match = [];
                 init_match = obj.align_init(d);
                 term_match = obj.align_term(d);
 
@@ -397,21 +403,18 @@ classdef opp_manager
         function occ_mom_con = align_occ(obj, d)
             %TODO: the alignment is broken. fix this.
             %also reduce the number of alignment constraints
-
-            bmom_all = obj.three_phase_current_mom(d);
             if obj.diff.DYNAMICS
                 %separate by levels in phase a
                 occ_mom_con = [];
 
                 bmom_all = obj.current_mom(d);
-
-                bmom = 0;
                 
                 mom_3 = obj.diff.get_I_marginal(d);
 
-                for i = 1:length(bmom)
+                for i = 1:length(bmom_all)
                     occ_mom_con = [occ_mom_con; bmom_all{i} - mom_3{i}==0];
                 end
+                occ_mom_con = [];
                 % occ_mom_con = (bmom - mom_3)==0;
             else
                 %put all levels together (add them up in phase a)
@@ -437,15 +440,15 @@ classdef opp_manager
         function init_mom_con = align_init(obj, d)
             %align the initial measure single-three phase
             if obj.diff.DYNAMICS            
-                init_1 = obj.modes{end}.sel_term_monom(d, [1, 2, 4]);
-                init_3 = obj.diff.sel_term_monom(d, [1, 2, 3]);
+                init_1 = obj.modes{1}.sel_init_monom(d, [1, 2, 4]);
+                init_3 = obj.diff.sel_init_monom(d, [1, 2, 3]);
 
                 
                 %TODO: quarter-wave symmetry will destroy some of this
                 init_mom_con = [];
                 for i = 1:length(init_1)
                     if ~isnumeric(init_1{i}) || ~isnumeric(init_3{i}) 
-                        init_mom_con= [init_mom_con; init_1{i} == init_3{i}];
+                        init_mom_con= [init_mom_con; init_1{i} - init_3{i}==0];
                     end
                 end
             else
@@ -464,7 +467,7 @@ classdef opp_manager
                 term_mom_con = [];
                 for i = 1:length(term_1)
                     if ~isnumeric(term_1{i}) || ~isnumeric(term_3{i}) 
-                        term_mom_con= [term_mom_con; term_1{i} == term_3{i}];
+                        term_mom_con= [term_mom_con; term_1{i} - term_3{i}==0];
                     end
                 end
             else

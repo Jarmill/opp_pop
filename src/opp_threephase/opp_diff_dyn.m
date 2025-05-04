@@ -75,6 +75,7 @@ classdef opp_diff_dyn
             opts_3.partition = 1 + (opts_3.Symmetry==0);   
             opts_3.L_single = opts_3.L;
             opts_3.L = L3;
+            opts_3.allowed_levels = ones(1, size(L3, 2));
             N = size(L3, 2);
 
             mode = opp_mode_3(lsupp_base, obj.objective*ones(N, 1), opts_3);
@@ -229,9 +230,11 @@ classdef opp_diff_dyn
             else
                 supp_con = obj.supp_con();
     
-                con_liou = obj.con_flow(d);
+                
+                % con_liou = [];
                 con_preserve = obj.con_return(d);
                 con_prob = obj.con_prob_dist();
+                con_liou = obj.con_flow(d);
 
                 con_sym = obj.con_rotate_symmetry(d);
     
@@ -303,14 +306,20 @@ classdef opp_diff_dyn
 
                 stop_monom = obj.mode.term_monom(d, true, flip_load);
                 return_mom = madd_cell_mom(return_mom, stop_monom, -1);
-        
+                
+                return_mom_1 = return_mom(:, 1);
                 [N, P] = size(return_mom);
                 return_con = [];
+
                 for n = 1:N
-                    for p = 1:P
-                        if ~isnumeric(return_mom{n, p})
-                            return_con = [return_con; return_mom{n, p}==0];
-                        end
+                    for p = 2:P
+                        return_mom_1{n, 1} = return_mom_1{n, 1} + return_mom{n, p};
+                    end
+                end
+
+                for n = 1:N
+                    if ~isnumeric(return_mom{n})
+                        return_con = [return_con; return_mom_1{n}==0];
                     end
                 end
 
@@ -333,7 +342,7 @@ classdef opp_diff_dyn
             NN = size(obj.opts.L, 2);
             for v = 1:NN
                 corr_i = obj.correspond(v);
-                sel_out{corr_i} = sel_out{corr_i} + sel_orig{v};
+                sel_out{corr_i} = sel_out{corr_i} + sel_orig{v, 1};
             end
         end
 
@@ -349,7 +358,7 @@ classdef opp_diff_dyn
             NN = size(obj.opts.L, 2);
             for v = 1:NN
                 corr_i = obj.correspond(v);
-                sel_out{corr_i} = sel_out{corr_i} + sel_orig{v};
+                sel_out{corr_i} = sel_out{corr_i} + sel_orig{v, end};
             end
         end
 
@@ -380,7 +389,37 @@ classdef opp_diff_dyn
                 tr_out = [];
                 j_out = [];
             end
-        end
+       end
+
+       function ms = mass_summary(obj)
+           ms = struct;
+           [N, P] = size(obj.mode.levels);
+           ms.mode = zeros(N, P);
+           ms.trans = zeros(N, P-1);
+            for n=1:N
+                for p = 1:P
+                    ms.mode(n, p) = double(obj.mode.levels{n, p}.sys{1}.meas_occ.mass());
+                    if p < P
+                        ms.trans(n, p) = double(obj.mode.transition{n, p}.mass());
+                    end
+                end
+            end       
+
+            E = length(obj.jumps.src)
+            ms.jump = zeros(E, 2);
+            
+            
+            for e = 1:E
+                for p = 1:2
+                    ms.jump(n, p) = double(obj.jumps.jump{n, p}.mass());                    
+                end
+            end
+        
+% 
+            % [c, mom_harm] = obj.con_harmonics();
+            % ms.harm = double(mom_harm);
+
+       end
 
     end
 end

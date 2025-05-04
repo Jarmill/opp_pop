@@ -39,7 +39,7 @@ classdef (Abstract) opp_mode_interface
             %create locations for each level     
             [prefix] = obj.get_prefix();
 
-            obj.levels = obj.make_level_locs(m, opts, lsupp_base, objective_mode, f, prefix);          
+            obj.levels = obj.make_level_locs(m, opts, lsupp_base, objective_mode, f, prefix);                  
             
             obj.transition = obj.make_transitions(m, opts,  lsupp_base, prefix);
         end
