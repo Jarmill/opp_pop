@@ -1,5 +1,5 @@
 classdef opp_system_3 < opp_system_interface
-    %OPP_DIFF_DYN Storage of three-phase terms
+    %OPP_SYSTEM_3 Storage of three-phase terms
     %   imposes that the three-phase terms obey dynamics as well
     %   should hopefully reduce conservatism
     
@@ -12,7 +12,7 @@ classdef opp_system_3 < opp_system_interface
     
     methods
         function obj = opp_system_3(opts)
-            %OPP_DIFF_DYN Construct an instance of this class
+            %OPP_SYSTEM_3 Construct an instance of this class
             %   Detailed explanation goes here
 
             obj@opp_system_interface(opts)

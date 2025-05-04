@@ -8,10 +8,8 @@ classdef opp_manager
     
     properties
         opts;   %f
-        jumps;  %cell of opp_switch
-        modes;  %cell of opp_mode(), contains initial/terminal/occupation measures
-
-        diff;   %storage for the three-phase terms
+        sys1;   %storage for the single-phase terms
+        sys3;   %storage for the three-phase terms
 
         sdp_settings;
         vars;
@@ -19,13 +17,31 @@ classdef opp_manager
     
     methods
         function obj = opp_manager(opts) 
-            %OPP_MANAGER Construct an instance of this class
+            %OPP_MANAGER storage to run the optimal pulse pattern problem
             %   Detailed explanation goes here
             %
             %opts: opp_options structure
-            obj.opts = opts;
-            if obj.opts.precise
-                obj.sdp_settings = sdpsettings('solver','sdpa_gmp',...
+
+            %break down the options structure
+            [obj.opts, obj.sdp_settings] = obj.process_opts(opts);
+
+
+            [obj.vars, obj.jumps, obj.modes] = obj.create_system(obj.opts);
+            % obj.sys3 = opp_diff_current(obj.opts.three_phase == "Floating");
+            % obj.sys3 = opp_diff_current_split(obj.opts.three_phase == "Floating");
+            
+            obj.sys1 = opp_system_1(obj.opts);
+            obj.sys3 = opp_system_3(obj.opts);
+        end
+
+
+
+        %% construct everything
+
+        function [opts_out, sdp_settings]= process_opts(obj, opts)
+            opts_out = opts;
+            if opts_out.precise
+                sdp_settings = sdpsettings('solver','sdpa_gmp',...
                 'sdpa_gmp.epsilonStar', 10^(-25), ...
                 'sdpa_gmp.epsilonDash', 10^(-25), ...
                 'sdpa_gmp.lambdaStar', 10^(4), ...
@@ -38,65 +54,49 @@ classdef opp_manager
                 'sdpa_gmp.maxIteration',200, ... 
                 'sdpa_gmp.precision',250);
             else
-                obj.sdp_settings = sdpsettings('solver', opts.solver, 'mosek.MSK_DPAR_BASIS_TOL_S', 1e-8, ...
+                sdp_settings = sdpsettings('solver', opts.solver, 'mosek.MSK_DPAR_BASIS_TOL_S', 1e-8, ...
                     'mosek.MSK_DPAR_BASIS_TOL_X', 1e-8, 'mosek.MSK_DPAR_INTPNT_CO_TOL_MU_RED', 1e-9, ...
                     'mosek.MSK_DPAR_INTPNT_TOL_PATH', 1e-6);        
             end
 
             N = length(opts.L);
             %quarter-wave symmetry starts at 0
-            if obj.opts.Symmetry==2                
-                obj.opts.start_level = int32((N+1)/2);
+            if opts_out.Symmetry==2                
+                opts_out.start_level = int32((N+1)/2);
             end
 
             %unipolar only if not full-wave symmetric
-            if obj.opts.Symmetry==0
-                obj.opts.unipolar = 0;
+            if opts_out.Symmetry==0
+                opts_out.unipolar = 0;
             end
 
             %if the start level is declared, then restrict the switching
             %structure
             pulse_length = 2^(-double(opts.Symmetry)) * opts.k;
             if isempty(opts.allowed_levels)
-                obj.opts.allowed_levels = ones( pulse_length+1, N);
+                opts_out.allowed_levels = ones( pulse_length+1, N);
             end
 
-            if obj.opts.start_level ~= 0
+            if opts_out.start_level ~= 0
                 for m = 1:pulse_length+1
                     for n = 1:N
-                        if (mod(m+n+obj.opts.start_level, 2)==0) || (abs(n-obj.opts.start_level) > (m-1))
-                            obj.opts.allowed_levels(m, n) = 0;
+                        if (mod(m+n+opts_out.start_level, 2)==0) || (abs(n-opts_out.start_level) > (m-1))
+                            opts_out.allowed_levels(m, n) = 0;
                         end
                         
                     end
                 end
             end
 
-            if obj.opts.Symmetry ~= 0 && obj.opts.unipolar
+            if opts_out.Symmetry ~= 0 && opts_out.unipolar
                 
-                obj.opts.allowed_levels(:, 1:((N-1)/2)) = 0;
+                opts_out.allowed_levels(:, 1:((N-1)/2)) = 0;
                         
             end
-
-
-
-            [obj.vars, obj.jumps, obj.modes] = obj.create_system(obj.opts);
-            % obj.diff = opp_diff_current(obj.opts.three_phase == "Floating");
-            % obj.diff = opp_diff_current_split(obj.opts.three_phase == "Floating");
-            obj.diff = opp_system_3(obj.opts);
         end
-
-        %% construct everything
-        function [vars, jumps, modes] = create_system(obj, opts)
-            %used in the constructor
-
-            k = opts.k/(2^opts.Symmetry);
-            jumps = cell(k, 1);
-            modes = cell(k+1, 1);
-
-            %declare the variables
+        function [t, x] = create_vars(obj, opts)
+              %declare the variables
             load_state = imag(opts.Z_load)~=0;
-            % mpol('x', 3 + load_state);
             mpol('c', 1, 1);
             mpol('s', 1, 1)
             mpol('phi', 1, 1)
@@ -105,6 +105,25 @@ classdef opp_manager
             if load_state
                 x = [x; I];
             end
+
+                if opts.TIME_INDEP
+                   t = [];
+                else
+                    mpol('t', 1, 1)
+                    % t = t;
+                end
+           
+            end
+        
+
+        function [vars, jumps, modes] = create_system(obj, opts)
+            %used in the constructor
+
+            k = opts.k/(2^opts.Symmetry);
+            jumps = cell(k, 1);
+            modes = cell(k+1, 1);
+
+          
             %x = [c; s; phi; l] -> [cos(theta), sin(theta), clock, load
             %state (current of load inductor/voltage of load capacitor)
 
@@ -264,13 +283,13 @@ classdef opp_manager
             
 
             %three-phase constraints         
-            [con_three, supp_three] = obj.diff.cons(d);
+            [con_three, supp_three] = obj.sys3.cons(d);
             con_align = obj.con_threephase_align(d);
 
             % con_align = [];
             % supp_three = [];
             % con_three = [];
-            % supp_three = obj.diff.supp_con();
+            % supp_three = obj.sys3.supp_con();
 
             
 
@@ -403,13 +422,13 @@ classdef opp_manager
         function occ_mom_con = align_occ(obj, d)
             %TODO: the alignment is broken. fix this.
             %also reduce the number of alignment constraints
-            if obj.diff.DYNAMICS
+            if obj.sys3.DYNAMICS
                 %separate by levels in phase a
                 occ_mom_con = [];
 
                 bmom_all = obj.current_mom(d);
                 
-                mom_3 = obj.diff.get_I_marginal(d);
+                mom_3 = obj.sys3.get_I_marginal(d);
 
                 for i = 1:length(bmom_all)
                     occ_mom_con = [occ_mom_con; bmom_all{i} - mom_3{i}==0];
@@ -424,13 +443,13 @@ classdef opp_manager
                 for i = 1:length(bmom_all)
                     bmom = bmom + bmom_all{i};
                 end
-                mom_3 = obj.diff.get_I_marginal(d);
+                mom_3 = obj.sys3.get_I_marginal(d);
                 % occ_mom_con = (bmom - mom_3)==0;
                 occ_mom_con = mom_3==bmom;
             end
 
             % bmom_all = obj.three_phase_current_mom(d);
-            % mom_3 = obj.diff.get_I_marginals(d);
+            % mom_3 = obj.sys3.get_I_marginals(d);
             % align_occ_set = (bmom_all - mom_3);
 
             % occ_mom_con = reshape(align_occ_set, [], 1)==0;
@@ -439,9 +458,9 @@ classdef opp_manager
 
         function init_mom_con = align_init(obj, d)
             %align the initial measure single-three phase
-            if obj.diff.DYNAMICS            
+            if obj.sys3.DYNAMICS            
                 init_1 = obj.modes{1}.sel_init_monom(d, [1, 2, 4]);
-                init_3 = obj.diff.sel_init_monom(d, [1, 2, 3]);
+                init_3 = obj.sys3.sel_init_monom(d, [1, 2, 3]);
 
                 
                 %TODO: quarter-wave symmetry will destroy some of this
@@ -458,9 +477,9 @@ classdef opp_manager
 
         function term_mom_con = align_term(obj, d)
             %align the terminal measure single-three phase
-            if obj.diff.DYNAMICS            
+            if obj.sys3.DYNAMICS            
                 term_1 = obj.modes{end}.sel_term_monom(d, [1, 2, 4]);
-                term_3 = obj.diff.sel_term_monom(d, [1, 2, 3]);
+                term_3 = obj.sys3.sel_term_monom(d, [1, 2, 3]);
 
                 
                 %TODO: quarter-wave symmetry will destroy some of this
@@ -520,14 +539,6 @@ classdef opp_manager
 
 
                 %TODO: testing only (do the whole current)
-                % mon_3_diff = mon_3 * K';
-                % mon_3_diff = mon_3 * Kt';
-                % width_3 = size(mon_3, 2);
-                % mon_3_cm = mon_3*ones(width_3, 1)/3;
-                % 
-                % %process the symmetry (if valid)
-                % mon_3_diff = obj.symmetry_eval(mon_3_diff, obj.vars.x([1; 2]));
-
                 bmom = 0;
                 %dispatch into the measures
                 for m = 1:length(obj.modes)
@@ -845,7 +856,7 @@ classdef opp_manager
                 supp_con_all = [supp_con_all; obj.modes{i}.supp_con()];
             end
 
-            supp_con_all = [supp_con_all; obj.diff.supp_con()];
+            supp_con_all = [supp_con_all; obj.sys3.supp_con()];
           %cell of opp_mode(), contains initial/terminal/occupation measures           
         end
 
@@ -925,7 +936,7 @@ classdef opp_manager
                 
                 objective_mode = 0;
                 if obj.opts.three_phase == "Floating"
-                    objective_mode = obj.diff.objective_diff();
+                    objective_mode = obj.sys3.objective_diff();
                 else
                     for i = 1:length(obj.modes)
                         objective_mode = objective_mode + obj.modes{i}.objective();
@@ -993,7 +1004,7 @@ classdef opp_manager
                 m_out.jump{i} = obj.jumps{i}.mmat();
             end
 
-            m_out.diff = obj.diff.mmat();
+            m_out.sys3 = obj.sys3.mmat();
         end
 
 
@@ -1016,7 +1027,7 @@ classdef opp_manager
             end
 
             [m_out.three_mode, m_out.three_transition, m_out.three_jump] = ...
-                obj.diff.mmat_corner();
+                obj.sys3.mmat_corner();
         end
 
         function [load, load_candidate] = recover_load(obj)
