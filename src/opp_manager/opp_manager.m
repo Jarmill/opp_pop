@@ -83,7 +83,7 @@ classdef opp_manager
             [obj.vars, obj.jumps, obj.modes] = obj.create_system(obj.opts);
             % obj.diff = opp_diff_current(obj.opts.three_phase == "Floating");
             % obj.diff = opp_diff_current_split(obj.opts.three_phase == "Floating");
-            obj.diff = opp_diff_dyn(obj.opts);
+            obj.diff = opp_system_3(obj.opts);
         end
 
         %% construct everything

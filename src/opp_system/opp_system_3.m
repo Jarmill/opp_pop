@@ -1,23 +1,17 @@
-classdef opp_diff_dyn < opp_system_interface
+classdef opp_system_3 < opp_system_interface
     %OPP_DIFF_DYN Storage of three-phase terms
     %   imposes that the three-phase terms obey dynamics as well
     %   should hopefully reduce conservatism
     
     properties
-        t; 
-        x;
-        mode = [];
-        jumps = [];
         G;
-        opts;
         testing = 0;
-        objective = 0;
         correspond = [];
         DYNAMICS = true;
     end
     
     methods
-        function obj = opp_diff_dyn(opts)
+        function obj = opp_system_3(opts)
             %OPP_DIFF_DYN Construct an instance of this class
             %   Detailed explanation goes here
 

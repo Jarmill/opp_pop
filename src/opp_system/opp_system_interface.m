@@ -5,8 +5,8 @@ classdef (Abstract) opp_system_interface
     properties
         t; 
         x;
-        mode; 
-        jumps;
+        mode = []; 
+        jumps = [];
         opts;
         objective;
     end
