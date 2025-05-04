@@ -179,11 +179,13 @@ classdef opp_manager
                                                              
 
                 % occ_match = [];
-                occ_match = obj.align_occ(d);
+                
                 init_match = obj.align_init(d);
                 term_match = obj.align_term(d);
+                occ_match = obj.align_occ(d);
+                jump_match = obj.align_jump(d);
 
-                three_con = [occ_match; init_match; term_match];
+                three_con = [occ_match; init_match; term_match; jump_match];
             else
                 three_con = [];
             end
@@ -204,7 +206,7 @@ classdef opp_manager
 
                 mom_1 = obj.sys1.sel_occ_monom(d, [1, 2, 4]);                
                 mom_3= obj.sys3.sel_occ_monom(d, [1, 2, 3]);
-                
+
                 % mom_1 = obj.sys1.current_mom(d);
                 % mom_3 = obj.sys3.get_I_marginal(d);
                 
@@ -276,6 +278,27 @@ classdef opp_manager
             end
         end
   
+
+        function jump_mom_con = align_jump(obj, d)
+            %align the terminal measure single-three phase
+            if obj.sys3.DYNAMICS            
+                term_1 = obj.sys1.sel_jump_monom(d, [1, 2, 4]);
+                term_3 = obj.sys3.sel_jump_monom(d, [1, 2, 3]);
+
+                [N, P] = size(term_1);
+                %TODO: quarter-wave symmetry will destroy some of this
+                jump_mom_con = [];
+                for i = 1:N
+                    for p = 1:P
+                        if ~isnumeric(term_1{i, p}) || ~isnumeric(term_3{i, p}) 
+                            jump_mom_con= [jump_mom_con; term_1{i, p} - term_3{i, p}==0];
+                        end
+                    end
+                end
+            else
+                jump_mom_con = [];
+            end
+        end
         %% process the objective
         function [objective, obj_con] = opp_objective(obj)
             %OPP_OBJECTIVE Form the objective of the OPP problem

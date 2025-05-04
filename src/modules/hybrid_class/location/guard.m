@@ -139,6 +139,22 @@ classdef guard < meas_base
                 mom_dest = obj.reset_push(d);
             end
         end
+
+        function [v_sel, mon_sel] = select_monom_jump(obj, d, ind)
+            %moments of all other variables [phi, l] 
+            
+            if isempty(obj.supp)
+                v_sel = 0;
+                mon_sel= 0;
+            else
+                x_curr = obj.vars.x;
+                x_sel = x_curr(ind);                
+                v_sel= mmon(x_sel, 0, d);
+                
+    
+                mon_sel = mom(v_sel);
+            end
+        end
         
         function reset_out = reset_eval(obj, x)
             %output of the reset map

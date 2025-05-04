@@ -6,9 +6,11 @@ cell_out = cell2;
 [N, P] = size(cell2);
 for n = 1:N
     for p = 1:P
-        if isnumeric(cell1)
+        if isempty(cell1) || isempty(cell1{n, p})
             cell_out{n, p} = C*cell2{n, p};
-        else        
+        elseif isnumeric(cell1)
+            cell_out{n, p} = cell1 + C*cell2{n, p};
+        else
             cell_out{n, p} = cell1{n, p} + C*cell2{n, p};
         end
     end

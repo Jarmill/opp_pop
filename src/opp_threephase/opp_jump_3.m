@@ -123,6 +123,8 @@ classdef opp_jump_3
             end
         end
 
+
+        %% fetch moments
         function mass_out = mass(obj)
             %find the mass of all of the jump measures
             mass_out = 0;
@@ -133,6 +135,29 @@ classdef opp_jump_3
                 end
             end
         end
+
+        function imon = sel_monom_jump(obj, d, ind)
+            %moments of the jump measure
+
+            n = length(obj.vars.x);
+            if nargin < 2
+                ind = 1:n;
+            end
+            
+            [N, P] = size(obj.jump);
+            imon = cell(N, P);
+            for n=1:N
+                for p = 1:P
+                    if ~isempty(obj.jump{n, p}.supp)                        
+                        [~, imon{n, p}] = obj.jump{n, p}.select_monom_jump(d, ind);                            
+                    else
+                        imon{n, p} = 0;
+                    end
+                end
+            end
+        end
+
+        
 
         %% recovery
          function m_out = mmat(obj)

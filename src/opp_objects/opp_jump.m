@@ -120,6 +120,34 @@ classdef opp_jump < handle
             end
         end
 
+        function [imon_up, imon_down] = sel_monom_jump(obj, d, ind)
+            %moments of the jump measure
+
+            n = length(obj.vars.x);
+            if nargin < 2
+                ind = 1:n;
+            end
+            
+            [N] = length(obj.jump_up);
+            imon_up = cell(N, 1);
+            imon_down = cell(N, 1);
+            for n=1:N                
+                if ~isempty(obj.jump_up{n}.supp)                        
+                    [~, imon_up{n}] = obj.jump_up{n}.select_monom_jump(d, ind);                            
+                else
+                    imon_up{n} = 0;
+                end
+                if ~isempty(obj.jump_down{n}.supp)                        
+                    [~, imon_down{n}] = obj.jump_down{n}.select_monom_jump(d, ind);                            
+                else
+                    imon_down{n} = 0;
+                end
+            end
+        end
+
+
+        %% recovery
+
         function m_out = mmat(obj)
             %get moment matrices of the jumps
             m_out = struct;

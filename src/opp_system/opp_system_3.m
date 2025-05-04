@@ -369,6 +369,39 @@ classdef opp_system_3 < opp_system_interface
             end
         end
         
+        function sel_out = sel_jump_monom(obj, d, ind)
+            %used for alignment
+
+            %get moments for all jump measures
+            sel_orig = obj.jumps.sel_jump_monom(d, ind);
+            N = length(obj.opts.L_single);
+            sel_out = cell(N, 2);            
+            for i = 1:N
+                sel_out{i} = 0;
+            end
+
+            %apportion measures into jump-up and jump-down
+            NN = size(sel_orig, 1);
+            for v = 1:NN
+                src_i = obj.correspond(obj.jumps.src(v));
+                dst_i = obj.correspond(obj.jumps.dst(v));
+
+                if src_i < dst_i
+                    %jump up
+                    ii = dst_i - 1;
+                    ji = 1;
+                else
+                    %jump down
+                    ii = dst_i;
+                    ji = 2;
+                end
+
+                % for p = 1:size(sel_orig, 2)
+                    sel_out{ii, ji} = sel_out{ii, ji} + sel_orig{v};
+                % end
+            end
+        end
+        
 
         %% recovery
         function [m_out] = mmat_corner(obj)

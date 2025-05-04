@@ -458,6 +458,25 @@ classdef opp_system_1 < opp_system_interface
         end
        
         %% other helper functions
+
+        function [sel_up, sel_down] = sel_jump_monom(obj, d, ind)
+            %used for alignment
+
+            %get moments for all jump measures
+            N = length(obj.opts.L);
+            sel_up   = cell(N-1, 1);
+            sel_down = cell(N-1, 1);           
+
+            M = length(obj.jumps);
+
+            for i = 1:M
+                [curr_up, curr_down] = obj.jumps{i}.sel_monom_jump(d, ind);
+                sel_up = madd_cell_mom(sel_up,curr_up, 1);
+                sel_down = madd_cell_mom(sel_down,curr_down, 1);
+            end                        
+        end
+
+
         function mom_I = current_mom(obj, d)
             %get the marginals of (c, s, I) from the occupation measure
             
