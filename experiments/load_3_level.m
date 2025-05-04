@@ -37,9 +37,9 @@ opts.k = 4;
 
 % opts.common_mode = 1;
 % opts.common_mode = 1/3;
-% opts.common_mode = 0;
+opts.common_mode = 0;
 
-opts.common_mode = 1/3;
+% opts.common_mode = 1/3;
 
 % modulation = 0.6;
 modulation = 1;
@@ -167,7 +167,7 @@ nexttile
 hold on
 plot(th, xcm, 'linewidth', 3, 'color', cc(4, :))
 plot([0, 2*pi], [0, 0], ':k')
-if opts.common_mode < Inf
+if (opts.common_mode < Inf) && (opts.common_mode > 0)
     plot([0, 2*pi], [1, 1]*opts.common_mode, 'k')
     plot([0, 2*pi], -[1, 1]*opts.common_mode, 'k')
     ylim([-1, 1]*1.25*opts.common_mode)
