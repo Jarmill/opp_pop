@@ -93,7 +93,6 @@ classdef opp_manager
         end
         
 
-
         %% the main routine
         function [sol, obj] = run(obj, order)
             %RUN the main call, the full peak program at the target order
@@ -173,9 +172,10 @@ classdef opp_manager
             %
             %figure out if this is possible to do without inductive current
             
-            if length(obj.vars.x)>3 && (obj.opts.Z_load ~= 0) ...
+            Lmax = max(abs(obj.opts.L));
+            if length(obj.sys1.vars.x)>3 && (obj.opts.Z_load ~= 0) ...
                     && ((obj.opts.three_phase ~= opp_three_phase.Ignore) ||...
-                (obj.opts.common_mode < Inf))
+                (obj.opts.common_mode < Lmax))
                                 
                
                 % align_occ = [];
@@ -266,9 +266,7 @@ classdef opp_manager
                 term_mom_con = [];
             end
         end
-
-   
-
+  
         %% process the objective
         function [objective, obj_con] = opp_objective(obj)
             %OPP_OBJECTIVE Form the objective of the OPP problem
@@ -293,7 +291,7 @@ classdef opp_manager
                 % end
                                 
                 if obj.opts.three_phase == "Floating"
-                    objective = obj.sys3.objective_diff();
+                    objective = obj.sys3.objective();
                 else
                     objective = obj.sys1.objective();
                 end                               
@@ -338,128 +336,27 @@ classdef opp_manager
                         
         end
 
-        function [m_out] = mmat(obj)
+        function [m_out_1, m_out_3] = mmat(obj)
             %get the moment matrix of all measure variables
-            m_out = struct;
-            K = length(obj.modes);
-            % [N, P] = size(obj.modes{1}.levels);
-            % m_out.levels = cell(K, N, P);
-            m_out.modes = cell(K, 1);
-            m_out.transition = cell(K, 1);
-
-            for i = 1:K
-                [m_out.modes{i}, m_out.transition{i}] = obj.modes{i}.mmat();
-            end
-
-            m_out.jump = cell(K-1, 1);
-            for i=1:(K-1)
-                m_out.jump{i} = obj.jumps{i}.mmat();
-            end
-
-            m_out.sys3 = obj.sys3.mmat();
+            m_out_1 = obj.sys1.mmat();            
+            m_out_3 = obj.sys3.mmat();
         end
 
 
-        function [m_out] = mmat_corner(obj)
-            %get the moment matrix of all measure variables
-            m_out = struct;
-            K = length(obj.modes);
-            % [N, P] = size(obj.modes{1}.levels);
-            % m_out.levels = cell(K, N, P);
-            m_out.modes = cell(K, 1);
-            m_out.transition = cell(K, 1);
-
-            for i = 1:K
-               [m_out.modes{i}, m_out.transition{i}] = obj.modes{i}.mmat_corner();
-            end
-
-            m_out.jump = cell(K-1, 1);
-            for i=1:(K-1)
-                m_out.jump{i} = obj.jumps{i}.mmat_corner();
-            end
-
-            [m_out.three_mode, m_out.three_transition, m_out.three_jump] = ...
-                obj.sys3.mmat_corner();
+        function [m_out_1, m_out_3] = mmat_corner(obj)
+            [m_out_1] = obj.sys1.mmat_corner();
+            [m_out_3] = obj.sys3.mmat_corner();
         end
 
         function [load, load_candidate] = recover_load(obj)
-            Mc = obj.mmat_corner();
-            ms = obj.mass_summary();
-            [N, P] = size(obj.modes{1}.levels);
-            Nmodes = length(obj.modes);
-            load_candidate = zeros(Nmodes+1, N)*NaN;
-            %get the initial current
-            for n =1:N
-                Mcurr= obj.modes{1}.levels{n, 1}.mmat_corner();
-                init_curr = Mcurr.init;
-                if ~isempty(init_curr) && (init_curr(1, 1) > 0.99)
-                    load_candidate(1, n) = init_curr(5, 1)/init_curr(1, 1);
-                end
-            end
-            %track along the jumps
-            for m = 1:(Nmodes-1)
-                for n = 1:N-1
-                   
-                    for p = 1:P
-                        if ms.jump_up(m, n, p) > 0.99
-                            jump_curr = Mc.jump{m}.up{n, p};
-                            load_candidate(m+1, n+1) = jump_curr(5, 1)/jump_curr(1, 1);
-                        elseif ms.jump_down(m, n, p) > 0.99
-                            jump_curr = Mc.jump{m}.down{n, p};
-                            load_candidate(m+1, n) = jump_curr(5, 1)/jump_curr(1, 1);
-                        end
-                    end
-                end
-            end
-
-            %track the exit
-            %get the initial current
-                for n =1:N
-                    Mcurr= obj.modes{end}.levels{n, end}.mmat_corner();
-                    term_curr = Mcurr.term;
-                    if ~isempty(term_curr) && (term_curr(1, 1) > 0.99)
-                        load_candidate(end, n) = term_curr(5, 1)/term_curr(1, 1);
-                    end
-                end
-            load =load_candidate(1, ~isnan(load_candidate(1, :)));
-
-
+            [load, load_candidate] = obj.sys1.recover_load();
         end
 
  
 
-        function ms = mass_summary(obj)
-            %collect the masses of the occupation measure into a neat array
-            ms = struct;
-            K = length(obj.modes);
-            [N, P] = size(obj.modes{1}.levels);
-
-            ms.mode = zeros(K, N, P);
-            ms.trans = zeros(K, N, P-1);
-            for m=1:K
-                for n=1:N
-                    for p = 1:P
-                        ms.mode(m, n, p) = double(obj.modes{m}.levels{n, p}.sys{1}.meas_occ.mass());
-                        if p < P
-                            ms.trans(m, n, p) = double(obj.modes{m}.transition{n, p}.mass());
-                        end
-                    end
-                end
-            end
-
-            ms.jump_up = zeros(K-1, N-1, P);
-            ms.jump_down = zeros(K-1, N-1, P);
-            for m=1:K-1
-                for n=1:N-1
-                    for p = 1:P
-                        ms.jump_up(m, n, p) = double(obj.jumps{m}.jump_up{n, p}.mass());
-                        ms.jump_down(m, n, p) = double(obj.jumps{m}.jump_down{n, p}.mass());
-                    end
-                end
-            end
-
-            [c, mom_harm] = obj.con_harmonics();
-            ms.harm = double(mom_harm);
+        function [ms1, ms3] = mass_summary(obj)
+            ms1 = obj.sys1.mass_summary();
+            ms3 = obj.sys3.mass_summary();
         end
 
         function [pattern] = recover_pattern(obj)
@@ -471,7 +368,7 @@ classdef opp_manager
             % alpha:    switching angles
             % u:        voltage levels
             % energy:   energy in the switching sequence
-            ms = obj.mass_summary;
+            ms = obj.sys1.mass_summary;
             % L = obj.L;
             
             mocc = sum(ms.mode, 3);

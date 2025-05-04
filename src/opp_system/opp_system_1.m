@@ -35,7 +35,7 @@ classdef opp_system_1 < opp_system_interface
             vars = struct('t', t, 'x', x);
         end
        
-        function [vars, jumps, modes] = create_system(obj, opts)
+        function [modes, jumps, opts] = create_system(obj, opts)
             %used in the constructor
 
             k = opts.k/(2^opts.Symmetry);
@@ -49,11 +49,9 @@ classdef opp_system_1 < opp_system_interface
             
             
             %create the basic location structure
-            if ~opts.TIME_INDEP
-                mpol('t', 1, 1)
-            else
-                t = [];
-            end
+
+            x = obj.vars.x;
+            t = obj.vars.t;
 
             %create the basic support set
             lsupp_base = loc_support();
@@ -80,7 +78,7 @@ classdef opp_system_1 < opp_system_interface
                 X_load = 1-x(4)^2;                
             end
 
-            Theta_scale = Theta*2^(double(obj.opts.Symmetry));
+            Theta_scale = Theta*2^(double(opts.Symmetry));
 
             X_clock_mode = x(3)*(1-2*Theta_scale- x(3));    
             X_clock_jump = (x(3)-Theta_scale)*(1-2*Theta_scale- x(3));    
@@ -158,14 +156,14 @@ classdef opp_system_1 < opp_system_interface
             %the flow conservation constraint (the big one)
 
             %start the storage structure 
-            Nmodes = length(obj.modes);
+            Nmodes = length(obj.mode);
             liou_cell = cell(Nmodes, 1);
             jump_src = cell(Nmodes-1, 1);
             jump_dst = cell(Nmodes-1, 1);
 
             %compute all terms
             for m=1:(Nmodes)
-                liou_cell{m} = obj.modes{m}.flow(d);
+                liou_cell{m} = obj.mode{m}.flow(d);
             end
 
             %add the jump to the cell terms
@@ -209,7 +207,7 @@ classdef opp_system_1 < opp_system_interface
         function mass_con_eq = con_prob_dist(obj)
             %initial measure is a probability distribution (mass 1)
             
-            [~, mass_init_sum] = obj.modes{1}.initial_mass();
+            [~, mass_init_sum] = obj.mode{1}.initial_mass();
         
             mass_con_eq = (mass_init_sum==1);
            
@@ -218,8 +216,8 @@ classdef opp_system_1 < opp_system_interface
         function return_con = con_return(obj, d)
             %conservation of position between the initial and final measure
             
-            % mass_con = obj.modes{1}.mass_init_mode();
-            init_monom = obj.modes{1}.init_monom(d, true);
+            % mass_con = obj.mode{1}.mass_init_mode();
+            init_monom = obj.mode{1}.init_monom(d, true);
 
             N = length(obj.opts.L);
             %TODO: 
@@ -237,23 +235,23 @@ classdef opp_system_1 < opp_system_interface
                 flip_load = obj.opts.Symmetry==1;                
                 if flip_load
                     stop_order = N:-1:1;   
-                    stop_range = 2:length(obj.modes);
+                    stop_range = 2:length(obj.mode);
                 else
                     stop_order = 1:N;
-                    stop_range = 3:2:length(obj.modes);
+                    stop_range = 3:2:length(obj.mode);
                 end
 
                 
 
                 if obj.opts.early_stop                
                     for m = stop_range
-                        % mass_con = mass_con - obj.modes{m}.mass_term_mode();
-                        stop_monom = obj.modes{m}.term_monom(d, true, flip_load);
+                        % mass_con = mass_con - obj.mode{m}.mass_term_mode();
+                        stop_monom = obj.mode{m}.term_monom(d, true, flip_load);
                         return_mom = madd_cell_mom(return_mom, {stop_monom{stop_order, end}}, -1);
                     end
                 else
-                    % mass_con = mass_con - obj.modes{end}.mass_term_mode();
-                    stop_monom = obj.modes{end}.term_monom(d, true, flip_load);
+                    % mass_con = mass_con - obj.mode{end}.mass_term_mode();
+                    stop_monom = obj.mode{end}.term_monom(d, true, flip_load);
                     return_mom = madd_cell_mom(return_mom, {stop_monom{stop_order, end}}, -1);
                 end
     
@@ -279,11 +277,9 @@ classdef opp_system_1 < opp_system_interface
             for i = 1:length(obj.jumps)
                 supp_con_all = [supp_con_all; obj.jumps{i}.supp_con()];
             end%cell of opp_switch
-            for i = 1:length(obj.modes)
-                supp_con_all = [supp_con_all; obj.modes{i}.supp_con()];
-            end
-
-            supp_con_all = [supp_con_all; obj.sys3.supp_con()];
+            for i = 1:length(obj.mode)
+                supp_con_all = [supp_con_all; obj.mode{i}.supp_con()];
+            end           
           %cell of opp_mode(), contains initial/terminal/occupation measures           
          end
 
@@ -296,8 +292,8 @@ classdef opp_system_1 < opp_system_interface
             % harmonics on voltage source
             if ~isempty(harm)
                 harm_source = 0;
-                for m = 1:length(obj.modes)   
-                    harm_mom = obj.modes{m}.voltage_harmonics_mom(obj.vars, harm);
+                for m = 1:length(obj.mode)   
+                    harm_mom = obj.mode{m}.voltage_harmonics_mom(obj.vars, harm);
                     harm_source = harm_source + harm_mom;
                 end
                 harm_source_con = harmonics_process(obj.opts.harmonics, harm_source);
@@ -312,8 +308,8 @@ classdef opp_system_1 < opp_system_interface
             %harmonics on the load side
             % if ~isempty(harm_load_data)          
             %     harm_load = 0;
-            %     for m = 0:length(obj.modes)     
-            %         harm_mom_load = obj.modes{m}.load_harmonics_mom(obj.vars, harm_load, obj.opts.harmonics_load);
+            %     for m = 0:length(obj.mode)     
+            %         harm_mom_load = obj.mode{m}.load_harmonics_mom(obj.vars, harm_load, obj.opts.harmonics_load);
             %         harm_load = harm_load + harm_mom_load;
             %     end
             %     harm_load_con = harmonics_process(obj.opts.harmonics_load, harm_load);
@@ -460,16 +456,7 @@ classdef opp_system_1 < opp_system_interface
             objective = objective'*sym_factor/(2*pi);
 
         end
-   
-
-        function objective_out = objective(obj)
-            %objective in the single-phase setting
-            objective_out = 0;
-            for i = 1:length(obj.sys1.modes)
-                objective_out = objective_mode + obj.modes{i}.objective();
-            end
-        end      
-
+       
         %% other helper functions
         function mom_I = current_mom(obj, d)
             %get the marginals of (c, s, I) from the occupation measure
@@ -480,8 +467,8 @@ classdef opp_system_1 < opp_system_interface
 
             bmom = 0;
                 %dispatch into the measures
-                for m = 1:length(obj.modes)
-                    curr_mom = obj.modes{m}.mom_sub(obj.get_vars(), p_in_sym);
+                for m = 1:length(obj.mode)
+                    curr_mom = obj.mode{m}.mom_sub(obj.get_vars(), p_in_sym);
                     bmom = madd_cell_mom(bmom, curr_mom, 1);
                 end
 
@@ -495,7 +482,7 @@ classdef opp_system_1 < opp_system_interface
                 end
         end
 
-    function bmom_all = three_phase_current_mom(obj, d)
+        function bmom_all = three_phase_current_mom(obj, d)
             %get moments of the differntial-mode current
 
             % K = sqrt(2/3)*[1 -0.5 -0.5;
@@ -517,8 +504,8 @@ classdef opp_system_1 < opp_system_interface
             %TODO: testing only (do the whole current)
             bmom = 0;
             %dispatch into the measures
-            for m = 1:length(obj.modes)
-                curr_mom = obj.modes{m}.mom_sub(obj.get_vars(), mon_3);
+            for m = 1:length(obj.mode)
+                curr_mom = obj.mode{m}.mom_sub(obj.get_vars(), mon_3);
                 bmom = madd_cell_mom(bmom, curr_mom, 1);
             end
 
@@ -532,6 +519,123 @@ classdef opp_system_1 < opp_system_interface
         end        
 
         %% recovery
+
+        function [m_out] = mmat(obj)
+            %get the moment matrix of all measure variables
+            m_out = struct;
+            K = length(obj.mode);
+            % [N, P] = size(obj.mode{1}.levels);
+            % m_out.levels = cell(K, N, P);
+            m_out.modes = cell(K, 1);
+            m_out.transition = cell(K, 1);
+
+            for i = 1:K
+                [m_out.modes{i}, m_out.transition{i}] = obj.mode{i}.mmat();
+            end
+
+            m_out.jump = cell(K-1, 1);
+            for i=1:(K-1)
+                m_out.jump{i} = obj.jumps{i}.mmat();
+            end            
+        end
+   
+        function [m_out] = mmat_corner(obj)
+            %get the moment matrix of all measure variables
+            m_out = struct;
+            K = length(obj.mode);
+            % [N, P] = size(obj.mode{1}.levels);
+            % m_out.levels = cell(K, N, P);
+            m_out.modes = cell(K, 1);
+            m_out.transition = cell(K, 1);
+
+            for i = 1:K
+               [m_out.modes{i}, m_out.transition{i}] = obj.mode{i}.mmat_corner();
+            end
+
+            m_out.jump = cell(K-1, 1);
+            for i=1:(K-1)
+                m_out.jump{i} = obj.jumps{i}.mmat_corner();
+            end
+        end
+    
+
+        function ms = mass_summary(obj)
+            %collect the masses of the occupation measure into a neat array
+            ms = struct;
+            K = length(obj.mode);
+            [N, P] = size(obj.mode{1}.levels);
+
+            ms.mode = zeros(K, N, P);
+            ms.trans = zeros(K, N, P-1);
+            for m=1:K
+                for n=1:N
+                    for p = 1:P
+                        ms.mode(m, n, p) = double(obj.mode{m}.levels{n, p}.sys{1}.meas_occ.mass());
+                        if p < P
+                            ms.trans(m, n, p) = double(obj.mode{m}.transition{n, p}.mass());
+                        end
+                    end
+                end
+            end
+
+            ms.jump_up = zeros(K-1, N-1, P);
+            ms.jump_down = zeros(K-1, N-1, P);
+            for m=1:K-1
+                for n=1:N-1
+                    for p = 1:P
+                        ms.jump_up(m, n, p) = double(obj.jumps{m}.jump_up{n, p}.mass());
+                        ms.jump_down(m, n, p) = double(obj.jumps{m}.jump_down{n, p}.mass());
+                    end
+                end
+            end
+
+            [c, mom_harm] = obj.con_harmonics();
+            ms.harm = double(mom_harm);
+        end
+        function [load, load_candidate] = recover_load(obj)
+                Mc = obj.mmat_corner();
+                ms = obj.mass_summary();
+                [N, P] = size(obj.mode{1}.levels);
+                Nmodes = length(obj.mode);
+                load_candidate = zeros(Nmodes+1, N)*NaN;
+                %get the initial current
+                for n =1:N
+                    Mcurr= obj.mode{1}.levels{n, 1}.mmat_corner();
+                    init_curr = Mcurr.init;
+                    if ~isempty(init_curr) && (init_curr(1, 1) > 0.99)
+                        load_candidate(1, n) = init_curr(5, 1)/init_curr(1, 1);
+                    end
+                end
+                %track along the jumps
+                for m = 1:(Nmodes-1)
+                    for n = 1:N-1
+                       
+                        for p = 1:P
+                            if ms.jump_up(m, n, p) > 0.99
+                                jump_curr = Mc.jump{m}.up{n, p};
+                                load_candidate(m+1, n+1) = jump_curr(5, 1)/jump_curr(1, 1);
+                            elseif ms.jump_down(m, n, p) > 0.99
+                                jump_curr = Mc.jump{m}.down{n, p};
+                                load_candidate(m+1, n) = jump_curr(5, 1)/jump_curr(1, 1);
+                            end
+                        end
+                    end
+                end
+    
+                %track the exit
+                %get the initial current
+                    for n =1:N
+                        Mcurr= obj.mode{end}.levels{n, end}.mmat_corner();
+                        term_curr = Mcurr.term;
+                        if ~isempty(term_curr) && (term_curr(1, 1) > 0.99)
+                            load_candidate(end, n) = term_curr(5, 1)/term_curr(1, 1);
+                        end
+                    end
+                load =load_candidate(1, ~isnan(load_candidate(1, :)));
+    
+    
+            end
+    
     end
 end
 

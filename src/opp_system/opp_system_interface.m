@@ -7,7 +7,7 @@ classdef (Abstract) opp_system_interface
         mode = []; 
         jumps = [];
         opts;
-        objective;
+        % objective;
     end
     
     methods
@@ -16,9 +16,18 @@ classdef (Abstract) opp_system_interface
             %   Detailed explanation goes here
             obj.opts = opts;
             [obj.vars] = obj.create_vars(opts);
-            obj.objective = obj.create_objective();
-            [obj.mode, obj.jumps, obj.opts] = obj.create_system();    
-        end         
+            % obj.objective = obj.create_objective();
+            [obj.mode, obj.jumps, obj.opts] = obj.create_system(opts);    
+        end        
+
+        function objective_out = objective(obj)
+            %objective in the single-phase setting
+            objective_out = 0;
+            for i = 1:length(obj.mode)
+                objective_out = objective_out + obj.mode{i}.objective();
+            end
+        end      
+
 
     %% constraints
         function sc = supp_con(obj)
@@ -147,8 +156,8 @@ classdef (Abstract) opp_system_interface
                 trmon_sum = 0;
                 sym_scale = 2^(-SYM);
                 %TODO: change the lebesgue constraint for symmetry
-                for m = 1:length(obj.modes)
-                    tr_curr = obj.modes{m}.trig_occ_monom(d);
+                for m = 1:length(obj.mode)
+                    tr_curr = obj.mode{m}.trig_occ_monom(d, SYM);
                     trmon_sum = trmon_sum + sym_scale*cell_sum(tr_curr);
                     % trmon_sum = madd_cell_mom(trmon_sum,tr_curr, sym_scale);
                 end
@@ -172,7 +181,7 @@ classdef (Abstract) opp_system_interface
     methods (Abstract)
         %constructor
         create_system(obj)
-        create_objective(obj)
+        % create_objective(obj)
 
         %constraints
         con_flow(obj, d)

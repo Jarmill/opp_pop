@@ -93,7 +93,6 @@ classdef opp_manager
         end
         
 
-
         %% the main routine
         function [sol, obj] = run(obj, order)
             %RUN the main call, the full peak program at the target order
@@ -139,7 +138,7 @@ classdef opp_manager
             if sol.status == 0
                 sol.mass = obj.mass_summary();
     
-                [~, mom_harm] = obj.con_harmonics();
+                [~, mom_harm] = obj.sys1.con_harmonics();
                 sol.harmonics = double(mom_harm);
             else
                 sol.mass = [];
@@ -167,46 +166,6 @@ classdef opp_manager
             len_dual = 0;
 
         end
-
-        function [harm_con, harm_source] = con_harmonics(obj)
-            %collect harmonics constraints on the voltage source and the load
-            harm = obj.harm_eval(obj.vars, obj.opts.harmonics);
-            harm_load_data = obj.harm_eval(obj.vars, obj.opts.harmonics_load);
-            
-            % harmonics on voltage source
-            if ~isempty(harm)
-                harm_source = 0;
-                for m = 1:length(obj.modes)   
-                    harm_mom = obj.modes{m}.voltage_harmonics_mom(obj.vars, harm);
-                    harm_source = harm_source + harm_mom;
-                end
-                harm_source_con = harmonics_process(obj.opts.harmonics, harm_source);
-            else
-                harm_source_con = [];                
-            end
-
-
-            %TODO: grid side filters
-
-            %TODO: symmetries with harmonics on load side
-            %harmonics on the load side
-            % if ~isempty(harm_load_data)          
-            %     harm_load = 0;
-            %     for m = 0:length(obj.modes)     
-            %         harm_mom_load = obj.modes{m}.load_harmonics_mom(obj.vars, harm_load, obj.opts.harmonics_load);
-            %         harm_load = harm_load + harm_mom_load;
-            %     end
-            %     harm_load_con = harmonics_process(obj.opts.harmonics_load, harm_load);
-            % else
-                harm_load_con = [];
-            % end
-            
-            harm_con = [harm_load_con; harm_source_con];
-
-            %TODO: finish this. Sum up the harmonics over all components
-        end
-
-
 
         function three_con = con_threephase_align(obj, d)                   
             %ensure that the inductive current is three-phase balanced
@@ -272,7 +231,7 @@ classdef opp_manager
         function init_mom_con = align_init(obj, d)
             %align the initial measure single-three phase
             if obj.sys3.DYNAMICS            
-                init_1 = obj.modes{1}.sel_init_monom(d, [1, 2, 4]);
+                init_1 = obj.sys1.modes{1}.sel_init_monom(d, [1, 2, 4]);
                 init_3 = obj.sys3.sel_init_monom(d, [1, 2, 3]);
 
                 
@@ -291,7 +250,7 @@ classdef opp_manager
         function term_mom_con = align_term(obj, d)
             %align the terminal measure single-three phase
             if obj.sys3.DYNAMICS            
-                term_1 = obj.modes{end}.sel_term_monom(d, [1, 2, 4]);
+                term_1 = obj.sys1.modes{end}.sel_term_monom(d, [1, 2, 4]);
                 term_3 = obj.sys3.sel_term_monom(d, [1, 2, 3]);
 
                 
@@ -306,88 +265,7 @@ classdef opp_manager
                 term_mom_con = [];
             end
         end
-
-
-        function mom_I = current_mom(obj, d)
-            %get the marginals of (c, s, I) from the occupation measure
-            
-            vars_inv = obj.vars.x([1, 2, 4]);
-            p_in = mmon(vars_inv, d);
-            p_in_sym = obj.symmetry_eval_current(p_in, vars_inv);
-
-            bmom = 0;
-                %dispatch into the measures
-                for m = 1:length(obj.modes)
-                    curr_mom = obj.modes{m}.mom_sub(obj.get_vars(), p_in_sym);
-                    bmom = madd_cell_mom(bmom, curr_mom, 1);
-                end
-
-                %collect all differential moments together
-                % bmom_all = 0*mom(mon_3);
-                mom_I = bmom(:, 1);
-                for i =1:size(bmom, 1)
-                    for j = 2:size(bmom, 2)
-                        mom_I{i, j} = mom_I{i, j} +  bmom{i, j};
-                    end
-                end
-        end
-
-        function bmom_all = three_phase_current_mom(obj, d)
-                %get moments of the differntial-mode current
-
-                % K = sqrt(2/3)*[1 -0.5 -0.5;
-                % 0 sqrt(3)/2 -sqrt(3)/2] /sqrt(3);
-
-
-                % Kt = [K; ones(1, 3)/3];
-
-                vars_inv = obj.vars.x([1, 2, 4]);
-                % p_in = mmon(vars_inv(1:2), d-1)*vars_inv(3);
-                p_in = mmon(vars_inv, d);
-
-                %TODO: Debug this
-                p_in_sym = obj.symmetry_eval_current(p_in, vars_inv);
-
-                mon_3 = obj.three_phase_rotate(p_in_sym, vars_inv);
-
-
-                %TODO: testing only (do the whole current)
-                bmom = 0;
-                %dispatch into the measures
-                for m = 1:length(obj.modes)
-                    curr_mom = obj.modes{m}.mom_sub(obj.get_vars(), mon_3);
-                    bmom = madd_cell_mom(bmom, curr_mom, 1);
-                end
-
-                %collect all differential moments together
-                bmom_all = 0*mom(mon_3);
-                for i =1:size(bmom, 1)
-                    for j = 1:size(bmom, 2)
-                        bmom_all = bmom_all +  bmom{i, j};
-                    end
-                end
-        end        
-
-
-
-        %% Other Helpers            
-
-        
-        function supp_con_all = supp_con(obj)
-            %fetch support constraints from the model
-            supp_con_all = [];
-
-            for i = 1:length(obj.jumps)
-                supp_con_all = [supp_con_all; obj.jumps{i}.supp_con()];
-            end%cell of opp_switch
-            for i = 1:length(obj.modes)
-                supp_con_all = [supp_con_all; obj.modes{i}.supp_con()];
-            end
-
-            supp_con_all = [supp_con_all; obj.sys3.supp_con()];
-          %cell of opp_mode(), contains initial/terminal/occupation measures           
-        end
-
+  
         %% process the objective
         function [objective, obj_con] = opp_objective(obj)
             %OPP_OBJECTIVE Form the objective of the OPP problem
@@ -459,90 +337,21 @@ classdef opp_manager
 
         function [m_out] = mmat(obj)
             %get the moment matrix of all measure variables
-            m_out = struct;
-            K = length(obj.modes);
-            % [N, P] = size(obj.modes{1}.levels);
-            % m_out.levels = cell(K, N, P);
-            m_out.modes = cell(K, 1);
-            m_out.transition = cell(K, 1);
-
-            for i = 1:K
-                [m_out.modes{i}, m_out.transition{i}] = obj.modes{i}.mmat();
-            end
-
-            m_out.jump = cell(K-1, 1);
-            for i=1:(K-1)
-                m_out.jump{i} = obj.jumps{i}.mmat();
-            end
-
+            m_out.sys1 = obj.sys1.mmat();            
             m_out.sys3 = obj.sys3.mmat();
         end
 
 
         function [m_out] = mmat_corner(obj)
-            %get the moment matrix of all measure variables
-            m_out = struct;
-            K = length(obj.modes);
-            % [N, P] = size(obj.modes{1}.levels);
-            % m_out.levels = cell(K, N, P);
-            m_out.modes = cell(K, 1);
-            m_out.transition = cell(K, 1);
 
-            for i = 1:K
-               [m_out.modes{i}, m_out.transition{i}] = obj.modes{i}.mmat_corner();
-            end
-
-            m_out.jump = cell(K-1, 1);
-            for i=1:(K-1)
-                m_out.jump{i} = obj.jumps{i}.mmat_corner();
-            end
-
+            [m_out_1] = .
+                obj.sys1.mmat_corner();
             [m_out.three_mode, m_out.three_transition, m_out.three_jump] = ...
                 obj.sys3.mmat_corner();
         end
 
         function [load, load_candidate] = recover_load(obj)
-            Mc = obj.mmat_corner();
-            ms = obj.mass_summary();
-            [N, P] = size(obj.modes{1}.levels);
-            Nmodes = length(obj.modes);
-            load_candidate = zeros(Nmodes+1, N)*NaN;
-            %get the initial current
-            for n =1:N
-                Mcurr= obj.modes{1}.levels{n, 1}.mmat_corner();
-                init_curr = Mcurr.init;
-                if ~isempty(init_curr) && (init_curr(1, 1) > 0.99)
-                    load_candidate(1, n) = init_curr(5, 1)/init_curr(1, 1);
-                end
-            end
-            %track along the jumps
-            for m = 1:(Nmodes-1)
-                for n = 1:N-1
-                   
-                    for p = 1:P
-                        if ms.jump_up(m, n, p) > 0.99
-                            jump_curr = Mc.jump{m}.up{n, p};
-                            load_candidate(m+1, n+1) = jump_curr(5, 1)/jump_curr(1, 1);
-                        elseif ms.jump_down(m, n, p) > 0.99
-                            jump_curr = Mc.jump{m}.down{n, p};
-                            load_candidate(m+1, n) = jump_curr(5, 1)/jump_curr(1, 1);
-                        end
-                    end
-                end
-            end
-
-            %track the exit
-            %get the initial current
-                for n =1:N
-                    Mcurr= obj.modes{end}.levels{n, end}.mmat_corner();
-                    term_curr = Mcurr.term;
-                    if ~isempty(term_curr) && (term_curr(1, 1) > 0.99)
-                        load_candidate(end, n) = term_curr(5, 1)/term_curr(1, 1);
-                    end
-                end
-            load =load_candidate(1, ~isnan(load_candidate(1, :)));
-
-
+            [load, load_candidate] = obj.sys1.recover_load();
         end
 
  
