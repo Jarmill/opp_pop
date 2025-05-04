@@ -19,11 +19,11 @@ opts.early_stop = 0;
 % opts.start_level = 3;
 % opts.null_objective = true;
 opts.null_objective = false;
-% opts.Symmetry = 0;
-opts.Symmetry = 1;
+opts.Symmetry = 0;
+% opts.Symmetry = 1;
 % opts.Symmetry = 2;
-% opts.unipolar = 0;
-% opts.unipolar = 1;
+opts.unipolar = 0;
+% opts.unipolar = 1; %need to debug this
 % opts.three_phase = "Balanced";
 opts.three_phase = "Floating";
 % opts.three_phase = "Ignore";
@@ -39,7 +39,7 @@ opts.k = 4;
 % opts.common_mode = 1/3;
 % opts.common_mode = 0;
 
-% opts.common_mode = 1/3;
+opts.common_mode = 1/3;
 
 % modulation = 0.6;
 modulation = 1;
@@ -67,8 +67,8 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 MG = opp_manager(opts);
 % order = 4;
 % order = 3;
-% order = 2;
-order = 1;
+order = 2;
+% order = 1;
 d = 2*order;
 
 sol = MG.run(order);

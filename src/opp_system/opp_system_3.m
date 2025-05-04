@@ -163,10 +163,7 @@ classdef opp_system_3 < opp_system_interface
 
             G = G + G';
 
-        end
-
-
-        
+        end        
 
         %% moment material
         function [objective] = create_objective(obj)
@@ -205,12 +202,13 @@ classdef opp_system_3 < opp_system_interface
                 con_liou = obj.con_flow(d);
                 con_uni = obj.con_uni_circ(d);
                 con_jumpmass = obj.con_jump_bound();
-
+                % 
                 con_sym = obj.con_rotate_symmetry(d);
-    
+                % 
                 %TODO: internal marginal constraints (ensure three-phase
                 %symmetry in the occupation and jump measures)
     
+                % mom_con = [con_preserve; con_prob; con_uni; con_jumpmass];            
                 mom_con = [con_liou; con_preserve; con_prob; con_uni; con_jumpmass; con_sym];            
             end
         end
@@ -465,12 +463,12 @@ classdef opp_system_3 < opp_system_interface
                     end
                 end       
     
-                E = length(obj.jumps.src);
+                [E, P] = size(obj.jumps.jump);
                 ms.jump = zeros(E, 2);
                 
                 
                 for e = 1:E
-                    for p = 1:2
+                    for p = 1:P
                         ms.jump(e, p) = double(obj.jumps.jump{e, p}.mass());                    
                     end
                 end

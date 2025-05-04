@@ -197,15 +197,15 @@ classdef opp_jump_3
                 else
                     mc0 = mr{ind_curr(1), 1};
                 end
-                if isnan(ind_curr(2))
-                    mc1 = 0;
+                if isnan(ind_curr(1))
+                    mc0 = 0;
                 else
-                    mc1 = mr{ind_curr(2), 1};
+                    mc0 = mr{ind_curr(1), 1};
                 end
-                if isnan(ind_curr(3))
+                if isnan(ind_curr(1))
                     mc2 = 0;
                 else
-                    mc2 = mr{ind_curr(3), 1};
+                    mc2 = mr{ind_curr(1), 1};
                 end
                
                 if obj.Symmetry > 0        
