@@ -358,7 +358,7 @@ classdef opp_system_3 < opp_system_interface
             N = length(obj.opts.L_single);
             sel_out = cell(N, 1);            
             for i = 1:N
-                sel_out{i} = 0*sel_orig{1};
+                sel_out{i} = 0;
             end
             NN = size(obj.opts.L, 2);
             for v = 1:NN
@@ -375,14 +375,11 @@ classdef opp_system_3 < opp_system_interface
             %get moments for all jump measures
             sel_orig = obj.jumps.sel_monom_jump(d, ind);
 
-            sel_jump = sel_orig(:, 1);
-            for p = 2:size(sel_orig, 2)
-                sel_jump = madd_cell_mom(sel_jump, sel_orig(:, p), 1);
-            end
+            
             N = length(obj.opts.L_single);
-            su = cell(N-1, 1);            
-            sd = cell(N-1, 1);     
-            for i = 1:N-1
+            su = cell(N, 1);            
+            sd = cell(N, 1);     
+            for i = 1:N
                 su{i} = 0;
                 sd{i} = 0;
             end
@@ -396,11 +393,11 @@ classdef opp_system_3 < opp_system_interface
                 if src_i < dst_i
                     %jump up
                     ii = dst_i - 1;
-                    su{ii} = su{ii} + sel_jump{v};                    
+                    su{ii} = su{ii} + sel_jump{v, 1} + sel_jump{v, 2};                    
                 elseif src_i > dst_i
                     %jump down
                     ii = dst_i;
-                    sd{ii} = sd{ii} + sel_jump{v};
+                    sd{ii} = sd{ii} + sel_jump{v, 1};
                     
                 else
                     %do nothing (party!), take care of this in the rotation

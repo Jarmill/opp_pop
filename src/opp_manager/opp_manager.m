@@ -178,7 +178,9 @@ classdef opp_manager
                 (obj.opts.common_mode < Lmax))
                                                              
 
-                % occ_match = [];
+                %match the measures between the single-phase
+                %(switch-constrained) data of (angle, current) and the 
+                % three-phase marginal onto the (angle, current in phase a)
                 
                 init_match = obj.align_init(d);
                 term_match = obj.align_term(d);
@@ -282,19 +284,24 @@ classdef opp_manager
         function jump_mom_con = align_jump(obj, d)
             %align the terminal measure single-three phase
             if obj.sys3.DYNAMICS            
-                term_1 = obj.sys1.sel_jump_monom(d, [1, 2, 4]);
-                term_3 = obj.sys3.sel_jump_monom(d, [1, 2, 3]);
+                [su_1, sd_1] = obj.sys1.sel_jump_monom(d, [1, 2, 4]);
+                [su_3, sd_3] = obj.sys3.sel_jump_monom(d, [1, 2, 3]);
 
-                [N, P] = size(term_1);
+                [NN] = size(su_3, 1);
                 %TODO: quarter-wave symmetry will destroy some of this
                 jump_mom_con = [];
-                for i = 1:N
-                    for p = 1:P
-                        if ~isnumeric(term_1{i, p}) || ~isnumeric(term_3{i, p}) 
-                            jump_mom_con= [jump_mom_con; term_1{i, p} - term_3{i, p}==0];
-                        end
+                for i = 1:NN                   
+                    if ~isnumeric(su_1{i}) || ~isnumeric(su_3{i}) 
+                        %jump up
+                        jump_mom_con= [jump_mom_con; su_1{i} - su_3{i}==0];
+                    end
+                    
+                    if ~isnumeric(sd_1{i}) || ~isnumeric(sd_3{i}) 
+                        %jump down
+                        jump_mom_con= [jump_mom_con; sd_1{i} - sd_3{i}==0];
                     end
                 end
+                
             else
                 jump_mom_con = [];
             end
