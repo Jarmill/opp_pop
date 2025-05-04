@@ -172,14 +172,13 @@ classdef opp_manager
             %
             %figure out if this is possible to do without inductive current
             
-            if length(obj.vars.x)>3 && (obj.opts.Z_load ~= 0) ...
+            Lmax = max(abs(obj.opts.L));
+            if length(obj.sys1.vars.x)>3 && (obj.opts.Z_load ~= 0) ...
                     && ((obj.opts.three_phase ~= opp_three_phase.Ignore) ||...
-                (obj.opts.common_mode < Inf))
-                                
-               
-                % align_occ = [];
+                (obj.opts.common_mode < Lmax))
+                                                             
 
-
+                % occ_match = [];
                 occ_match = obj.align_occ(d);
                 init_match = obj.align_init(d);
                 term_match = obj.align_term(d);
@@ -198,14 +197,25 @@ classdef opp_manager
                 %separate by levels in phase a
                 occ_mom_con = [];
 
-                bmom_all = obj.current_mom(d);
-                
-                mom_3 = obj.sys3.get_I_marginal(d);
+                %just the trig components
+                mom_1 = obj.sys1.trig_occ_monom(d);
+                mom_3= obj.sys3.trig_occ_monom(d);
+                mom_3= obj.sys3.trig_occ_monom(d); MG.sys3.sel_occ_monom(2, [1, 2])
 
-                for i = 1:length(bmom_all)
-                    occ_mom_con = [occ_mom_con; bmom_all{i} - mom_3{i}==0];
+                % mom_1 = 0;
+                % mom_3 = 0; 
+                %
+                % mom_1 = obj.sys1.current_mom(d);
+                % mom_3 = obj.sys3.get_I_marginal(d);
+                
+                if ~iscell(mom_1)
+                    occ_mom_con = (mom_1 - mom_3  == 0);
+                else
+                    for i = 1:length(mom_1)
+                        occ_mom_con = [occ_mom_con; mom_1{i} - mom_3{i}==0];
+                    end
                 end
-                occ_mom_con = [];
+                % occ_mom_con = [];
                 % occ_mom_con = (bmom - mom_3)==0;
             else
                 %put all levels together (add them up in phase a)
@@ -231,7 +241,7 @@ classdef opp_manager
         function init_mom_con = align_init(obj, d)
             %align the initial measure single-three phase
             if obj.sys3.DYNAMICS            
-                init_1 = obj.sys1.modes{1}.sel_init_monom(d, [1, 2, 4]);
+                init_1 = obj.sys1.mode{1}.sel_init_monom(d, [1, 2, 4]);
                 init_3 = obj.sys3.sel_init_monom(d, [1, 2, 3]);
 
                 
@@ -250,7 +260,7 @@ classdef opp_manager
         function term_mom_con = align_term(obj, d)
             %align the terminal measure single-three phase
             if obj.sys3.DYNAMICS            
-                term_1 = obj.sys1.modes{end}.sel_term_monom(d, [1, 2, 4]);
+                term_1 = obj.sys1.mode{end}.sel_term_monom(d, [1, 2, 4]);
                 term_3 = obj.sys3.sel_term_monom(d, [1, 2, 3]);
 
                 
@@ -281,7 +291,7 @@ classdef opp_manager
                 %for testing only
                 % m0 = obj.modes{1}.initial_mass();
                 % [~, mass_init_sum] = ones(1, length(obj.opts.L))*m0(:, 1);
-                [~, mass_init_sum] = obj.sys1.modes{1}.initial_mass();
+                [~, mass_init_sum] = obj.sys1.mode{1}.initial_mass();
                 objective = mass_init_sum;
             else
                 % objective_jump = 0;
@@ -290,7 +300,7 @@ classdef opp_manager
                 % end
                                 
                 if obj.opts.three_phase == "Floating"
-                    objective = obj.sys3.objective_diff();
+                    objective = obj.sys3.objective();
                 else
                     objective = obj.sys1.objective();
                 end                               
@@ -335,19 +345,16 @@ classdef opp_manager
                         
         end
 
-        function [m_out] = mmat(obj)
+        function [m_out_1, m_out_3] = mmat(obj)
             %get the moment matrix of all measure variables
-            m_out.sys1 = obj.sys1.mmat();            
-            m_out.sys3 = obj.sys3.mmat();
+            m_out_1 = obj.sys1.mmat();            
+            m_out_3 = obj.sys3.mmat();
         end
 
 
-        function [m_out] = mmat_corner(obj)
-
-            [m_out_1] = .
-                obj.sys1.mmat_corner();
-            [m_out.three_mode, m_out.three_transition, m_out.three_jump] = ...
-                obj.sys3.mmat_corner();
+        function [m_out_1, m_out_3] = mmat_corner(obj)
+            [m_out_1] = obj.sys1.mmat_corner();
+            [m_out_3] = obj.sys3.mmat_corner();
         end
 
         function [load, load_candidate] = recover_load(obj)
@@ -356,38 +363,9 @@ classdef opp_manager
 
  
 
-        function ms = mass_summary(obj)
-            %collect the masses of the occupation measure into a neat array
-            ms = struct;
-            K = length(obj.modes);
-            [N, P] = size(obj.modes{1}.levels);
-
-            ms.mode = zeros(K, N, P);
-            ms.trans = zeros(K, N, P-1);
-            for m=1:K
-                for n=1:N
-                    for p = 1:P
-                        ms.mode(m, n, p) = double(obj.modes{m}.levels{n, p}.sys{1}.meas_occ.mass());
-                        if p < P
-                            ms.trans(m, n, p) = double(obj.modes{m}.transition{n, p}.mass());
-                        end
-                    end
-                end
-            end
-
-            ms.jump_up = zeros(K-1, N-1, P);
-            ms.jump_down = zeros(K-1, N-1, P);
-            for m=1:K-1
-                for n=1:N-1
-                    for p = 1:P
-                        ms.jump_up(m, n, p) = double(obj.jumps{m}.jump_up{n, p}.mass());
-                        ms.jump_down(m, n, p) = double(obj.jumps{m}.jump_down{n, p}.mass());
-                    end
-                end
-            end
-
-            [c, mom_harm] = obj.con_harmonics();
-            ms.harm = double(mom_harm);
+        function [ms1, ms3] = mass_summary(obj)
+            ms1 = obj.sys1.mass_summary();
+            ms3 = obj.sys3.mass_summary();
         end
 
         function [pattern] = recover_pattern(obj)
@@ -399,7 +377,7 @@ classdef opp_manager
             % alpha:    switching angles
             % u:        voltage levels
             % energy:   energy in the switching sequence
-            ms = obj.mass_summary;
+            ms = obj.sys1.mass_summary;
             % L = obj.L;
             
             mocc = sum(ms.mode, 3);

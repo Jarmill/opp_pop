@@ -176,12 +176,10 @@ classdef opp_manager
             if length(obj.sys1.vars.x)>3 && (obj.opts.Z_load ~= 0) ...
                     && ((obj.opts.three_phase ~= opp_three_phase.Ignore) ||...
                 (obj.opts.common_mode < Lmax))
-                                
-               
-                % align_occ = [];
+                                                             
 
-                occ_match = [];
-                % occ_match = obj.align_occ(d);
+                % occ_match = [];
+                occ_match = obj.align_occ(d);
                 init_match = obj.align_init(d);
                 term_match = obj.align_term(d);
 
@@ -199,14 +197,25 @@ classdef opp_manager
                 %separate by levels in phase a
                 occ_mom_con = [];
 
-                bmom_all = obj.sys1.current_mom(d);
-                
-                mom_3 = obj.sys3.get_I_marginal(d);
+                %just the trig components
+                % mom_1 = obj.sys1.sel_occ_monom(d, [1, 2]);                
+                % mom_3= obj.sys3.sel_occ_monom(d, [1, 2]);
+      
 
-                for i = 1:length(bmom_all)
-                    occ_mom_con = [occ_mom_con; bmom_all{i} - mom_3{i}==0];
+                mom_1 = obj.sys1.sel_occ_monom(d, [1, 2, 4]);                
+                mom_3= obj.sys3.sel_occ_monom(d, [1, 2, 3]);
+                
+                % mom_1 = obj.sys1.current_mom(d);
+                % mom_3 = obj.sys3.get_I_marginal(d);
+                
+                if ~iscell(mom_1)
+                    occ_mom_con = (mom_1 - mom_3  == 0);
+                else
+                    for i = 1:length(mom_1)
+                        occ_mom_con = [occ_mom_con; mom_1{i} - mom_3{i}==0];
+                    end
                 end
-                occ_mom_con = [];
+                % occ_mom_con = [];
                 % occ_mom_con = (bmom - mom_3)==0;
             else
                 %put all levels together (add them up in phase a)

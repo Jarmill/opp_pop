@@ -172,6 +172,22 @@ classdef opp_location < location_interface
             end
         end
 
+        function [v_sel, mon_sel] = select_monom_occ(obj, d, ind)
+            %moments of all other variables [phi, l] 
+            
+            if isempty(obj.supp.X)
+                v_sel = 0;
+                mon_sel= 0;
+            else
+                x_curr = obj.sys{1}.meas_occ.vars.x;
+                x_sel = x_curr(ind);                
+                v_sel= mmon(x_sel, 0, d);
+                
+    
+                mon_sel = mom(v_sel);
+            end
+        end
+
         function [v_ntrig, mon_ntrig] = non_trig_monom_init(obj, d)
             %moments of all other variables [phi, l] 
             

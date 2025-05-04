@@ -157,19 +157,10 @@ classdef (Abstract) opp_system_interface
                 uni_circ = leb_circ/(2*pi);
     
                 %get moments of the (c, s)-marginal
-                trmon_sum = 0;
-                sym_scale = 2^(-SYM);
+               
                 %TODO: change the lebesgue constraint for symmetry
                 
-                if iscell(obj.mode)
-                    for m = 1:length(obj.mode)                    
-                        tr_curr = obj.mode{m}.trig_occ_monom(d, SYM);
-                        trmon_sum = trmon_sum + sym_scale*cell_sum(tr_curr);
-                        % trmon_sum = madd_cell_mom(trmon_sum,tr_curr, sym_scale);
-                    end
-                else
-                     trmon_sum = cell_sum(obj.mode.trig_occ_monom(d, SYM));
-                end
+                trmon_sum = cell_sum(obj.trig_occ_monom(d, SYM));
     
                 uni_con = (trmon_sum == uni_circ);
             else
@@ -178,6 +169,35 @@ classdef (Abstract) opp_system_interface
             
         end
 
+
+        function trmon_sum = trig_occ_monom(obj, d, SYM)
+            %sum up the trigonometric occupation measure components
+            if nargin < 3
+                SYM = double(obj.opts.Symmetry);
+            end
+            trmon_sum = 0;
+            sym_scale = 2^(-SYM);
+            if iscell(obj.mode)
+                for m = 1:length(obj.mode)                    
+                    tr_curr = obj.mode{m}.trig_occ_monom(d, SYM);
+                    % trmon_sum = trmon_sum + sym_scale*cell_sum(tr_curr);
+                    trmon_sum = madd_cell_mom(trmon_sum,tr_curr, sym_scale);
+                end
+            else
+                 trmon_sum = obj.mode.trig_occ_monom(d, SYM);
+            end
+        end
+
+        function sel_out = sel_occ_monom(obj, d, ind)
+            %used for alignment
+            sel_out = 0;
+            
+            for m = 1:length(obj.mode)                    
+                tr_curr = obj.mode{m}.sel_occ_monom(d, ind);
+                % trmon_sum = trmon_sum + sym_scale*cell_sum(tr_curr);
+                sel_out = madd_cell_mom(sel_out,tr_curr, 1);
+            end
+        end
 
    
         function var_stack = get_vars(obj)

@@ -352,6 +352,23 @@ classdef opp_system_3 < opp_system_interface
             end
         end
 
+        function sel_out = sel_occ_monom(obj, d, ind)
+            %used for alignment
+            sel_orig = obj.mode.sel_occ_monom(d, ind);
+            N = length(obj.opts.L_single);
+            sel_out = cell(N, 1);            
+            for i = 1:N
+                sel_out{i} = 0;
+            end
+            NN = size(obj.opts.L, 2);
+            for v = 1:NN
+                corr_i = obj.correspond(v);
+                for p = 1:size(sel_orig, 2)
+                    sel_out{corr_i} = sel_out{corr_i} + sel_orig{v, p};
+                end
+            end
+        end        
+
         %% recovery
         function [m_out] = mmat_corner(obj)
 

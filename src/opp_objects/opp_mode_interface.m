@@ -274,6 +274,27 @@ classdef (Abstract) opp_mode_interface
             end
         end
 
+        function imon = sel_occ_monom(obj, d, ind)
+            %moments of the occupation measure
+
+            n = length(obj.vars.x);
+            if nargin < 2
+                ind = 1:n;
+            end
+            
+            [N, P] = size(obj.levels);
+            imon = cell(N, P);
+            for n=1:N
+                for p = 1:P
+                    if ~isempty(obj.levels{n, p}.supp.X)                        
+                        [~, imon{n, p}] = obj.levels{n, p}.select_monom_occ(d, ind);                            
+                    else
+                        imon{n, p} = 0;
+                    end
+                end
+            end
+        end
+
         function [trmon, trmon_sum] = trig_occ_monom(obj, d, level_mult)
             %get moments of the occupation measure
             %for the (c, s) marginal
