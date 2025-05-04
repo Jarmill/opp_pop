@@ -172,27 +172,15 @@ classdef opp_system_3 < opp_system_interface
         function [objective] = create_objective(obj)
             %create the common-mode current
 
-            if isempty(obj.mode)
-                objective = 0;
-            else
-                if obj.testing==0
-                    Q = (eye(3) - ones(3)/3);
-                else
-                    Q = eye(3);
-                end
-                
-                
+            % if isempty(obj.mode)
+            %     objective = 0;
+            % else
                 xi = obj.vars.x(3:5);
+                quad = (sum(xi)/3)^2;
+
+                objective = -(2*pi) * (pi)^2 * quad;
                 
-                % Q = ones(3);
-    
-               
-                quad = (xi'*Q*xi)*(1/3);
-    
-                % objective = (2*pi) * (pi)^2 * mom(quad);
-                objective = (2*pi) * (pi)^2 * quad;            
-                % objective = 0;
-            end
+            % end
         end
         
 
@@ -483,7 +471,7 @@ classdef opp_system_3 < opp_system_interface
                 
                 for e = 1:E
                     for p = 1:2
-                        ms.jump(n, p) = double(obj.jumps.jump{n, p}.mass());                    
+                        ms.jump(e, p) = double(obj.jumps.jump{e, p}.mass());                    
                     end
                 end
             end

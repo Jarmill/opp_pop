@@ -328,12 +328,16 @@ classdef opp_manager
                 % for i = 1:length(obj.sys1.jumps)
                 %     objective_jump = objective_jump + obj.sys1.jumps{i}.objective();
                 % end
-                                
+                     
+                objective_1 = obj.sys1.objective();
                 if obj.opts.three_phase == "Floating"
-                    objective = obj.sys3.objective();
+                    %subtract the common-mode contribution
+                    objective_3 = obj.sys3.objective();
                 else
-                    objective = obj.sys1.objective();
-                end                               
+                    objective_3 = 0;
+                end              
+
+                objective = objective_1 + objective_3;
             end
 
         end
