@@ -25,7 +25,7 @@ classdef opp_system_3 < opp_system_interface
             %generate the modes and jumps
         end
 
-        function [t, x] = create_vars(obj, opts)
+        function [vars] = create_vars(obj, opts)
             if (opts.three_phase ~= "Ignore") || (opts.common_mode < Inf)
                 mpol('c_tau', 1, 1)
                 mpol('s_tau', 1, 1)
@@ -43,6 +43,7 @@ classdef opp_system_3 < opp_system_interface
                 t = [];
                 x = [];
             end
+            vars = struct('t', t, 'x', x);
         end
 
         function I_marg = get_I_marginals(obj, d)
@@ -90,12 +91,12 @@ classdef opp_system_3 < opp_system_interface
 
         function sc = supp_con_base(obj)
             %support constraint
-            sc = [sum(obj.x(1:2).^2) == 1; 
-                obj.x(3:5).^2 <= 1];
+            sc = [sum(obj.vars.x(1:2).^2) == 1; 
+                obj.vars.x(3:5).^2 <= 1];
 
             if obj.opts.three_phase == "Balanced"
                 %produce a balanced current
-                sc = [sc; obj.x(5) == (-obj.x(3) - obj.x(4))];
+                sc = [sc; obj.vars.x(5) == (-obj.vars.x(3) - obj.vars.x(4))];
             end
         end
         
@@ -176,7 +177,7 @@ classdef opp_system_3 < opp_system_interface
             end
             
             
-            xi = obj.x(3:5);
+            xi = obj.vars.x(3:5);
             
             % Q = ones(3);
 

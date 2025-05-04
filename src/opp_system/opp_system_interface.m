@@ -3,8 +3,7 @@ classdef (Abstract) opp_system_interface
     %   Detailed explanation goes here
     
     properties
-        t; 
-        x;
+        vars;
         mode = []; 
         jumps = [];
         opts;
@@ -16,7 +15,7 @@ classdef (Abstract) opp_system_interface
             %OPP_SYSTEM_INTERFACE Construct an instance of this class
             %   Detailed explanation goes here
             obj.opts = opts;
-            [obj.t, obj.x] = obj.create_vars(opts);
+            [obj.vars] = obj.create_vars(opts);
             obj.objective = obj.create_objective();
             [obj.mode, obj.jumps, obj.opts] = obj.create_system();    
         end         
@@ -37,8 +36,8 @@ classdef (Abstract) opp_system_interface
         function lsupp_base = get_support(obj)
             %get the generic support of the mode measures
             lsupp_base = loc_support();
-            lsupp_base.vars.x = obj.x;
-            lsupp_base.vars.t = obj.t;
+            lsupp_base.vars.x = obj.vars.x;
+            lsupp_base.vars.t = obj.vars.t;
 
             lsupp_base.TIME_INDEP = obj.opts.TIME_INDEP;
             lsupp_base.FREE_TERM = 0;
@@ -48,6 +47,125 @@ classdef (Abstract) opp_system_interface
             
         end
 
+
+        %% helper functions
+        function w_sym = symmetry_eval(obj, w_in, vars_trig)
+            %compensate for the symmetry structure in the problem
+            %
+            %original: w(c, s) over the occupation measure
+            %
+            %Full-Wave w(c, s)
+            %Half-Wave w(c, s) - w(-c, -s)
+            %Quarter-Wave w(c, s) + w(-c, s) - w(-c, -s) - w(c, -s)
+
+            if obj.opts.Symmetry==0
+                w_sym = w_in;
+            else
+                w_refl = subs(w_in, vars_trig, -vars_trig);
+                if obj.opts.Symmetry==1
+                    w_sym = w_in - w_refl;
+                else
+                    Rp = -[-1, 0; 0, 1];
+                    w_q_pos = subs(w_in, vars_trig, Rp*vars_trig);
+                    w_q_neg = subs(w_in, vars_trig, -Rp*vars_trig);
+                    w_sym = w_in + w_q_pos - w_q_neg - w_refl;
+                end
+            end
+        end
+
+        function w_sym = symmetry_eval_current(obj, w_in, vars_trig_I)
+            %compensate for the symmetry structure in the problem
+            %
+            %original: w(c, s, I) over the occupation measure
+            %
+            %Full-Wave w(c, s, I)
+            %Half-Wave w(c, s, I) + w(-c, -s, -I)
+            %Quarter-Wave w(c, s, I) + w(-c, s, I) + w(-c, -s, -I) - w(c, -s, -I)
+
+            if obj.opts.Symmetry==0
+                w_sym = w_in;
+            else
+                w_refl = subs(w_in, vars_trig_I, -vars_trig_I);
+                if obj.opts.Symmetry==1
+                    w_sym = (w_in + w_refl)*0.5;
+                else
+                    Rp_pos = diag([1, -1, 1]);
+                    Rp_neg = diag([-1, 1, -1]);
+                    w_q_pos = subs(w_in, vars_trig_I, Rp_pos*vars_trig_I);
+                    w_q_neg = subs(w_in, vars_trig_I, Rp_neg*vars_trig_I);
+                    w_sym = (w_in + w_q_pos + w_q_neg + w_refl)*0.25;
+                end
+            end
+        end
+
+        function mon_3 = three_phase_rotate(obj, p_in, vars_inv)            
+            %return a vector of polynomials in vars_inv
+            %rotated as [u(theta), u(theta-2pi/3), u(theta-4pi/3)]
+            %variable 1 and 2 are trigonometrically related (cos and sin)
+            %the others are along for the ride
+
+            %TODO: use this in constructing three-phase symmetry
+
+            R3 = [cos(2*pi/3), -sin(2*pi/3); sin(2*pi/3), cos(2*pi/3)];
+
+            vars_inv_trig = vars_inv(1:2);
+            %monomials times the current
+            va = p_in;
+            vb = subs(va, vars_inv_trig, R3*vars_inv_trig);
+            vc = subs(va, vars_inv_trig, (R3*R3)*vars_inv_trig);
+
+            mon_3 = [va, vb, vc];
+
+            % if obj.opts.Symmetry==1
+            %     R2 = [-1, 0; 0, 1];
+            % 
+            % 
+            %     mon_3_flip = subs(mon_3, vars_inv_trig, R2*vars_inv_trig);
+            % 
+            %     mon_3 = [mon_3, -mon_3_flip];
+            % end
+
+        end
+
+        function uni_con = con_uni_circ(obj, d, SYM)
+            %the signal encircles the unit disk entirely in one period
+            %this means that the (c, s) marginal of the occupation measures
+            %is a uniform distribution (because time has been scaled back)
+            
+            if nargin < 3
+                SYM = double(obj.opts.Symmetry);
+            end
+            %get the uniform distribution over the circular arc
+            if obj.opts.uniform_arc && obj.opts.TIME_INDEP               
+                pw = genPowGlopti(2, d);
+                leb_circ = leb_sphere(pw,1);
+    
+                %time is scaled, should be uniform moments
+                uni_circ = leb_circ/(2*pi);
+    
+                %get moments of the (c, s)-marginal
+                trmon_sum = 0;
+                sym_scale = 2^(-SYM);
+                %TODO: change the lebesgue constraint for symmetry
+                for m = 1:length(obj.modes)
+                    tr_curr = obj.modes{m}.trig_occ_monom(d);
+                    trmon_sum = trmon_sum + sym_scale*cell_sum(tr_curr);
+                    % trmon_sum = madd_cell_mom(trmon_sum,tr_curr, sym_scale);
+                end
+    
+                uni_con = (trmon_sum == uni_circ);
+            else
+                uni_con = [];
+            end
+            
+        end
+
+
+   
+        function var_stack = get_vars(obj)
+            %return variables
+            var_stack = [obj.vars.t; obj.vars.x];
+        end
     end
 
     %% abstract methods (to be overloaded)
@@ -57,7 +175,9 @@ classdef (Abstract) opp_system_interface
         create_objective(obj)
 
         %constraints
-        
+        con_flow(obj, d)
+        con_prob_dist(obj, d)
+        con_return(obj, d)
 
         %recovery
         mmat(obj)
