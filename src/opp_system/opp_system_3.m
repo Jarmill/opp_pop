@@ -1,4 +1,4 @@
-classdef opp_diff_dyn
+classdef opp_diff_dyn < opp_system_interface
     %OPP_DIFF_DYN Storage of three-phase terms
     %   imposes that the three-phase terms obey dynamics as well
     %   should hopefully reduce conservatism
@@ -20,35 +20,35 @@ classdef opp_diff_dyn
         function obj = opp_diff_dyn(opts)
             %OPP_DIFF_DYN Construct an instance of this class
             %   Detailed explanation goes here
+
+            obj@opp_system_interface(opts)
+
             if (opts.three_phase ~= "Ignore") || (opts.common_mode < Inf)
-                % mpol('x_tau', 5, 1);        
+                obj.correspond = (1:length(obj.opts.L_single)) * (obj.opts.L_single' ==obj.opts.L(1, :));
+                obj.mode.correspond = obj.correspond;               
+            end
+
+            %generate the modes and jumps
+        end
+
+        function [t, x] = create_vars(obj, opts)
+            if (opts.three_phase ~= "Ignore") || (opts.common_mode < Inf)
                 mpol('c_tau', 1, 1)
                 mpol('s_tau', 1, 1)
                 mpol('I_tau', 3, 1)
                 x_tau = [c_tau; s_tau; I_tau];
-                obj.x = x_tau;
+                x = x_tau;
 
                 if opts.TIME_INDEP
-                    obj.t = [];
+                   t = [];
                 else
                     mpol('t_tau', 1, 1)
-                    obj.t = t_tau;
+                    t = t_tau;
                 end
-                
-                       
-                obj.opts = opts;
-    
-                obj.objective = obj.objective_diff();
-                [obj.mode, obj.jumps, obj.opts] = obj.create_system();
-    
-                %which index (single-phase level at phase a) is the 
-                %three-phase level associated with?
-                obj.correspond = (1:length(obj.opts.L_single)) * (obj.opts.L_single' ==obj.opts.L(1, :));
-                obj.mode.correspond = obj.correspond;
-               
+            else
+                t = [];
+                x = [];
             end
-
-            %generate the modes and jumps
         end
 
         function I_marg = get_I_marginals(obj, d)
@@ -63,57 +63,36 @@ classdef opp_diff_dyn
 
         %create the modes and jumps for the three-phase system
         function [mode, jumps, opts_3] = create_system(obj)
-            [L3, G] = obj.mode_switch_graph();
+            if (obj.opts.three_phase ~= "Ignore") || (obj.opts.common_mode < Inf)
+                [L3, G] = obj.mode_switch_graph();
+    
+                %partitions of the three-phase system
+                %if full-wave only, break up the symmetry structure
+                
+                %create the mode
+                lsupp_base = obj.get_support();                                    
+    
+                opts_3 = obj.opts;
+                opts_3.partition = 1 + (opts_3.Symmetry==0);   
+                opts_3.L_single = opts_3.L;
+                opts_3.L = L3;
+                opts_3.allowed_levels = ones(1, size(L3, 2));
+                N = size(L3, 2);
+    
+                mode = opp_mode_3(lsupp_base, obj.objective*ones(N, 1), opts_3);
+               
+                %create the jump
+                jumps = opp_jump_3(lsupp_base, opts_3, G);
+            else
+                mode = [];
+                jumps = [];
+                opts_3 = obj.opts;
 
-            %partitions of the three-phase system
-            %if full-wave only, break up the symmetry structure
-            
-            %create the mode
-            lsupp_base = obj.get_support();                                    
-
-            opts_3 = obj.opts;
-            opts_3.partition = 1 + (opts_3.Symmetry==0);   
-            opts_3.L_single = opts_3.L;
-            opts_3.L = L3;
-            opts_3.allowed_levels = ones(1, size(L3, 2));
-            N = size(L3, 2);
-
-            mode = opp_mode_3(lsupp_base, obj.objective*ones(N, 1), opts_3);
-           
-            %create the jump
-            jumps = opp_jump_3(lsupp_base, opts_3, G);
-
-        end
-
-
-        %% support constraints
-        function sc = supp_con(obj)
-            %support of all measures in the three-phase assembly
-
-            if isempty(obj.mode)
-                sc = [];
-            else                
-                sc_mode = obj.mode.supp_con();
-                sc_jump = obj.jumps.supp_con();
-                sc = [sc_mode; sc_jump];
             end
         end
 
 
-        function lsupp_base = get_support(obj)
-            %get the generic support of the mode measures
-            lsupp_base = loc_support();
-            lsupp_base.vars.x = obj.x;
-            lsupp_base.vars.t = obj.t;
-            vars = lsupp_base.vars;
-
-            lsupp_base.TIME_INDEP = obj.opts.TIME_INDEP;
-            lsupp_base.FREE_TERM = 0;
-            lsupp_base.Tmax = 1;
-
-            lsupp_base.X = obj.supp_con_base(); 
-            
-        end
+        %% support constraints
 
         function sc = supp_con_base(obj)
             %support constraint
@@ -193,7 +172,7 @@ classdef opp_diff_dyn
         
 
         %% moment material
-        function [objective] = objective_diff(obj)
+        function [objective] = create_objective(obj)
             %create the common-mode current
 
             if obj.testing==0
