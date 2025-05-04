@@ -72,6 +72,12 @@ classdef meas_base < meas_interface
             end
         end        
         
+        function m_out = mom_sub(obj, vars_old, f_old)
+            %substitute moments
+            mn = obj.var_sub(vars_old, f_old);
+            m_out = mom(mn);
+        end
+        
         
         %% moment recovery
         function [optimal, mom_out, corner] = recover(obj, tol)

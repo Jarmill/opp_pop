@@ -36,8 +36,8 @@ opts.k = 4;
 % opts.k = 36;
 
 % opts.common_mode = 1;
-% opts.common_mode = 1/3;
-opts.common_mode = 0;
+opts.common_mode = 1/3;
+% opts.common_mode = 0;
 
 % opts.common_mode = 1/3;
 

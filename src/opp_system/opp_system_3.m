@@ -267,8 +267,15 @@ classdef opp_system_3 < opp_system_interface
             %TODO: figure out the math of this. then implement it.
             %should hopefully reduce conservatism of the approach
             
-            con_sym =[];
+            con_sym_mode = obj.mode.con_rotate(d);
+            con_sym_jumps = obj.jumps.con_rotate(d);
+
+            %con_sym_jump = obj.jumps.con_rotate
+            con_sym = [con_sym_mode; con_sym_jumps];
+
         end
+
+        
 
         function con_jumpmass = con_jump_bound(obj)
             jlim = double(obj.opts.k)*3*(2^double(obj.opts.Symmetry));

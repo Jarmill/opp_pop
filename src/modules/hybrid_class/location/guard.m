@@ -126,6 +126,8 @@ classdef guard < meas_base
                 mom_out = mom(Rv);
             end
         end
+
+      
         
         function [mom_src, mom_dest] = liou_reset(obj, d)
             %LIOU_RESET Liouville expressions from the transition

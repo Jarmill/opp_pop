@@ -14,6 +14,7 @@ classdef opp_jump_3
        L_single;      %three-phase levels of the inverter
        vars;          %basic variable type    
        orbits;        %cyclic symmetry for the guards
+       Symmetry; 
     end
     
     methods
@@ -23,6 +24,7 @@ classdef opp_jump_3
             %   Detailed explanation goes here
             obj.L = opts_3.L;
             obj.L_single = opts_3.L_single;
+            obj.Symmetry = opts_3.Symmetry;
             % obj.G = G;
             [obj.src, obj.dst] = find(G);     
 
@@ -157,6 +159,104 @@ classdef opp_jump_3
             end
         end
 
+        function tmon = mom_sub(obj, vars, vref)
+            %three-phase balanced symmetry in the current
+          
+            [N, P] = size(obj.jump);
+            tmon = cell(N, P);
+            for n=1:N
+                for p = 1:P                    
+                      if isempty(obj.jump{n, p}.supp)
+                          tmon{n, p} = 0;
+                      else
+                          tmon{n, p} = obj.jump{n, p}.mom_sub(vars, vref);
+                      end                                                         
+                end
+            end
+
+
+        end
+
+        %% rotation
+        function con_rot = con_rotate(obj, d)
+            %match content of the occupation measure in disparate locations
+
+            mr = obj.rotate_mom(d);
+            N = size(obj.L, 2);
+
+            if obj.opts.Symmetry > 0                
+                mrh = obj.rotate_mom(d, 1);
+            end
+
+            %full-wave only
+            con_rot = [];
+            for i = 1:N
+                ind_curr = obj.orbits.ind_std(:, i);
+                mc0 = mr{ind_curr(1), 1};
+                mc1 = mr{ind_curr(2), 2};
+                mc2 = mr{ind_curr(3), 3};                
+
+                if obj.Symmetry > 0        
+                    ind_f_curr = obj.orbits.ind_flip(:, i);
+                    mh0 = mrh{ind_f_curr(1), 1};
+                    mh1 = mrh{ind_f_curr(2), 2};
+                    mh2 = mrh{ind_f_curr(3), 3};
+
+                    mc0 = mc0 + mh0;
+                    mc1 = mc1 + mh1;
+                    mc2 = mc2 + mh2;
+                end
+                
+                con_rot = [con_rot; mc0 - mc1 == 0; mc0 - mc2 == 0];
+            end
+
+        end
+
+        function rot_mom = rotate_mom(obj, d, flip)
+            %perform 2pi/3 rotation of the entries in the occupation
+            %measure
+            %TODO: implement symmetry (half-wave, quarter-wave)
+
+            if nargin < 3
+                flip = 0;
+            end
+
+            if flip
+                offset = pi;
+            else
+                offset = 0;
+            end
+            
+            %form the generator matrix
+            R3 = [cos(2*pi/3+offset), -sin(2*pi/3+offset); sin(2*pi/3+offset), cos(2*pi/3+offset)];
+            P3 = ((-1)^flip) * [0 0 1; 1 0 0; 0 1 0]; 
+
+            G = blkdiag(R3, P3);
+
+            %create rotating objects
+            V0 = mmon(obj.vars.x, d);
+            V1 = subs(V0, obj.vars.x, G*obj.vars.x);
+            V2 = subs(V0, obj.vars.x, (G*G)*obj.vars.x);
+
+            
+            % rot_mom = cell(size(obj.L));
+
+            % m_a = obj.mom_sub(obj.vars.x, va);
+            m0 = obj.mom_sub(obj.vars.x, V0);
+            m1 = obj.mom_sub(obj.vars.x, V1);
+            m2 = obj.mom_sub(obj.vars.x, V2);
+
+            ms0 = m0(:, 1);
+            ms1 = m1(:, 1);
+            ms2 = m2(:, 1);
+            for i = 2:size(m0, 2)
+                ms0 = madd_cell_mom(ms0, m0(:, i), 1);
+                ms1 = madd_cell_mom(ms1, m1(:, i), 1);
+                ms2 = madd_cell_mom(ms2, m2(:, i), 1);
+            end
+            rot_mom = cat(2, ms0, ms1, ms2);
+
+        end
         
 
         %% recovery
