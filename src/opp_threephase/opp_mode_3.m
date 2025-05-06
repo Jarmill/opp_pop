@@ -213,12 +213,12 @@ classdef opp_mode_3 < opp_mode_interface
                 if isnan(ind_curr(2))
                     mc1 = 0;
                 else
-                    mc1 = mr{ind_curr(2), 1};
+                    mc1 = mr{ind_curr(2), 2};
                 end
                 if isnan(ind_curr(3))
                     mc2 = 0;
                 else
-                    mc2 = mr{ind_curr(3), 1};
+                    mc2 = mr{ind_curr(3),3};
                 end               
 
                 if obj.Symmetry > 0        
@@ -231,12 +231,12 @@ classdef opp_mode_3 < opp_mode_interface
                     if isnan(ind_f_curr(2))
                         mh1 = 0;
                     else
-                        mh1 = mrh{ind_f_curr(2), 1};
+                        mh1 = mrh{ind_f_curr(2), 2};
                     end
                     if isnan(ind_f_curr(3))
                         mh2 = 0;
                     else
-                        mh2 = mrh{ind_f_curr(3), 1};
+                        mh2 = mrh{ind_f_curr(3), 3};
                     end
                     mc0 = mc0 + mh0;
                     mc1 = mc1 + mh1;

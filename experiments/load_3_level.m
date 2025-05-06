@@ -27,8 +27,8 @@ opts.unipolar = 0;
 % opts.three_phase = "Balanced";
 opts.three_phase = "Floating";
 % opts.three_phase = "Ignore";
-opts.k = 4;
-% opts.k = 8;
+% opts.k = 4;
+opts.k = 8;
 % % opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
@@ -37,9 +37,9 @@ opts.k = 4;
 
 % opts.common_mode = 1;
 % opts.common_mode = 1/3;
-% opts.common_mode = 0;
+opts.common_mode = 0;
 
-opts.common_mode = 1/3;
+% opts.common_mode = 1/3;
 
 % modulation = 0.6;
 modulation = 1;
@@ -50,7 +50,7 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 % opts.harmonics.bound_cos = [0,  0; 0.5, 0.5];
 
 %k=4 example
-% opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
+opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
 
 % modulation = 1;
 % opts.harmonics.index_cos = [opts.harmonics.index_cos; 2; 3; 4];
@@ -67,7 +67,7 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 MG = opp_manager(opts);
 % order = 4;
 % order = 3;
-order = 2;
+% order = 2;
 % order = 1;
 d = 2*order;
 

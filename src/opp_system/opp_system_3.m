@@ -93,9 +93,10 @@ classdef opp_system_3 < opp_system_interface
 
         function sc = supp_con_base(obj)
             %support constraint
-            sc = [sum(obj.vars.x(1:2).^2) == 1; 
-                obj.vars.x(3:5).^2 <= 1];
-
+            % sc = [sum(obj.vars.x(1:2).^2) == 1; 
+            %     obj.vars.x(3:5).^2 <= 1];
+            
+            sc = [];
             if obj.opts.three_phase == "Balanced"
                 %produce a balanced current
                 sc = [sc; obj.vars.x(5) == (-obj.vars.x(3) - obj.vars.x(4))];

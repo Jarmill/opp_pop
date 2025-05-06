@@ -154,8 +154,8 @@ classdef opp_manager
             [con_one, supp_one] = obj.sys1.cons(d);
             [con_three, supp_three] = obj.sys3.cons(d);
 
-            % con_align = obj.con_threephase_align(d);
-            con_align = [];
+            con_align = obj.con_threephase_align(d);
+            % con_align = [];
 
             %with harmonics and dynamics
             mom_con = [con_one; con_three; con_align];
