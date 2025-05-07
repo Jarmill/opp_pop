@@ -195,7 +195,9 @@ classdef opp_system_1 < opp_system_interface
                             flow_con_cell{m, n, p} = liou_curr{n, p} + src_curr + dst_curr==0;
                             
                             %stack them into a giant vector: flow_con
-                            flow_con = [flow_con; flow_con_cell{m, n, p}];
+                            if ~islogical(flow_con_cell{m, n, p})                               
+                                flow_con = [flow_con; flow_con_cell{m, n, p}];
+                            end
                         end
                     end
                 end
