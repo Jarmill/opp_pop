@@ -38,6 +38,7 @@ else
 end
 
 out.current = I_val;
+out.u = uf;
 
 nalpha = length(alpha);
 
