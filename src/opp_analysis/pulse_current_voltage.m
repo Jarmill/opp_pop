@@ -31,13 +31,14 @@ out.voltage = uf;
 I_step = uf.*da;
 I0_val = cumsum([0; I_step]);
 if nargin < 4
-    mean_I = mean(I0_val);
-    I_val = I0_val - mean_I;
+    % mean_I = mean(I0_val);
+    I_val = I0_val - max(I0_val)/2;
 else
     I_val = I_val + I0;
 end
 
 out.current = I_val;
+out.u = uf;
 
 nalpha = length(alpha);
 

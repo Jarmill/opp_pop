@@ -47,12 +47,13 @@ plot(aa_allq2, u_allq2, '--', 'linewidth', 2)
 title('Switching Signals $U_1$, $U_2$', 'Interpreter', 'latex', 'FontSize',14)
 % axis off
 xl = xlabel('$\theta$', 'interpreter', 'latex');
+xlim([0, 2*pi])
 xl.Position(2) = xl.Position(2) + 0.2;
 ylabel('$u(\theta)$', 'interpreter', 'latex')
 
 subplot(2, 2, 3)
 imagesc(mass_1)
-title('Pure ($U_1$) Mass', 'interpreter', 'latex')
+title('Pure ($U_1$) Mass', 'interpreter', 'latex', 'FontSize',12)
 % colorbar
 clim([0, 1])
 % axis off
@@ -62,11 +63,11 @@ xticklabels({'0', '1', '2', '3'})
 
 subplot(2, 2, 4)
 imagesc(mass_mixed)
-title('Mixed ($0.6U_1 + 0.4U_2$) Mass', 'interpreter', 'latex')
+title('Mixed ($0.6U_1 + 0.4U_2$) Mass', 'interpreter', 'latex', 'FontSize',12)
 % colorbar
 clim([0, 1])
-ylabel('$n$', 'interpreter', 'latex')
-xlabel('$i$', 'interpreter', 'latex')
+xlabel('$n$', 'interpreter', 'latex')
+ylabel('$i$', 'interpreter', 'latex')
 xticklabels({'0', '1', '2', '3'})
 % /axis off
 
