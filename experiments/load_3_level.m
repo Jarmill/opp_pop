@@ -43,7 +43,8 @@ opts.common_mode = Inf;
 % opts.common_mode = 1/3;
 
 % modulation = 0.6;
-modulation = 0.25;
+% modulation = 0.25;
+modulation = 0.8;
 % opts.Z_load = 0;
 opts.Z_load = 1.0j;
 

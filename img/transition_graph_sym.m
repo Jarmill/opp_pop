@@ -68,24 +68,28 @@ for i=0:k/2-1
 end
 
 %Quarter-Wave
-for i=0:k/4-1
-    for n=1:N
-        up_src = [dx*i; dy*n + QW] + R*[1; 1]*(sqrt(2)/2);
-        up_dst = [dx*(i+1); dy*(n+1) + QW] + R*[-1; -1]*(sqrt(2)/2);
 
-        down_src = [dx*i; dy*n + QW] +  R*[1; -1]*(sqrt(2)/2);
-        down_dst = [dx*(i+1); dy*(n-1) + QW] + R*[-1; 1]*(sqrt(2)/2);
-
-        du = up_dst - up_src;
-        dd = down_dst - down_src;
-
-        if n < N
-            quiver(up_src(1), up_src(2), du(1), du(2), 'autoscale', 1, ...
-                'Color', cc(1, :), 'linewidth', 3, 'maxheadsize', 3)
-        end
-        if n > 1
-            quiver(down_src(1), down_src(2), dd(1), dd(2), 'autoscale', 1, ...
-                'Color', cc(2, :), 'linewidth', 3, 'maxheadsize', 3)
+for i=0:((k/4)-1)
+    for n=nstart:N
+        % if start_level==0 || i >= (N-1)/2 || 
+        if true
+            up_src = [dx*i; dy*n + QW] + R*[1; 1]*(sqrt(2)/2);
+            up_dst = [dx*(i+1); dy*(n+1) + QW] + R*[-1; -1]*(sqrt(2)/2);
+    
+            down_src = [dx*i; dy*n + QW] +  R*[1; -1]*(sqrt(2)/2);
+            down_dst = [dx*(i+1); dy*(n-1) + QW] + R*[-1; 1]*(sqrt(2)/2);
+    
+            du = up_dst - up_src;
+            dd = down_dst - down_src;
+    
+            if n < N && (mod(i+n, 2)==0) && (abs(n-Nc)<=i)
+                quiver(up_src(1), up_src(2), du(1), du(2), 'autoscale', 1, ...
+                    'Color', cc(1, :), 'linewidth', 3, 'maxheadsize', 3)
+            end
+            if n > nstart &&  (mod(i+n, 2)==0) &&(abs(n-Nc)<=i)
+                quiver(down_src(1), down_src(2), dd(1), dd(2), 'autoscale', 1, ...
+                    'Color', cc(2, :), 'linewidth', 3, 'maxheadsize', 3)
+            end
         end
     end
 end
@@ -111,10 +115,13 @@ for n = 1:N
             patch(c+dx*i, s+dy*n+HW, 'k')
         end
     end    
+    
     for i = 0:k/4
-        plot(c+dx*i, s+dy*n+ QW, 'k', 'linewidth', 3)
-        if i==0 && n==n0
-            patch(c+dx*i, s+dy*n+ QW, 'k')
+        if  (mod(i+n, 2)==0) &&(abs(n-Nc)<=i)
+            plot(c+dx*i, s+dy*n+ QW, 'k', 'linewidth', 3)
+            if i==0 && n==Nc
+                patch(c+dx*i, s+dy*n+ QW, 'k')
+            end
         end
     end    
 end

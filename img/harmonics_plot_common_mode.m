@@ -16,26 +16,31 @@ I0_rec = 0;
 
 c = linspecer(5);
 
-figure(3)
+%% signal
+figure(2)
 clf
 % tiledlayout(2, 1)
 % nexttile
-% hold on
-% [outq] = pulse_current_voltage(uq, aq, 2);
-%  outq.uu = kron(outq.u, [1; 1]);    
-%     outq.aa = [0; kron(outq.alpha(2:end-1), [1; 1]); 2*pi];
+hold on
+[outq] = pulse_current_voltage(uq, aq, 2);
+outq.uu = kron(outq.u, [1; 1]);    
+outq.aa = [0; kron(outq.alpha(2:end-1), [1; 1]); 2*pi];
 % 
-% plot([0, 2*pi], [0, 0], ':k', 'HandleVisibility','off')
-% plot(outq.aa, outq.uu, 'LineWidth',3, 'Color', c(1, :))
-% plot(outq.alpha, outq.current, 'LineWidth',3, 'Color', c(2, :))
-% ylabel('Signal', 'Interpreter', 'latex', 'FontSize',14);
-% xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
-% % ylim([-mi, mi])
-% legend({'$u(\theta)$', '$I(\theta)$'}, 'interpreter', 'latex', 'location', 'northeast', 'FontSize', 12)
-% xlim([0, 2*pi])
+plot([0, 2*pi], [0, 0], ':k', 'HandleVisibility','off')
+plot(outq.aa, outq.uu, 'LineWidth',3, 'Color', c(1, :))
+plot(outq.alpha, outq.current, 'LineWidth',3, 'Color', c(2, :))
+ylabel('Signal', 'Interpreter', 'latex', 'FontSize',14);
+xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
+% ylim([-mi, mi])
+legend({'$u(\theta)$', '$I(\theta)$'}, 'interpreter', 'latex', 'location', 'northeast', 'FontSize', 12)
+xlim([0, 2*pi])
 % box off
 % 
 % nexttile
+
+%% harmonics
+figure(3)
+clf
 hold on
 nmax = 41;
 [na, nb] = pulse_harmonics(nmax, outq.u, outq.alpha(2:end-1)');
