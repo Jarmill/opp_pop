@@ -36,10 +36,11 @@ title('Switching Signals $U_1$, $U_2$', 'Interpreter', 'latex', 'FontSize',14)
 xl = xlabel('$\theta$', 'interpreter', 'latex');
 xl.Position(2) = xl.Position(2) + 0.2;
 ylabel('$u(\theta)$', 'interpreter', 'latex')
+xlim([0, 2*pi])
 
 subplot(2, 2, 3)
 imagesc(mass_1)
-title('Pure ($U_1$) Mass', 'interpreter', 'latex')
+title('Pure ($U_1$) Mass', 'interpreter', 'latex', 'FontSize',12)
 % colorbar
 clim([0, 2.6])
 % axis off
@@ -48,9 +49,10 @@ ylabel('$i$', 'interpreter', 'latex')
 
 subplot(2, 2, 4)
 imagesc(mass_mixed)
-title('Mixed ($0.6U_1 + 0.4U_2$) Mass', 'interpreter', 'latex')
-% colorbar
+title('Mixed ($0.6U_1 + 0.4U_2$) Mass', 'interpreter', 'latex', 'FontSize',12)
+% cb= colorbar;
 clim([0, 2.6])
+% ylabel(cb,'Dwell Angle','FontSize',16,'Rotation',270, 'interpreter', 'latex')
 xlabel('$n$', 'interpreter', 'latex')
 ylabel('$i$', 'interpreter', 'latex')
 % /axis off
