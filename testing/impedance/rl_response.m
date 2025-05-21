@@ -1,0 +1,63 @@
+%% make the signal
+aq = [0.423323100643366	0.646289267844426	0.806615717344141	1.55083012024646	]';
+uq = [0 1 0  1 0]';
+
+[outq] = pulse_current_voltage(uq, aq, 2);
+outq.uu = kron(outq.u, [1; 1]);    
+outq.aa = [0; kron(outq.alpha(2:end-1), [1; 1]); 2*pi];
+
+%% load characteristics
+
+% R = 3;
+% R = 0.0;
+% R = 1;
+R = 1;
+L = 1;
+kappa = R/L;
+
+T = 1;
+N = 1000;
+t = linspace(0, T*2*pi, N);
+
+% I0 = -3;
+% I0 = -0.471070901026913;
+I0 = -0.473;
+s = tf('s');
+sys = 1/(s + kappa);
+
+u0 = 1;
+% u = ones(size(t))*u0;
+
+% u = square(t*(2*pi))*u0;
+u = pulse_func(t, outq.u, outq.alpha(2:end-1));
+
+% y = lsim(sys, u, t, I0);
+A = -R/L;
+B = 1;
+C = 1;
+D = 0;
+
+NI = 100;
+I0_list = linspace(-5, 5, NI);
+y_list = zeros(NI, N);
+for i = 1:NI
+    y_list(i, :) = lsim(A, B, C, D, u, t, I0_list(i))';
+end
+
+y = lsim(A, B, C, D, u, t, I0)';
+% y = lsim(A, B, C, D, u, t, I0);
+
+%% plot the voltage and the current
+figure(1)
+c = linspecer(2);
+clf
+hold on
+plot(reshape((0:(T-1))*2*pi + outq.aa, [], 1), reshape(repmat(outq.uu, [1, T]), [], 1),...
+    'LineWidth', 3, 'Color', c(1, :));
+plot(t, y, 'LineWidth', 3,  'Color', c(2, :));
+
+
+% figure(2)
+% plot(I0_list, y_list(:, end), 'color', 'k')
+% xlabel('$I(0)$', 'Interpreter', 'latex')
+% ylabel('$I(2\pi)$', 'Interpreter', 'latex')

@@ -5,7 +5,7 @@ function [x] = pulse_func(th, u, alpha)
 th = mod(th, 2*pi);
 N = length(th);
 x = zeros(1, N);
-a0 = [0, alpha, 2*pi];
+a0 = [0, reshape(alpha, 1, []), 2*pi];
 nalpha = length(alpha);
 
 for i = 1:nalpha
