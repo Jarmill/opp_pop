@@ -142,9 +142,14 @@ classdef guard < meas_base
             end
         end
 
-        function [v_sel, mon_sel] = select_monom_jump(obj, d, ind)
+        function [v_sel, mon_sel] = select_monom_jump(obj, d, ind, signs)
             %moments of all other variables [phi, l] 
             
+            % if nargin < 4
+            %     subsign = false;
+            %     signs = ones(length(ind));
+            % end
+
             if isempty(obj.supp)
                 v_sel = 0;
                 mon_sel= 0;
@@ -153,6 +158,9 @@ classdef guard < meas_base
                 x_sel = x_curr(ind);                
                 v_sel= mmon(x_sel, 0, d);
                 
+                if (nargin >= 4) && (any(signs ~= 1))                    
+                    v_sel = subs(v_sel, x_sel, signs.*x_sel);
+                end
     
                 mon_sel = mom(v_sel);
             end

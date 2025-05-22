@@ -36,6 +36,7 @@ classdef opp_options
         uniform_arc(1, 1)logical=true %impose that the (c, s) marginals of the occupation measure is the uniform distribution over an arc
         common_mode(1, 1)double = Inf %common-mode voltage constraint
 
+        quarter_match(1, 1)logical=false %impose QW symmetry on an HW signal
         allowed_levels = []; %which levels are allowed at which switching indices?
 
         %polynomial optimization parameters

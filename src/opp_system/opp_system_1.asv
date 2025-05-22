@@ -282,7 +282,6 @@ classdef opp_system_1 < opp_system_interface
             %only use when there are an even number of jumps
             con_match = [];
             if (obj.opts.Symmetry==1) && (obj.opts.quarter_match)
-            % if false
                 %only match quarters 
                 
                 kh = length(obj.jumps);
@@ -294,17 +293,17 @@ classdef opp_system_1 < opp_system_interface
                 % jump_down_after = cell(N, kh);
                 
                 %moments for the occupation measures
-                % for i = 1:((kh/2))
-                %     oub = obj.mode{i}.trig_occ_sign_monom(d, [1; 1]);
-                %     oua = obj.mode{kh - i + 1}.trig_occ_sign_monom(d, [-1; 1]);
-                %     con_curr = [];
-                %     for n = 1:(N)
-                %         if ~isnumeric(oub{n})
-                %             con_curr = [con_curr; oub{n}-oua{n}==0];
-                %         end                                               
-                %     end
-                %     con_match = [con_match; con_curr];
-                % end
+                for i = 1:((kh/2)+1)
+                    oub = obj.mode{i}.trig_occ_sign_monom(obj, d, [1; 1]);
+                    oua = obj.mode{kh - i + 1}.trig_occ_sign_monom(obj, d, [1; -1]);
+                    con_curr = [];
+                    for n = 1:(N)
+                        if ~isnumeric(oub{n})
+                            con_curr = [con_curr; oub{n}-oua{n}==0];
+                        end                                               
+                    end
+                    
+                end
 
                 %get moments for the jumps before pi
                 for i = 1:(kh/2)
@@ -507,17 +506,17 @@ classdef opp_system_1 < opp_system_interface
                 objective = (2*pi)*(opts.L.^2);
             elseif (imag(opts.Z_load) >= 0)
                 
-                % if real(opts.Z_load)==0
+                if real(opts.Z_load)==0
                     objective = pi^2 * (2*pi)^2*vars.x(4)^2*ones(size(opts.L));
-                % else
+                else
                     %inductive load
                     %i' = -(R/L)i + (1/L) v
                     %per-unit system, ignore the L value
-                    % inductance = imag(opts.Z_load)/(2*pi*opts.f0);
+                    inductance = imag(opts.Z_load)/(2*pi*opts.f0);
                     % resistance= real(opts.Z_load);                
                     % f_load = -(resistance)/(inductance)*vars.x(4) + Lscale;
-                    % objective = (2*pi)*vars.x(4)^2*(Lmax/inductance)^2*(opts.L).^2;
-                % end
+                    objective = (2*pi)*vars.x(4)^2*(Lmax/inductance)^2*(opts.L).^2;
+                end
             else
                  %vc' = (v-vc)/(R*C)
                  %per-unit, ignore (R*C) factor

@@ -13,8 +13,13 @@ N = 1000;
 
 I0 = -0.473;
 %% make the signal
-aq = [0.423323100643366	0.646289267844426	0.806615717344141	1.55083012024646	]';
-uq = [0 1 0  1 0]';
+% aq = [0.423323100643366	0.646289267844426	0.806615717344141	1.55083012024646	]';
+% uq = [0 1 0  1 0]';
+
+% aq = [0.423323100643366	0.646289267844426	0.806615717344141	1.55083012024646	]';
+aq = [0.720186460835395,1.447102394507780]';
+% uq = [0 1 0  1 0]';
+uq = [0 1 0]';
 
 param = struct('aq', aq, 'uq', uq, 'kappa', kappa);
 
@@ -27,8 +32,9 @@ param = struct('aq', aq, 'uq', uq, 'kappa', kappa);
 % y0 = -0.472;
 y0 =-0.3;
 
+NA = 10000;
 [y, cval, info] = fmincon(@(I) objective_Imatch(I, param), y0, [1; -1], [1; 1]);
-[outq] = pulse_current_voltage_RL(param.uq, param.aq, 2, 1000, param.kappa, y);
+[outq] = pulse_current_voltage_RL(param.uq, param.aq, 2, NA, param.kappa, y);
 
 outq.uu = kron(outq.u, [1; 1]);    
 outq.aa = [0; kron(outq.alpha(2:end-1), [1; 1]); 2*pi];

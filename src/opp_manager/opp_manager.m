@@ -60,7 +60,16 @@ classdef opp_manager
             %quarter-wave symmetry starts at 0
             if opts_out.Symmetry==2                
                 opts_out.start_level = int32((N+1)/2);
+                %if there's an RL load, do quarter-matching
+                %track the signal between [0, pi], but impose that the
+                %voltage is quarter-wave symmetric
+                if (real(opts.Z_load) > 0) && (imag(opts.Z_load) ~= 0)
+                    opts_out.quarter_match = true;
+                    opts_out.Symmetry=1;
+                end
             end
+
+            
 
             %unipolar only if not full-wave symmetric
             if opts_out.Symmetry==0
@@ -155,6 +164,7 @@ classdef opp_manager
             [con_three, supp_three] = obj.sys3.cons(d);
 
             con_align = obj.con_threephase_align(d);
+            
             % con_align = [];
 
             %with harmonics and dynamics
@@ -451,35 +461,45 @@ classdef opp_manager
             pattern.energy = (obj.opts.L(ind).^2)*(2*pi*ang)/(2*pi);
 
 
+            [I0, Ic] = obj.recover_load();
 
             % I_val = mom(obj.levels{(length(obj.opts.L)-1)/2+1, 1});
-            if obj.opts.Z_load == 1.0j
-                uf = pattern.u';
-                ah = [0; pattern.alpha'; 2*pi];               
-                da = diff(ah);
-                            %compute the energy in a pure inductor
-                I_step = uf.*da;
-                [I0, Ic] = obj.recover_load();
-                I_val = cumsum([pi*I0; I_step]);
-                % I_val = I_step + 
-                pattern.I = I_val;
-                energy_raw = 0;
-                for i = 1:length(da)
-                    slope = uf(i);
-                    offset = I_val(i);
-                    prev = ah(i);
-                
-                    if slope == 0
-                        energy_curr = offset.^2 * (ah(i+1)-ah(i));
-                    else
-                        pt_end = (offset + slope*(ah(i+1)-prev))^3/(3*slope);
-                        pt_start = (offset)^3/(3*slope);
-                        energy_curr = pt_end - pt_start;
+            if imag(obj.opts.Z_load) > 0
+                if real(obj.opts.Z_load) > 0
+                    kappa = real(obj.opts.Z_load)/imag(obj.opts.Z_load) * (2 * pi * obj.opts.f0); 
+                    outq = pulse_current_voltage_RL(uf, af, 0, 1000, kappa, I0);
+                    pattern.energy_I = outq.energy;
+                    pattern.I_val = outq.I_val;
+                    pattern.alpha_val = outq.alpha_val;
+                    pattern.I = outq.I;
+                else
+                    uf = pattern.u';
+                    ah = [0; pattern.alpha'; 2*pi];               
+                    da = diff(ah);
+                                %compute the energy in a pure inductor
+                    I_step = uf.*da;
+                    
+                    I_val = cumsum([pi*I0; I_step]);
+                    % I_val = I_step + 
+                    pattern.I = I_val;
+                    energy_raw = 0;
+                    for i = 1:length(da)
+                        slope = uf(i);
+                        offset = I_val(i);
+                        prev = ah(i);
+                    
+                        if slope == 0
+                            energy_curr = offset.^2 * (ah(i+1)-ah(i));
+                        else
+                            pt_end = (offset + slope*(ah(i+1)-prev))^3/(3*slope);
+                            pt_start = (offset)^3/(3*slope);
+                            energy_curr = pt_end - pt_start;
+                        end
+                        % energy_raw = energy_raw + energy_curr/(2*pi);
+                        energy_raw = energy_raw + energy_curr;
                     end
-                    % energy_raw = energy_raw + energy_curr/(2*pi);
-                    energy_raw = energy_raw + energy_curr;
+                    pattern.energy_I = energy_raw;
                 end
-                pattern.energy_I = energy_raw;
             else
                 pattern.energy_I = 0;
             end

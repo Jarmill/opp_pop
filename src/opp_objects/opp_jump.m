@@ -120,27 +120,76 @@ classdef opp_jump < handle
             end
         end
 
-        function [imon_up, imon_down] = sel_monom_jump(obj, d, ind)
+
+
+        function [imon_up, imon_down] = sel_monom_jump_summarize(obj, d, ind, signs)
             %moments of the jump measure
 
             n = length(obj.vars.x);
             if nargin < 2
                 ind = 1:n;
             end
+
+
+            % [imon_up_pre, imon_down_pre] = obj.sel_monom_jump(d, ind, signs);
+            % if nargin < 4
+            %     subsign = false;
+            %     signs = ones(length(ind));
+            % end
             
-            [N] = length(obj.jump_up);
+            [N, P] = size(obj.jump_up);
             imon_up = cell(N, 1);
             imon_down = cell(N, 1);
+            for i = 1:N
+                imon_up{i} = 0;
+                imon_down{i} = 0;
+            end
             for n=1:N                
-                if ~isempty(obj.jump_up{n}.supp)                        
-                    [~, imon_up{n}] = obj.jump_up{n}.select_monom_jump(d, ind);                            
-                else
-                    imon_up{n} = 0;
+                for p=1:P       
+                    if ~isempty(obj.jump_up{n, p}.supp)                        
+                        [~, curr_up] = obj.jump_up{n, p}.select_monom_jump(d, ind, signs);                            
+                        imon_up{n} = imon_up{n} + curr_up;
+                    % else
+                        % imon_up{n, p} = 0;
+                    end
+                    if ~isempty(obj.jump_down{n, p}.supp)                        
+                        [~, curr_down] = obj.jump_down{n, p}.select_monom_jump(d, ind, signs);                            
+                        imon_down{n} = imon_down{n} + curr_down;
+                    % else
+                        % imon_down{n} = 0;
+                    end
                 end
-                if ~isempty(obj.jump_down{n}.supp)                        
-                    [~, imon_down{n}] = obj.jump_down{n}.select_monom_jump(d, ind);                            
-                else
-                    imon_down{n} = 0;
+            end
+        end
+
+        function [imon_up, imon_down] = sel_monom_jump(obj, d, ind, signs)
+            %moments of the jump measure
+
+            n = length(obj.vars.x);
+            if nargin < 2
+                ind = 1:n;
+            end
+
+            % if nargin < 4
+            %     subsign = false;
+            %     signs = ones(length(ind));
+            % end
+            
+            [N, P] = size(obj.jump_up);
+            imon_up = cell(N, P);
+            imon_down = cell(N, P);
+            for n=1:N                
+                for p=1:P       
+                    if ~isempty(obj.jump_up{n, p}.supp)                        
+                        [~, imon_up{n, p}] = obj.jump_up{n, p}.select_monom_jump(d, ind, signs);                            
+                    else
+                        imon_up{n, p} = 0;
+                    end
+                    if ~isempty(obj.jump_down{n, p}.supp)                        
+                        [~, imon_down{n, p}] = obj.jump_down{n, p}.select_monom_jump(d, ind, signs);                            
+                    else
+                        imon_down{n, p} = 0;
+                    end
                 end
             end
         end

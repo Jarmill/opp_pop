@@ -35,13 +35,11 @@ opts.common_mode = Inf;
 
 % modulation = 0.6;
 % modulation = 0.25;
-modulation = 0.8;
-% modulation = 1;
+% modulation = 0.8;
+modulation = 1;
 
-% kappa = 0;
-kappa = 1;
-% kappa = 1.5;
-% kappa = 2;
+kappa = 0;
+% kappa = 1;
 
 % opts.Z_load = 0;
 opts.Z_load = kappa/(2*pi*opts.f0) + 1.0j;
@@ -98,13 +96,13 @@ if sol.status==0
 
 
     bound_lower = sol.obj_rec;
-    if imag(opts.Z_load)>0
+    if opts.Z_load==1.0j
         bound_upper = pattern_rec.energy_I;
     else
         bound_upper = pattern_rec.energy;
     end
-    bn_lower = sqrt(bound_lower/pi - modulation^2/(1+kappa^2));
-    bn_upper = sqrt(bound_upper/pi - modulation^2/(1+kappa^2));
+    bn_lower = sqrt(bound_lower/pi - modulation/(1+kappa^2));
+    bn_upper = sqrt(bound_upper/pi - modulation^2);
 % save('experiments/k_16_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern_rec', 'ms', 'order')
 % save('experiments/k_8_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern', 'ms', 'order')
 
@@ -150,7 +148,7 @@ title(sprintf('M=%0.1f, k=%d, Lower=%0.3f\\%%, Upper=%0.3f\\%%', modulation, opt
 
 nexttile
 hold on
-plot(th, -modulation/(1+kappa)*cos(th + atan(kappa)), 'k', 'linewidth', 3);
+plot(th, -modulation*cos(th), 'k', 'linewidth', 3);
 if kappa > 0
     plot(pattern_rec.alpha_val, pattern_rec.I_val, 'linewidth', 3, 'color', cc(2, :));
 else

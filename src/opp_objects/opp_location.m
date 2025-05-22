@@ -116,7 +116,7 @@ classdef opp_location < location_interface
         
 
         
-            function [v_trig, mom_trig] = trig_monom(obj, d, signs)
+        function [v_trig, mom_trig] = trig_monom(obj, d, signs)
             %moments of [c, s] (trigonometric lift, used for Lebesgue
             %constraint)
             if nargin < 3
@@ -138,7 +138,7 @@ classdef opp_location < location_interface
                 mom_trig = mom(v_trig);
             end
 
-            end
+        end
 
         function [v_sel, mon_sel] = select_monom_init(obj, d, ind)
             %moments of all other variables [phi, l] 
