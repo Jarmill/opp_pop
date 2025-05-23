@@ -103,7 +103,7 @@ classdef opp_mode < opp_mode_interface
             else
                 x_load = vars.x(4);
             end
-            f_load = load_dynamics(obj, x_load, opts) / (2^double(obj.Symmetry));
+            f_load = obj.load_dynamics(x_load, opts) / (2^double(obj.Symmetry));
             
             % f = [f_trig; f_phi; f_load];
             N = size(opts.L, 2);

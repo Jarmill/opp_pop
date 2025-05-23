@@ -9,7 +9,7 @@ classdef (Abstract) opp_mode_interface
         L;             %levels of the inverter        
         transition;    %guard measures for the partition staying within the level (no switching)
         vars;          %basic variable type
-        
+        f;             %dynamics
         Z_load;
         Symmetry; 
         f0;
@@ -39,6 +39,7 @@ classdef (Abstract) opp_mode_interface
             %create locations for each level     
             [prefix] = obj.get_prefix();
 
+            obj.f = f;
             obj.levels = obj.make_level_locs(m, opts, lsupp_base, objective_mode, f, prefix);                  
             
             obj.transition = obj.make_transitions(m, opts,  lsupp_base, prefix);
@@ -136,7 +137,12 @@ classdef (Abstract) opp_mode_interface
                 %per-unit system, ignore the L value
                 inductance = imag(opts.Z_load)/(2*pi*opts.f0);
                 resistance= real(opts.Z_load);                
-                f_load = -((resistance)/(inductance))*x_load*ones(1, N) + Lscale;
+
+                % load_scale = 1/(2*pi);
+                % load_scale = 1/pi;
+                load_scale = 2*pi;
+
+                f_load = -load_scale*((resistance)/(inductance))*x_load*ones(1, N) + Lscale;
             else
                  %vc' = (v-vc)/(R*C)
                  %per-unit, ignore (R*C) factor

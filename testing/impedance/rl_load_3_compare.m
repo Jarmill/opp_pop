@@ -18,11 +18,11 @@ opts.unipolar = 1; %need to debug this
 % opts.three_phase = "Floating";
 opts.three_phase = "Ignore";
 % opts.k = 4;
-opts.k = 8;
+% opts.k = 8;
 opts.quarter_match = true;
 % opts.k = 12;
 % opts.k = 16;
-% opts.k=20;
+opts.k=20;
 % opts.k = 24;
 % opts.k = 36;
 
@@ -35,11 +35,15 @@ opts.common_mode = Inf;
 
 % modulation = 0.6;
 % modulation = 0.25;
-% modulation = 0.8;
-modulation = 1;
+modulation = 0.8;
+% modulation = 1;
 
-kappa = 0;
-% kappa = 1;
+% kappa = 0;
+% kappa = 0.5;
+% kappa = 2;
+kappa = 1;
+% kappa = 1.5;
+% kappa = 2;
 
 % opts.Z_load = 0;
 opts.Z_load = kappa/(2*pi*opts.f0) + 1.0j;
@@ -96,13 +100,13 @@ if sol.status==0
 
 
     bound_lower = sol.obj_rec;
-    if opts.Z_load==1.0j
+    if imag(opts.Z_load)>0
         bound_upper = pattern_rec.energy_I;
     else
         bound_upper = pattern_rec.energy;
     end
-    bn_lower = sqrt(bound_lower/pi - modulation/(1+kappa^2));
-    bn_upper = sqrt(bound_upper/pi - modulation^2);
+    bn_lower = sqrt(bound_lower/pi - modulation^2/(1+kappa^2));
+    bn_upper = sqrt(bound_upper/pi - modulation^2/(1+kappa^2));
 % save('experiments/k_16_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern_rec', 'ms', 'order')
 % save('experiments/k_8_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern', 'ms', 'order')
 
@@ -132,9 +136,9 @@ xi = pi*(cumsum(2*x)/(N_interp)) + I0_rec;
 
 
 cc = linspecer(4);
-figure(1)
+figure(2)
 clf
-tiledlayout(3, 1)
+tiledlayout(2, 1)
 nexttile
 hold on
 plot(th, modulation*sin(th), 'k', 'linewidth', 3);
@@ -146,43 +150,63 @@ xlim([0, 2*pi])
 title(sprintf('M=%0.1f, k=%d, Lower=%0.3f\\%%, Upper=%0.3f\\%%', modulation, opts.k, bn_lower, bn_upper), ...
     'FontSize',16, 'Interpreter', 'latex')
 
+%find the current
+
+%there might be an incorrect 2pi-scaling somewhere
+a_jump = [];
+I_jump = [];
+for i = 1:length(Mc1.jump)
+    for n = 1:length(opts.L)-1
+        juc = Mc1.jump{i}.up{n};
+        jdc = Mc1.jump{i}.down{n};
+        %jump up
+        if ~isempty(juc) && abs(juc(1, 1) - 1) < 1e-6
+            alpha_curr = atan2(juc(3, 1), juc(2, 1));
+            a_jump = [a_jump; alpha_curr];
+            I_jump = [I_jump; juc(5, 1)];
+        end
+        %jump down
+        if ~isempty(jdc) && abs(jdc(1, 1) - 1) < 1e-6
+            alpha_curr = atan2(jdc(3, 1), jdc(2, 1));
+            a_jump = [a_jump; alpha_curr];
+            I_jump = [I_jump; jdc(5, 1)];
+        end
+    end
+end
+
+if opts.Symmetry == 1
+    a_jump = [a_jump; a_jump + pi];
+    I_jump = [I_jump; -I_jump];
+end
+
+
+
 nexttile
 hold on
-plot(th, -modulation*cos(th), 'k', 'linewidth', 3);
+Ascale = sqrt((1)/(1+kappa^2));
+plot(th, -modulation*Ascale*cos(th + atan(kappa)), 'k', 'linewidth', 3);
 if kappa > 0
     plot(pattern_rec.alpha_val, pattern_rec.I_val, 'linewidth', 3, 'color', cc(2, :));
+    scatter([0, pattern_rec.alpha, 2*pi], pattern_rec.I, 100, 'k', 'filled')    
 else
     plot(th, xi, 'linewidth', 3, 'color', cc(2, :));
 end
+scatter(a_jump, pi*I_jump, 100, 'g', 'filled')
+
+
+%quarter-match
+I0 = Mc1.modes{1}{2}.init(5, 1);
+Iterm = Mc1.modes{end}{2}.term(5, 1);
+scatter([0, pi, 2*pi], pi*[I0; Iterm; I0], 100, 'b', 'filled')
+
+
 ylabel('$I(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
 xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
 xlim([0, 2*pi])
 
 
-% th_interp = linspace(0, 2*pi, 900);
-% xi_interp = interp1(th,xi,th_interp);
 
-xa = x;
-xb = circshift(xa, N_interp/3);
-xc = circshift(xa, 2*N_interp/3);
-
-xcm = (xa + xb + xc)/3;
-
-nexttile
-hold on
-plot(th, xcm, 'linewidth', 3, 'color', cc(4, :))
-plot([0, 2*pi], [0, 0], ':k')
-if (opts.common_mode < Inf) && (opts.common_mode > 0)
-    plot([0, 2*pi], [1, 1]*opts.common_mode, 'k')
-    plot([0, 2*pi], -[1, 1]*opts.common_mode, 'k')
-    ylim([-1, 1]*1.25*opts.common_mode)
-end
-xlim([0, 2*pi])
-ylabel('$v_{cm}(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
-xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
-
-
-
+%% plot the harmonics
 figure(3)
 clf
 nmax = 21;

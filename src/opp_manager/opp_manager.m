@@ -467,7 +467,7 @@ classdef opp_manager
             if imag(obj.opts.Z_load) > 0
                 if real(obj.opts.Z_load) > 0
                     kappa = real(obj.opts.Z_load)/imag(obj.opts.Z_load) * (2 * pi * obj.opts.f0); 
-                    outq = pulse_current_voltage_RL(uf, af, 0, 1000, kappa, I0);
+                    outq = pulse_current_voltage_RL(uf, af, 0, 1000, kappa, pi*I0);
                     pattern.energy_I = outq.energy;
                     pattern.I_val = outq.I_val;
                     pattern.alpha_val = outq.alpha_val;
