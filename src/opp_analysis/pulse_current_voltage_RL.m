@@ -96,7 +96,8 @@ for i = 1:Na
     E_s(i) = (E_num_1 + E_num_2 - E0)/E_denom;
 end
 
-energy = da'*E_s;
+% energy = da'*E_s;
+energy = sum(E_s);
 
 out.energy = energy;
 % out.I_avg = I_avg;

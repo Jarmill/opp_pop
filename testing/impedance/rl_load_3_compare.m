@@ -19,12 +19,13 @@ opts.unipolar = 1; %need to debug this
 opts.three_phase = "Ignore";
 % opts.k = 4;
 % opts.k = 8;
-opts.quarter_match = true;
+% opts.quarter_match = true;
 % opts.k = 12;
 % opts.k = 16;
-opts.k=20;
+% opts.k=20;
 % opts.k = 24;
 % opts.k = 36;
+opts.k = 40;
 
 % opts.common_mode = 1;
 % opts.common_mode = 1/3;
@@ -39,11 +40,13 @@ modulation = 0.8;
 % modulation = 1;
 
 % kappa = 0;
-% kappa = 0.5;
+kappa = 0.5;
 % kappa = 2;
-kappa = 1;
+% kappa = 1;
 % kappa = 1.5;
 % kappa = 2;
+
+Ascale = sqrt((1)/(1+kappa^2));
 
 % opts.Z_load = 0;
 opts.Z_load = kappa/(2*pi*opts.f0) + 1.0j;
@@ -70,9 +73,9 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 
 
 MG = opp_manager(opts);
-% order = 4;
-% order = 3;
-order = 2;
+% order = 4;\
+order = 3;
+% order = 2;
 % order = 1;
 d = 2*order;
 
@@ -105,8 +108,8 @@ if sol.status==0
     else
         bound_upper = pattern_rec.energy;
     end
-    bn_lower = sqrt(bound_lower/pi - modulation^2/(1+kappa^2));
-    bn_upper = sqrt(bound_upper/pi - modulation^2/(1+kappa^2));
+    bn_lower = sqrt(bound_lower/pi - modulation^2*Ascale^2);
+    bn_upper = sqrt(bound_upper/pi - modulation^2*Ascale^2);
 % save('experiments/k_16_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern_rec', 'ms', 'order')
 % save('experiments/k_8_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern', 'ms', 'order')
 
@@ -183,7 +186,6 @@ end
 
 nexttile
 hold on
-Ascale = sqrt((1)/(1+kappa^2));
 plot(th, -modulation*Ascale*cos(th + atan(kappa)), 'k', 'linewidth', 3);
 if kappa > 0
     plot(pattern_rec.alpha_val, pattern_rec.I_val, 'linewidth', 3, 'color', cc(2, :));

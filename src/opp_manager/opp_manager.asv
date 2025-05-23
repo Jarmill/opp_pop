@@ -60,7 +60,16 @@ classdef opp_manager
             %quarter-wave symmetry starts at 0
             if opts_out.Symmetry==2                
                 opts_out.start_level = int32((N+1)/2);
+                %if there's an RL load, do quarter-matching
+                %track the signal between [0, pi], but impose that the
+                %voltage is quarter-wave symmetric
+                if (real(opts.Z_load) > 0) && (imag(opts.Z_load) ~= 0)
+                    opts_out.quarter_match = true;
+                    opts_out.Symmetry=1;
+                end
             end
+
+            
 
             %unipolar only if not full-wave symmetric
             if opts_out.Symmetry==0
@@ -155,7 +164,8 @@ classdef opp_manager
             [con_three, supp_three] = obj.sys3.cons(d);
 
             con_align = obj.con_threephase_align(d);
-
+            
+            % con_align = [];
 
             %with harmonics and dynamics
             mom_con = [con_one; con_three; con_align];
@@ -178,7 +188,9 @@ classdef opp_manager
                 (obj.opts.common_mode < Lmax))
                                                              
 
-                % occ_match = [];
+                %match the measures between the single-phase
+                %(switch-constrained) data of (angle, current) and the 
+                % three-phase marginal onto the (angle, current in phase a)
                 
                 init_match = obj.align_init(d);
                 term_match = obj.align_term(d);
@@ -285,16 +297,21 @@ classdef opp_manager
                 [su_1, sd_1] = obj.sys1.sel_jump_monom(d, [1, 2, 4]);
                 [su_3, sd_3] = obj.sys3.sel_jump_monom(d, [1, 2, 3]);
 
-                [N, P] = size(su_);
+                [NN] = size(su_3, 1);
                 %TODO: quarter-wave symmetry will destroy some of this
                 jump_mom_con = [];
-                for i = 1:N
-                    for p = 1:P
-                        if ~isnumeric(term_1{i, p}) || ~isnumeric(term_3{i, p}) 
-                            jump_mom_con= [jump_mom_con; term_1{i, p} - term_3{i, p}==0];
-                        end
+                for i = 1:NN                   
+                    if ~isnumeric(su_1{i}) || ~isnumeric(su_3{i}) 
+                        %jump up
+                        jump_mom_con= [jump_mom_con; su_1{i} - su_3{i}==0];
+                    end
+                    
+                    if ~isnumeric(sd_1{i}) || ~isnumeric(sd_3{i}) 
+                        %jump down
+                        jump_mom_con= [jump_mom_con; sd_1{i} - sd_3{i}==0];
                     end
                 end
+                
             else
                 jump_mom_con = [];
             end
@@ -321,12 +338,16 @@ classdef opp_manager
                 % for i = 1:length(obj.sys1.jumps)
                 %     objective_jump = objective_jump + obj.sys1.jumps{i}.objective();
                 % end
-                                
+                     
+                objective_1 = obj.sys1.objective();
                 if obj.opts.three_phase == "Floating"
-                    objective = obj.sys3.objective();
+                    %subtract the common-mode contribution
+                    objective_3 = obj.sys3.objective();
                 else
-                    objective = obj.sys1.objective();
-                end                               
+                    objective_3 = 0;
+                end              
+
+                objective = objective_1 + objective_3;
             end
 
         end
@@ -440,35 +461,45 @@ classdef opp_manager
             pattern.energy = (obj.opts.L(ind).^2)*(2*pi*ang)/(2*pi);
 
 
+            [I0, Ic] = obj.recover_load();
 
             % I_val = mom(obj.levels{(length(obj.opts.L)-1)/2+1, 1});
-            if obj.opts.Z_load == 1.0j
-                uf = pattern.u';
-                ah = [0; pattern.alpha'; 2*pi];               
-                da = diff(ah);
-                            %compute the energy in a pure inductor
-                I_step = uf.*da;
-                [I0, Ic] = obj.recover_load();
-                I_val = cumsum([pi*I0; I_step]);
-                % I_val = I_step + 
-                pattern.I = I_val;
-                energy_raw = 0;
-                for i = 1:length(da)
-                    slope = uf(i);
-                    offset = I_val(i);
-                    prev = ah(i);
-                
-                    if slope == 0
-                        energy_curr = offset.^2 * (ah(i+1)-ah(i));
-                    else
-                        pt_end = (offset + slope*(ah(i+1)-prev))^3/(3*slope);
-                        pt_start = (offset)^3/(3*slope);
-                        energy_curr = pt_end - pt_start;
+            if imag(obj.opts.Z_load) > 0
+                if real(obj.opts.Z_load) > 0
+                    kappa = real(obj.opts.Z_load)/imag(obj.opts.Z_load) * (2 * pi * obj.opts.f0); 
+                    outq = pulse_current_voltage_RL(uf, af, 0, 1000, kappa, pi*I0);
+                    pattern.energy_I = outq.energy;
+                    pattern.I_val = outq.I_val;
+                    pattern.alpha_val = outq.alpha_val;
+                    pattern.I = outq.I;
+                else
+                    uf = pattern.u';
+                    ah = [0; pattern.alpha'; 2*pi];               
+                    da = diff(ah);
+                                %compute the energy in a pure inductor
+                    I_step = uf.*da;
+                    
+                    I_val = cumsum([pi*I0; I_step]);
+                    % I_val = I_step + 
+                    pattern.I = I_val;
+                    energy_raw = 0;
+                    for i = 1:length(da)
+                        slope = uf(i);
+                        offset = I_val(i);
+                        prev = ah(i);
+                    
+                        if slope == 0
+                            energy_curr = offset.^2 * (ah(i+1)-ah(i));
+                        else
+                            pt_end = (offset + slope*(ah(i+1)-prev))^3/(3*slope);
+                            pt_start = (offset)^3/(3*slope);
+                            energy_curr = pt_end - pt_start;
+                        end
+                        % energy_raw = energy_raw + energy_curr/(2*pi);
+                        energy_raw = energy_raw + energy_curr;
                     end
-                    % energy_raw = energy_raw + energy_curr/(2*pi);
-                    energy_raw = energy_raw + energy_curr;
+                    pattern.energy_I = energy_raw;
                 end
-                pattern.energy_I = energy_raw;
             else
                 pattern.energy_I = 0;
             end
