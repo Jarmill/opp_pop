@@ -40,6 +40,8 @@ classdef opp_options
         allowed_levels = []; %which levels are allowed at which switching indices?
 
         clock(1, 1)logical = true; %enforce the dwell time constraint
+        clock_split(1, 1)logical = false; %perform a correlative sparse decomposition:
+        %separate the clock dynamics from the current dynamics
 
         %polynomial optimization parameters
         partition(1, 1)int32 = 4; %number of partitions of the disc c^2+s^2=1

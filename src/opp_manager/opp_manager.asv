@@ -297,24 +297,53 @@ classdef opp_manager
             % occ_mom_con = occ_mom_con(:, 1);
         end
 
-        function occ_mom_con = align_clock_occ(obj, d)          
-            %separate by levels in phase a
-            occ_mom_con = [];
+function occ_mom_con = align_occ(obj, d)
 
-            %just the trig components
-            mom_1 = obj.sys1.sel_occ_monom(d, [1, 2]);                
-            mom_c= obj.sysclock.sel_occ_monom(d, [1, 2]);
-             
-            if ~iscell(mom_1)
-                occ_mom_con = (mom_1 - mom_c  == 0);
-            else
-                for i = 1:length(mom_1)
-                    if ~isnumeric(mom_1{i})
-                        occ_mom_con = [occ_mom_con; mom_1{i} - mom_c{i}==0];
+            clock_offset = 0 + obj.opts.clock - obj.opts.clock_split;
+
+            if obj.sys3.DYNAMICS
+                %separate by levels in phase a
+                occ_mom_con = [];
+
+                %just the trig components
+                % mom_1 = obj.sys1.sel_occ_monom(d, [1, 2]);                
+                % mom_3= obj.sys3.sel_occ_monom(d, [1, 2]);
+      
+
+                mom_1 = obj.sys1.sel_occ_monom(d, [1, 2, 3 + clock_offset]);                
+                mom_3= obj.sys3.sel_occ_monom(d, [1, 2, 3]);
+
+                % mom_1 = obj.sys1.current_mom(d);
+                % mom_3 = obj.sys3.get_I_marginal(d);
+                
+                if ~iscell(mom_1)
+                    occ_mom_con = (mom_1 - mom_3  == 0);
+                else
+                    for i = 1:length(mom_1)
+                        occ_mom_con = [occ_mom_con; mom_1{i} - mom_3{i}==0];
                     end
                 end
+                % occ_mom_con = [];
+                % occ_mom_con = (bmom - mom_3)==0;
+            else
+                %put all levels together (add them up in phase a)
+                bmom_all = obj.current_mom(d);
+
+                bmom = 0;
+                for i = 1:length(bmom_all)
+                    bmom = bmom + bmom_all{i};
+                end
+                mom_3 = obj.sys3.get_I_marginal(d);
+                % occ_mom_con = (bmom - mom_3)==0;
+                occ_mom_con = mom_3==bmom;
             end
 
+            % bmom_all = obj.three_phase_current_mom(d);
+            % mom_3 = obj.sys3.get_I_marginals(d);
+            % align_occ_set = (bmom_all - mom_3);
+
+            % occ_mom_con = reshape(align_occ_set, [], 1)==0;
+            % occ_mom_con = occ_mom_con(:, 1);
         end
 
         function init_mom_con = align_init(obj, d)
@@ -337,23 +366,6 @@ classdef opp_manager
             end
         end
 
-         function init_mom_con = align_clock_init(obj, d)
-            %align the initial measure single-three phase                          
-            init_1 = obj.sys1.mode{1}.sel_init_monom(d, [1, 2]);
-            init_c = obj.sysclock.mode{1}.sel_init_monom(d, [1, 2]);
-
-            
-            %TODO: quarter-wave symmetry will destroy some of this
-            init_mom_con = [];
-            for i = 1:length(init_1)
-                if ~isnumeric(init_1{i}) || ~isnumeric(init_c{i}) 
-                    init_mom_con= [init_mom_con; init_1{i} - init_c{i}==0];
-                end
-            end
-        
-        end
-
-
         function term_mom_con = align_term(obj, d)
             %align the terminal measure single-three phase
             clock_offset = 0 + obj.opts.clock - obj.opts.clock_split;
@@ -372,22 +384,6 @@ classdef opp_manager
             else
                 term_mom_con = [];
             end
-        end
-
-        function term_mom_con = align_clock_term(obj, d)
-            %align the terminal measure single-three phase                 
-            term_1 = obj.sys1.mode{end}.sel_term_monom(d, [1, 2]);
-            term_c = obj.sysclock.mode{end}.sel_term_monom(d, [1, 2]);
-
-            
-            %TODO: quarter-wave symmetry will destroy some of this
-            term_mom_con = [];
-            for i = 1:length(term_1)
-                if ~isnumeric(term_1{i}) || ~isnumeric(term_c{i}) 
-                    term_mom_con= [term_mom_con; term_1{i} - term_c{i}==0];
-                end
-            end
-
         end
   
 
@@ -410,32 +406,6 @@ classdef opp_manager
                     if ~isnumeric(sd_1{i}) || ~isnumeric(sd_3{i}) 
                         %jump down
                         jump_mom_con= [jump_mom_con; sd_1{i} - sd_3{i}==0];
-                    end
-                end
-                
-            else
-                jump_mom_con = [];
-            end
-        end
-
-        function jump_mom_con = align_clock_jump(obj, d)
-            %align the terminal measure single-three phase            
-            if obj.sys3.DYNAMICS            
-                [su_1, sd_1] = obj.sys1.sel_jump_monom(d, [1, 2]);
-                [su_c, sd_c] = obj.sysclock.sel_jump_monom(d, [1, 2]);
-
-                [NN] = size(su_c, 1);
-                %TODO: quarter-wave symmetry will destroy some of this
-                jump_mom_con = [];
-                for i = 1:NN                   
-                    if ~isnumeric(su_1{i}) || ~isnumeric(su_c{i}) 
-                        %jump up
-                        jump_mom_con= [jump_mom_con; su_1{i} - su_c{i}==0];
-                    end
-                    
-                    if ~isnumeric(sd_1{i}) || ~isnumeric(sd_c{i}) 
-                        %jump down
-                        jump_mom_con= [jump_mom_con; sd_1{i} - sd_c{i}==0];
                     end
                 end
                 

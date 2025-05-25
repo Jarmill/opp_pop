@@ -174,10 +174,10 @@ classdef opp_jump < handle
                 ind = 1:n;
             end
 
-            % if nargin < 4
-            %     subsign = false;
-            %     signs = ones(length(ind));
-            % end
+            if nargin < 4
+                % subsign = false;
+                signs = ones(length(ind), 1);
+            end
             
             [N, P] = size(obj.jump_up);
             imon_up = cell(N, P);

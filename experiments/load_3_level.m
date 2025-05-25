@@ -21,7 +21,7 @@ opts.three_phase = "Ignore";
 opts.k = 8;
 % opts.quarter_match = true;
 opts.clock = true;
-% opts.clock = false;
+% opts.clock_split = true;% opts.clock = false;
 % opts.k = 12;
 % opts.k = 16;
 % opts.k=20;

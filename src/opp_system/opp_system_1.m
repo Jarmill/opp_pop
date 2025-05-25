@@ -173,6 +173,21 @@ classdef opp_system_1 < opp_system_interface
                 ];                  
 
         end
+
+          function [mom_con, supp_con_one] = cons_limited(obj, d)
+
+            %generate the constraints
+            supp_con_one = obj.supp_con();                          
+
+            
+
+            %flow +jump continuity constraints
+            con_liou = obj.con_flow(d);
+            
+
+            mom_con = con_liou;              
+
+        end
   
 
         function flow_con = con_flow(obj, d)
