@@ -3,30 +3,35 @@ classdef opp_system_1 < opp_system_interface
     %   includes the N-switching constraints
     
     % properties
-    %     Property1
-    % end
-    
+    %     name = '';
+    % end    
     methods
         %% constructor
         function obj = opp_system_1(opts)
             %OPP_SYSTEM_1 Construct an instance of this class
             %   Detailed explanation goes here
-            obj@opp_system_interface(opts)
+            obj@opp_system_interface(opts)            
         end
         
         function [vars] = create_vars(obj, opts)
               %declare the variables
             load_state = imag(opts.Z_load)~=0;
-            mpol('c', 1, 1);
-            mpol('s', 1, 1);
+            mpol(['c', opts.name], 1, 1);
+            mpol(['s', opts.name], 1, 1);
+
+            c = eval(['c', opts.name]);
+            s = eval(['s', opts.name]);
 
             if opts.clock
-                mpol('phi', 1, 1);
+                mpol(['phi', opts.name], 1, 1);
+                phi = eval(['phi', opts.name]);
             else
                 phi = [];
             end
 
-            mpol('I', 1, 1)
+            mpol(['I', opts.name], 1, 1)
+            I = eval(['I', opts.name]);
+            
             x = [c; s; phi];
             if load_state
                 x = [x; I];
@@ -35,7 +40,8 @@ classdef opp_system_1 < opp_system_interface
             if opts.TIME_INDEP
                t = [];
             else
-                mpol('t', 1, 1)
+                mpol(['t', opts.name], 1, 1)
+                t = eval(['t', opts.name]);
                 % t = t;
             end
             vars = struct('t', t, 'x', x);
@@ -179,13 +185,14 @@ classdef opp_system_1 < opp_system_interface
             %generate the constraints
             supp_con_one = obj.supp_con();                          
 
-            
+            %initial = sum of terminal measure
+            con_preserve = obj.con_return(d);
 
             %flow +jump continuity constraints
             con_liou = obj.con_flow(d);
             
 
-            mom_con = con_liou;              
+            mom_con = [con_preserve; con_liou];              
 
         end
   

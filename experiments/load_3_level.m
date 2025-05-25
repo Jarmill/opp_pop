@@ -14,14 +14,16 @@ opts.null_objective = false;
 % opts.Symmetry = 1;
 opts.Symmetry = 2;
 opts.unipolar = 1; %need to debug this
+% opts.quarter_match = true;
 % opts.three_phase = "Balanced";
 % opts.three_phase = "Floating";
 opts.three_phase = "Ignore";
+
+
+% opts.clock_split = true;% opts.clock = false;
+
 % opts.k = 4;
 opts.k = 8;
-% opts.quarter_match = true;
-opts.clock = true;
-% opts.clock_split = true;% opts.clock = false;
 % opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
@@ -88,6 +90,11 @@ if sol.status==0
     pattern_rec = MG.recover_pattern();
 
     [Mc1, Mc3] = MG.mmat_corner();
+    if opts.clock_split
+        mcc = MG.sysclock.mmat_corner();
+    else
+        mcc = [];
+    end
     % M = MG.mmat();
     
     % Q = (eye(3) - ones(3)/3);

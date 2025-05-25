@@ -57,7 +57,7 @@ classdef (Abstract) opp_mode_interface
                 curr_objective = objective_mode(n, :);                
                 for p = 1:P
                     % curr_id = loc_id(n, j);
-                    curr_id = strcat(prefix, sprintf('m%d_n%d_p%d', m, n, p));
+                    curr_id = strcat(prefix, sprintf([opts.name, 'm%d_n%d_p%d'], m, n, p));
 
                     curr_lsupp = lsupp_base;
 
@@ -319,7 +319,7 @@ classdef (Abstract) opp_mode_interface
             end
                 end
 
-        function [trmon, trmon_sum] = trig_occ_monom(obj, d, level_mult)
+        function [trmon, trmon_sum] = trig_occ_monom(obj, d)
             %get moments of the occupation measure
             %for the (c, s) marginal
             [N, P] = size(obj.levels);

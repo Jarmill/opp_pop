@@ -48,8 +48,8 @@ classdef opp_jump < handle
                     supp_up = supp_curr;
                     supp_down = supp_curr;
                     % curr_name = sprintf('jump_m%d_n%d_p%d', m, n, p);
-                    name_down = sprintf('down_m%d_n%d_p%d', m, n, p);
-                    name_up = sprintf('up_m%d_n%d_p%d', m, n+1, p);
+                    name_down = sprintf([opts.name,'down_m%d_n%d_p%d'], m, n, p);
+                    name_up = sprintf([opts.name,'up_m%d_n%d_p%d'], m, n+1, p);
                     if ~isempty(opts.allowed_levels) 
 
                         %jump up

@@ -46,6 +46,7 @@ classdef opp_options
         %polynomial optimization parameters
         partition(1, 1)int32 = 4; %number of partitions of the disc c^2+s^2=1
         solver = 'mosek';
+        name = ''; %hack for the clock splitter
         verbose(1, 1)logical = true; %log output
         TIME_INDEP(1, 1)logical = false; %include time as an explicit state
         precise = false; %true: use sdpa-gmp instead

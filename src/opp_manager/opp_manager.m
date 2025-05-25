@@ -37,13 +37,16 @@ classdef opp_manager
                 std_opts = obj.opts;
                 
                 clock_opts.Z_load = 0;
+                clock_opts.name= 'clock_';
                 std_opts.clock = false;
 
-                obj.sysclock = opp_system_1(clock_opts);
+                
                 obj.sys1 = opp_system_1(std_opts);
+                obj.sysclock = opp_system_1(clock_opts);
             else
-                obj.sysclock = [];
+                
                 obj.sys1 = opp_system_1(obj.opts);
+                obj.sysclock = [];
             end
         end
 
@@ -177,7 +180,7 @@ classdef opp_manager
             [con_one, supp_one] = obj.sys1.cons(d);
             [con_three, supp_three] = obj.sys3.cons(d);
 
-            if ~isempty(obj.sysclock)
+            if obj.opts.clock_split
                 [con_clock, supp_clock] = obj.sysclock.cons_limited(d);
             else
                 con_clock = [];
@@ -187,8 +190,10 @@ classdef opp_manager
             con_align = obj.con_threephase_align(d);
 
             clock_align = obj.con_clock_align(d);
+            % clock_align = [];
             
             % con_align = [];
+            % supp_clock = [];
 
             %with harmonics and dynamics
             mom_con = [con_one; con_three; con_align; clock_align];
@@ -230,7 +235,7 @@ classdef opp_manager
         function clock_con = con_clock_align(obj, d)                
 
             Lmax = max(abs(obj.opts.L));
-            if obj.opts.clock_split && (imag(obj.opts.Z_load)~=0)
+            if obj.opts.clock && obj.opts.clock_split && (imag(obj.opts.Z_load)~=0)
                                                              
 
                 %match the measures between the single-phase
@@ -241,6 +246,7 @@ classdef opp_manager
                 term_match = obj.align_clock_term(d);
                 occ_match = obj.align_clock_occ(d);
                 jump_match = obj.align_clock_jump(d);
+                % jump_match = [];
 
                 clock_con = [occ_match; init_match; term_match; jump_match];
             else
@@ -302,15 +308,18 @@ classdef opp_manager
             occ_mom_con = [];
 
             %just the trig components
-            mom_1 = obj.sys1.sel_occ_monom(d, [1, 2]);                
-            mom_c= obj.sysclock.sel_occ_monom(d, [1, 2]);
-             
-            if ~iscell(mom_1)
-                occ_mom_con = (mom_1 - mom_c  == 0);
-            else
-                for i = 1:length(mom_1)
-                    if ~isnumeric(mom_1{i})
-                        occ_mom_con = [occ_mom_con; mom_1{i} - mom_c{i}==0];
+            % mom_1 = obj.sys1.sel_occ_monom(d, [1, 2]);                
+            % mom_c= obj.sysclock.sel_occ_monom(d, [1, 2]);
+             kc = length(obj.sys1.mode);
+            [N, P] = size(obj.sys1.mode{1}.levels);
+            for m = 1:kc
+                for n = 1:N
+                    for p = 1:P
+                        mom_1 = obj.sys1.mode{m}.levels{n, p}.trig_monom(d);
+                        if ~isnumeric(mom_1)
+                            mom_c = obj.sysclock.mode{m}.levels{n, p}.trig_monom(d);
+                            occ_mom_con = [occ_mom_con; (mom(mom_1) - mom(mom_c))==0];
+                        end
                     end
                 end
             end
@@ -420,29 +429,49 @@ classdef opp_manager
 
         function jump_mom_con = align_clock_jump(obj, d)
             %align the terminal measure single-three phase            
-            if obj.sys3.DYNAMICS            
-                [su_1, sd_1] = obj.sys1.sel_jump_monom(d, [1, 2]);
-                [su_c, sd_c] = obj.sysclock.sel_jump_monom(d, [1, 2]);
+                 
+            %this is bugged
 
-                [NN] = size(su_c, 1);
-                %TODO: quarter-wave symmetry will destroy some of this
-                jump_mom_con = [];
-                for i = 1:NN                   
-                    if ~isnumeric(su_1{i}) || ~isnumeric(su_c{i}) 
-                        %jump up
-                        jump_mom_con= [jump_mom_con; su_1{i} - su_c{i}==0];
+            kc = length(obj.sys1.mode);
+            [N, P] = size(obj.sys1.mode{1}.levels); 
+            jump_mom_con = [];
+            for m = 1:kc-1
+
+                [mom_1_up, mom_1_down] = obj.sys1.jumps{m}.sel_monom_jump(d, [1, 2]);
+                [mom_c_up, mom_c_down] = obj.sysclock.jumps{m}.sel_monom_jump(d, [1, 2]);
+                       
+                for n = 1:N-1
+                    if ~isnumeric(mom_1_up{n})                            
+                        jump_mom_con = [jump_mom_con; (mom_1_up{n}) - (mom_c_up{n})==0];                        
                     end
-                    
-                    if ~isnumeric(sd_1{i}) || ~isnumeric(sd_c{i}) 
-                        %jump down
-                        jump_mom_con= [jump_mom_con; sd_1{i} - sd_c{i}==0];
+                    if ~isnumeric(mom_1_down{n})                            
+                        jump_mom_con = [jump_mom_con; (mom_1_down{n})-(mom_c_down{n})==0];                        
                     end
                 end
-                
-            else
-                jump_mom_con = [];
+                    
             end
         end
+
+            % [su_1, sd_1] = obj.sys1.sel_jump_monom(d, [1, 2]);
+            % [su_c, sd_c] = obj.sysclock.sel_jump_monom(d, [1, 2]);
+            % 
+            % [NN] = size(su_c, 1);
+            % %TODO: quarter-wave symmetry will destroy some of this
+            % jump_mom_con = [];
+            % for i = 1:NN                   
+            %     if ~isnumeric(su_1{i}) || ~isnumeric(su_c{i}) 
+            %         %jump up
+            %         jump_mom_con= [jump_mom_con; su_1{i} - su_c{i}==0];
+            %     end
+            % 
+            %     if ~isnumeric(sd_1{i}) || ~isnumeric(sd_c{i}) 
+            %         %jump down
+            %         jump_mom_con= [jump_mom_con; sd_1{i} - sd_c{i}==0];
+            %     end
+            % end
+                
+           
+        
 
 
         %% process the objective

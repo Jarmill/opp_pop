@@ -25,7 +25,7 @@ classdef opp_system_3 < opp_system_interface
             %generate the modes and jumps
         end
 
-        function [vars] = create_vars(obj, opts)
+        function [vars] = create_vars(obj, opts, name)
             if (opts.three_phase ~= "Ignore") || (opts.common_mode < Inf)
                 mpol('c_tau', 1, 1)
                 mpol('s_tau', 1, 1)
