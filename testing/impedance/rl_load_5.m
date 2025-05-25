@@ -18,8 +18,8 @@ opts.unipolar = 1;
 opts.quarter_match = 1;
 % opts.three_phase = "Balanced";
 % opts.k = 4;
-opts.k = 8;
-% opts.k = 12;
+% opts.k = 8;
+opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
 % opts.k = 24;
@@ -28,7 +28,8 @@ opts.k = 8;
 % opts.k = 36;
 
 % kappa = 0;
-kappa = 1;
+kappa = 0.5;
+% kappa = 1;
 % kappa = 1.5;
 % kappa = 2;
 
@@ -76,8 +77,17 @@ if sol.status==0
     % M = MG.mmat();
     out = MG.recover(sol);
 
+    if imag(opts.Z_load)>0
+        bound_upper = pattern_rec.energy_I;
+    else
+        bound_upper = pattern_rec.energy;
+    end
+    bound_lower = sol.obj_rec;
+    bn_lower = sqrt(bound_lower/pi - modulation^2/(1+kappa^2));
+    bn_upper = sqrt(bound_upper/pi - modulation^2/(1+kappa^2));
+
     % harm_valid = out.pattern.harm_valid;
-    bound_upper = out.tdd_upper;
+    % bound_upper = out.tdd_upper;
     %solve again
     if RESOLVE
         opts2 = opts;
@@ -88,25 +98,27 @@ if sol.status==0
 
         bound_lower2 = sol2.obj_rec;
         bound_upper2 = out2.tdd_upper;
-        bound_upper = out2.tdd_upper;        
-        out_polish = opp_polish_qw(out2);
-        bound_upper = out_polish.warm.tdd;
-    else
+        bound_upper = out2.tdd_upper;      
+        out_polish = out2;
+        % out_polish = opp_polish_qw(out2);
+        % bound_upper = out_polish.warm.tdd;
+    % else
         % out_polish = opp_polish_qw(out);
         out_polish = out;
-        out_polish.warm = 1;
+        % out_polish.warm = 1;
         
         
     end
     
 
-    harm_valid = ~isempty(out_polish.warm);
+    % harm_valid = ~isempty(out_polish.warm);
     
-    if harm_valid
-        validstr = ' Valid';
-    else
-        validstr = ' Invalid';
-    end
+    % if harm_valid
+    %     validstr = ' Valid';
+    % else
+    %     validstr = ' Invalid';
+    % end
+    validstr = [];
 
 
     summary_str = strcat(sprintf('M=%0.1f, k=%d, Lower=%0.3e, Upper=%0.3e ', ...
@@ -125,14 +137,25 @@ th = linspace(0, 2*pi, N);
 if ~RESOLVE
     pu = out.pattern.u;
     pa = out.pattern.alpha;
-    thi = [0, pa, 2*pi];
-    xi = out.pattern.I;
+    if real(opts.Z_load)==0
+        thi = [0, pa, 2*pi];
+        xi = out.pattern.I;
+    else
+        thi = out.pattern.alpha_val;
+        xi= out.pattern.I_val;
+    end
     % I0_rec = out.pattern.I(1);
 else
     pu = out2.pattern.u;
     pa = out2.pattern.alpha;
-    thi = [0, pa, 2*pi];
-    xi = out2.pattern.I;
+    
+    if real(opts.Z_load)==0
+        thi = [0, pa, 2*pi];
+        xi = out2.pattern.I;    
+    else
+        thi = out2.pattern.alpha_val;
+        xi= out2.pattern.I_val;
+    end
     % I0_rec = out2.pattern.I(1);
 end
 x = pulse_func(th, pu, pa);

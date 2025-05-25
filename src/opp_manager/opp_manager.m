@@ -8,8 +8,10 @@ classdef opp_manager
     
     properties
         opts;   %f
+        
         sys1;   %storage for the single-phase terms
         sys3;   %storage for the three-phase terms
+        sysclock; %storage for the clock terms (in the case of correlative sparsity)
 
         sdp_settings;
         vars;
@@ -26,7 +28,8 @@ classdef opp_manager
             [obj.opts, obj.sdp_settings] = obj.process_opts(opts);
 
             % obj.sys3 = opp_diff_current(obj.opts.three_phase == "Floating");
-            % obj.sys3 = opp_diff_current_split(obj.opts.three_phase == "Floating");            
+            % obj.sys3 = opp_diff_current_split(obj.opts.three_phase == "Floating");   
+            if
             obj.sys1 = opp_system_1(obj.opts);
             obj.sys3 = opp_system_3(obj.opts);
         end
@@ -390,6 +393,8 @@ classdef opp_manager
             opp_out.valid_upper = pattern_rec.harm_valid;
 
             opp_out.opts = obj.opts;
+            nmax = 50;
+            [opp_out.harm_a, opp_out.harm_b] = pulse_harmonics(nmax, pattern_rec.u, pattern_rec.alpha);
                         
         end
 
