@@ -21,8 +21,12 @@ classdef opp_jump < handle
             obj.vars = vars;
             obj.L = opts.L;
 
+            
+
             reset_law = vars.x;
-            reset_law(3) = 0*vars.x(3);
+            if opts.clock
+                reset_law(3) = 0*vars.x(3);
+            end
 
             P = opts.partition;
             N = length(obj.L);

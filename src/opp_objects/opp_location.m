@@ -112,7 +112,12 @@ classdef opp_location < location_interface
             %     obj_min = mom(q);
             %     obj_con_eq = [mass(q) == 1];
             %     obj_con_ineq= (mom(q) <= obj_subs);
-            end            
+        end          
+
+        function om = occ_mass(obj)
+            %mass of the occupation measure in this level
+            om = obj.sys{1}.meas_occ.mass();
+        end
         
 
         

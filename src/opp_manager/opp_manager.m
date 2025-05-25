@@ -67,9 +67,7 @@ classdef opp_manager
                     opts_out.quarter_match = true;
                     opts_out.Symmetry=1;
                 end
-            end
-
-            
+            end            
 
             %unipolar only if not full-wave symmetric
             if opts_out.Symmetry==0
@@ -216,7 +214,7 @@ classdef opp_manager
                 % mom_3= obj.sys3.sel_occ_monom(d, [1, 2]);
       
 
-                mom_1 = obj.sys1.sel_occ_monom(d, [1, 2, 4]);                
+                mom_1 = obj.sys1.sel_occ_monom(d, [1, 2, 3 + obj.opts.clock]);                
                 mom_3= obj.sys3.sel_occ_monom(d, [1, 2, 3]);
 
                 % mom_1 = obj.sys1.current_mom(d);
@@ -255,7 +253,7 @@ classdef opp_manager
         function init_mom_con = align_init(obj, d)
             %align the initial measure single-three phase
             if obj.sys3.DYNAMICS            
-                init_1 = obj.sys1.mode{1}.sel_init_monom(d, [1, 2, 4]);
+                init_1 = obj.sys1.mode{1}.sel_init_monom(d, [1, 2, 3 + obj.opts.clock]);
                 init_3 = obj.sys3.sel_init_monom(d, [1, 2, 3]);
 
                 
@@ -274,7 +272,7 @@ classdef opp_manager
         function term_mom_con = align_term(obj, d)
             %align the terminal measure single-three phase
             if obj.sys3.DYNAMICS            
-                term_1 = obj.sys1.mode{end}.sel_term_monom(d, [1, 2, 4]);
+                term_1 = obj.sys1.mode{end}.sel_term_monom(d, [1, 2, 3 + obj.opts.clock]);
                 term_3 = obj.sys3.sel_term_monom(d, [1, 2, 3]);
 
                 
@@ -294,7 +292,7 @@ classdef opp_manager
         function jump_mom_con = align_jump(obj, d)
             %align the terminal measure single-three phase
             if obj.sys3.DYNAMICS            
-                [su_1, sd_1] = obj.sys1.sel_jump_monom(d, [1, 2, 4]);
+                [su_1, sd_1] = obj.sys1.sel_jump_monom(d, [1, 2, 3 + obj.opts.clock]);
                 [su_3, sd_3] = obj.sys3.sel_jump_monom(d, [1, 2, 3]);
 
                 [NN] = size(su_3, 1);
@@ -371,8 +369,14 @@ classdef opp_manager
             %assuming that the b1 coefficient is pinned
             modulation = obj.opts.harmonics.bound_sin(1);
 
-            bn_lower = sqrt(bound_lower/pi - modulation^2);
-            bn_upper = sqrt(bound_upper/pi - modulation^2);
+            
+            %impedance function
+            kappa = real(obj.opts.Z_load)/(imag(obj.opts.Z_load)*2*pi*obj.opts.f0);
+            A_scale = 1/(1+kappa^2);
+
+
+            bn_lower = sqrt(bound_lower/pi - A_scale*modulation^2);
+            bn_upper = sqrt(bound_upper/pi - A_scale*modulation^2);
 
             opp_out = struct;
             opp_out.pattern = pattern_rec;
@@ -404,8 +408,6 @@ classdef opp_manager
         function [load, load_candidate] = recover_load(obj)
             [load, load_candidate] = obj.sys1.recover_load();
         end
-
- 
 
         function [ms1, ms3] = mass_summary(obj)
             ms1 = obj.sys1.mass_summary();
