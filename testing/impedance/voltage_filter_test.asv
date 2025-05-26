@@ -1,0 +1,93 @@
+%test the system from https://tobiasgeyer.org/RaKG23_3LOPPsforLCLfilters.pdf
+
+%this is a given LCL filter
+%not a custom filter
+
+%grid frequency 
+f0 = 50;
+w0 = f0*2*pi;
+
+
+C = 1e-4;
+L = (1/C)*(1/w0^2);
+% R = 50;
+R = 10;
+
+
+zeta = R/2 * sqrt(C/L);
+
+s = tf('s');
+% sys = 1/(s^2 + 2*zeta*w0*s + w0^2);
+
+sysL = (s*L)/(R + L*s + 1/(C*s));
+
+sys = 1-sysL;
+
+
+%% pulse input
+aq = [0.423323100643366	0.646289267844426	0.806615717344141	1.55083012024646	]';
+% aq = [0.720186460835395,1.447102394507780]';
+uq = [0 1 0  1 0]';
+% uq = [0 1 0]';
+
+
+
+
+%% apply a signal
+NP = 10;
+NT = 10000;
+t = linspace(0, NP/f0, NT)';
+u = sin(w0*t);
+[yf, to, xo] = lsim(sys, u, t);
+% [ydf, to, xo] = lsim(sysd, u, t);
+
+
+[outq] = pulse_current_voltage(uq, aq, 2);
+outq.uu = kron(outq.u, [1; 1]);    
+outq.aa = [0; kron(outq.alpha(2:end-1), [1; 1]); 2*pi];
+up = pulse_func(w0*t, outq.u, outq.alpha(2:end-1));
+[yp, top, xop] = lsim(sys, up, t);
+
+
+%load
+Rload = 1e-4;
+Lload = 1e-3;
+sysload = 1/(s + Rload/Lload);
+sys_c = sysload * sys;
+% [yload, tload, xload] = lsim(sys_c, up, t);
+% [yload, tload, xload] = lsim(sysload, yp, t);
+% [yload, tload, xload] = lsim(sysload, yp, t);
+yload = 
+
+% [yloadP, tloadP, xloadP] = lsim(sys_c, up, t);
+
+%% plots
+figure(1)
+clf
+hold on
+bode(sys)
+% bode(sysg)
+% bode(sysd)
+
+figure(2)
+clf
+tiledlayout(2, 1)
+nexttile
+hold on
+plot(t, u);
+plot(t, yf);
+
+% tiledlayout(2, 1)
+nexttile
+hold on
+plot(t, up);
+plot(t, yp);
+plot(t, yload);
+
+% nexttile
+% hold on
+% plot(t, up);
+% plot(t, yload);
+
+% nexttile
+% plot(t, ydf);
