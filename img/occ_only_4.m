@@ -36,8 +36,8 @@ imagesc(mass_1)
 cb = colorbar;
 clim([0, 2.6])
 % axis off
-xlabel('$n$', 'interpreter', 'latex', 'fontsize', 14)
-ylabel('$i$', 'interpreter', 'latex', 'fontsize', 14)
+ylabel('$n$', 'interpreter', 'latex', 'fontsize', 14)
+xlabel('$i$', 'interpreter', 'latex', 'fontsize', 14)
 ylabel(cb,'Dwell Angle','FontSize',14,'interpreter', 'latex')
 % cb.Position(1) = cb.Position(1) -0.05;
 xl = xlim;

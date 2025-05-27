@@ -44,8 +44,12 @@ title('Pure ($U_1$) Mass', 'interpreter', 'latex', 'FontSize',12)
 % colorbar
 clim([0, 2.6])
 % axis off
-xlabel('$n$', 'interpreter', 'latex')
-ylabel('$i$', 'interpreter', 'latex')
+ylabel('$n$', 'interpreter', 'latex')
+xlabel('$i$', 'interpreter', 'latex')
+xl = xlim;
+yl = ylim;
+pbaspect([diff(xl), diff(yl), 1])
+
 
 subplot(2, 2, 4)
 imagesc(mass_mixed)
@@ -53,9 +57,11 @@ title('Mixed ($0.6U_1 + 0.4U_2$) Mass', 'interpreter', 'latex', 'FontSize',12)
 % cb= colorbar;
 clim([0, 2.6])
 % ylabel(cb,'Dwell Angle','FontSize',16,'Rotation',270, 'interpreter', 'latex')
-xlabel('$n$', 'interpreter', 'latex')
-ylabel('$i$', 'interpreter', 'latex')
+ylabel('$n$', 'interpreter', 'latex')
+xlabel('$i$', 'interpreter', 'latex')
 % /axis off
-
+xl = xlim;
+yl = ylim;
+pbaspect([diff(xl), diff(yl), 1])
 
 
