@@ -18,8 +18,8 @@ opts.unipolar = 1;
 opts.quarter_match = 1;
 % opts.three_phase = "Balanced";
 % opts.k = 4;
-opts.k = 8;
-% opts.k = 12;
+% opts.k = 8;
+opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
 % opts.k = 24;
@@ -27,8 +27,8 @@ opts.k = 8;
 % opts.k = 32;
 % opts.k = 36;
 
-% kappa = 0;
-kappa = 1;
+kappa = 0;
+% kappa = 1;
 % kappa = 1.5;
 % kappa = 2;
 
@@ -36,7 +36,9 @@ kappa = 1;
 opts.Z_load = kappa/(2*pi*opts.f0) + 1.0j;
 
 % modulation = 1.1;
-modulation = 0.9;
+% modulation = 0.9;
+% modulation = 0.5;
+modulation = 1.05;
 % opts.Z_load = 1.0j;
 opts.verbose = 0;
 
@@ -44,8 +46,19 @@ opts.verbose = 0;
 % opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
 
 % modulation = 1;
-opts.harmonics.index_sin= [1;  3];
-opts.harmonics.bound_sin = [modulation, modulation; -0.01, 0.01];
+% opts.harmonics.index_sin= [1;  3];
+% opts.harmonics.bound_sin = [modulation, modulation; -0.01, 0.01];
+
+
+opts.harmonics.index_sin= [1];
+opts.harmonics.bound_sin = [modulation, modulation];
+% 
+% opts.allowed_levels = [0 0 1 0 0;
+%                        0 0 0 1 0;
+%                        0 0 0 0 1;
+%                        0 0 0 1 0;
+%                        ones(14, 5)];
+% sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
 
 
 %% test a manager

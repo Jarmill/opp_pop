@@ -23,8 +23,8 @@ opts.three_phase = "Ignore";
 % opts.clock_split = true;% opts.clock = false;
 
 % opts.k = 4;
-opts.k = 8;
-% opts.k = 12;
+% opts.k = 8;
+opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
 % opts.k = 24;
@@ -39,7 +39,8 @@ opts.common_mode = Inf;
 
 % modulation = 0.6;
 % modulation = 0.25;
-modulation = 0.8;
+% modulation = 0.8;
+modulation = 0.5;
 % modulation = 1;
 
 kappa = 0;
@@ -50,7 +51,6 @@ kappa = 0;
 % opts.Z_load = 0;
 opts.Z_load = kappa/(2*pi*opts.f0) + 1.0j;
 % opts.Z_load = 4.0j;
-
 
 
 
@@ -72,9 +72,9 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 
 
 MG = opp_manager(opts);
-order = 4;
+% order = 4;
 % order = 3;
-% order = 2;
+order = 2;
 % order = 1;
 d = 2*order;
 

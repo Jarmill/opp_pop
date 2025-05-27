@@ -1,0 +1,99 @@
+
+u1 = [0 0.5 1 0.5]';
+u2 = [0 0.5 0 0.5]';
+
+% u1 = [0 1 0 1]';
+
+Ma = 0.4;
+Mb = 0.8;
+% a1 = atrue(1:2);
+% ab = [0.3 0.4]';
+% e1 = pulse_qe(u1, a1, Mb)
+
+[outtrue] = pulse_current_voltage(u1, atrue, 2);
+
+% M = 1.1;
+M1 = 0.5;
+% M1 = 0.5;
+M2 = 1.05;
+
+figure(4)
+
+MD = 250;
+% MD = 70; %Mesh Density
+
+%true values
+a1true = [0.4494 0.7160 0.8775];
+u1true = u2;
+e1true = 0.7865;
+
+a1sub = [ 0.7013    0.7348    0.7662 ];
+u1sub = u1;
+e1sub = 0.7909;
+
+clf
+tiledlayout(2, 2)
+nexttile
+
+e1_func = @(x, y) pulse_qe(x, y, u2, M1);
+% fsurf(@(x, y) e1_func(x, y), [0, pi/2, 0, pi/2])
+fcontour(@(x, y) e1_func(x, y), [0, pi/2, 0, pi/2],'Fill', 'on', 'MeshDensity',MD)
+xlabel('$\alpha_1$', 'interpreter', 'latex')
+ylabel('$\alpha_2$', 'interpreter', 'latex')
+scatter(a1true(1)
+title(sprintf('$M=%0.1f$, low', M1), 'interpreter', 'latex', 'fontsize', 14)
+axis square
+
+nexttile
+
+e1_func = @(x, y) pulse_qe(x, y, u2, M2);
+% fsurf(@(x, y) e1_func(x, y), [0, pi/2, 0, pi/2])
+fcontour(@(x, y) e1_func(x, y), [0, pi/2, 0, pi/2],'Fill', 'on', 'MeshDensity',MD)
+xlabel('$\alpha_1$', 'interpreter', 'latex')
+ylabel('$\alpha_2$', 'interpreter', 'latex')
+title(sprintf('$M=%0.1f$, low', M2), 'interpreter', 'latex', 'fontsize', 14)
+axis square
+
+nexttile 
+e2_func = @(x, y) pulse_qe(x, y, u1, M1);
+% fsurf(@(x, y) e1_func(x, y), [0, pi/2, 0, pi/2])
+fcontour(@(x, y) e2_func(x, y), [0, pi/2, 0, pi/2],'Fill', 'on', 'MeshDensity',MD)
+xlabel('$\alpha_1$', 'interpreter', 'latex')
+ylabel('$\alpha_2$', 'interpreter', 'latex')
+title(sprintf('$M=%0.1f$, high', M1), 'interpreter', 'latex', 'fontsize', 14)
+axis square
+
+nexttile 
+e2_func = @(x, y) pulse_qe(x, y, u1, M2);
+% fsurf(@(x, y) e1_func(x, y), [0, pi/2, 0, pi/2])
+fcontour(@(x, y) e2_func(x, y), [0, pi/2, 0, pi/2],'Fill', 'on', 'MeshDensity',MD)
+xlabel('$\alpha_1$', 'interpreter', 'latex')
+ylabel('$\alpha_2$', 'interpreter', 'latex')
+title(sprintf('$M=%0.1f$, high', M2), 'interpreter', 'latex', 'fontsize', 14)
+axis square
+
+function e = pulse_qe(x, y, uq, M)
+
+    [R, S] = size(x);
+
+    Npts = R*S;
+    x = reshape(x, [], 1);
+    y = reshape(y, [], 1);
+    
+    e = zeros(Npts, 1);
+    for i = 1:Npts
+        aq2 = [x(i); y(i)];
+        du = diff(uq);
+        c3 = (M*pi/(4) - (du(1)*cos(aq2(1)) + du(2)*cos(aq2(2))))/du(3);
+        a3 = acos(c3);
+        aq = [aq2; a3];
+    
+        if (c3 >= -1) && (c3 <= 1) && (diff(aq2)>=0) && (a3 >=aq2(end)) && (a3 <= pi/2)
+            [outq] = pulse_current_voltage(uq, aq, 2);
+            e(i) = outq.energy_I;
+        else
+            e(i) = NaN;
+        end
+    end
+    e = reshape(e, R, S);
+end
