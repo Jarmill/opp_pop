@@ -5,15 +5,25 @@
 
 %grid frequency 
 % f0 = 50;
-f0 = 1;
-w0 = f0*2*pi;
-
+% f0 = 1;
+% w0 = f0*2*pi;
 
 s = tf('s');
-sys = s/((s+2)*((s^2 + w0^2) + 0.05*s));
+w0 = 1; % = 1/sqrt(LC)
+f0 = 1/(2*pi)*w0;
+% zeta = 0.2;
+alpha = 0.2;
+zeta = alpha/w0;
+sys = (w0^2 + 2*zeta*s)/(w0^2 + 2*zeta*s + s^2);
+
+
+
+
+% sys = s/((s+2)*((s^2 + w0^2) + 0.05*s));
 g = hinfnorm(sys);
 sys = sys / g;
-sysp =  ss(sys);
+G0 = freqresp(sys, w0);
+% sysp =  ss(sys);
 
 % %filter
 % Lf = 0.35e-3;
@@ -56,12 +66,12 @@ sysp =  ss(sys);
 
 
 %% apply a signal
-NP = 100;
-NT = 100000;
+NP = 20;
+NT = 2000;
 t = linspace(0, NP/f0, NT)';
 u = sin(w0*t);
-x0 = sysp.C/(max(sysp.C));
-[yf, to, xo] = lsim(sys, u, t, x0);
+% x0 = sysp.C/(max(sysp.C));
+[yf, to, xo] = lsim(sys, u, t);
 % [ydf, to, xo] = lsim(sysd, u, t);
 
 
