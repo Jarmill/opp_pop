@@ -8,7 +8,7 @@ classdef opp_options
         Ts(1, 1)double{mustBeNonnegative} = 1e-4; %minimal inter-switch sample time (sec)
         Z_load(1, 1)double = 0+0j; %impedance of the load (given frequency f0)
         L = [-1, 0, 1]; %levels of the inverter
-        L_single = [-1, 0, 1]; %single-phase levels
+        L_single = [-1, 0, 1]; %single-phase levels        
 
         %harmonics constraints
         harmonics = [];
@@ -39,9 +39,14 @@ classdef opp_options
         quarter_match(1, 1)logical=false %impose QW symmetry on an HW signal
         allowed_levels = []; %which levels are allowed at which switching indices?
 
+        clock(1, 1)logical = true; %enforce the dwell time constraint
+        clock_split(1, 1)logical = false; %perform a correlative sparse decomposition:
+        %separate the clock dynamics from the current dynamics
+
         %polynomial optimization parameters
         partition(1, 1)int32 = 4; %number of partitions of the disc c^2+s^2=1
         solver = 'mosek';
+        name = ''; %hack for the clock splitter
         verbose(1, 1)logical = true; %log output
         TIME_INDEP(1, 1)logical = false; %include time as an explicit state
         precise = false; %true: use sdpa-gmp instead

@@ -39,12 +39,15 @@ classdef opp_mode < opp_mode_interface
                     stop_pt = [vars.x(1)==-1; vars.x(2)==0];
                 case 2
                     %quarter-wave symmetry: end at pi/2
-                    Theta_scale = opts.f0*opts.Ts*2^(double(opts.Symmetry));
-                    start_pt = [start_pt; vars.x(3)>=Theta_scale/2];
-                    stop_pt= [vars.x(1)==0; vars.x(2)==1; ...
-                        vars.x(3)>=Theta_scale/2];
+                    Theta_scale = opts.f0*opts.Ts*2^(double(opts.Symmetry));                    
+                    stop_pt= [vars.x(1)==0; vars.x(2)==1];
+                    if opts.clock
+                        start_pt = [start_pt; vars.x(3)>=Theta_scale/2];
+                        stop_pt = [stop_pt; vars.x(3)>=Theta_scale/2];
+                    end
                     if imag(opts.Z_load)>0 && real(opts.Z_load)==0
-                        stop_pt = [stop_pt; vars.x(4)==0];
+                        I_ind = 3 + opts.clock;
+                        stop_pt = [stop_pt; vars.x(I_ind)==0];
                     end                    
             end
             Xstop = [stop_pt; lsupp_base.X(2:end-1)];
@@ -95,13 +98,17 @@ classdef opp_mode < opp_mode_interface
             %column: each state
             f_trig = 2*pi*[-vars.x(2); vars.x(1)] / (2^double(obj.Symmetry));
             % f_phi = vars.x(3);
-            f_clock = 1;
+            if opts.clock
+                f_clock = 1;
+            else
+                f_clock = [];
+            end
 
             %TODO: check for symmetry scaling in the load
-            if length(vars.x)==3
+            if imag(opts.Z_load) == 0
                 x_load = [];
             else
-                x_load = vars.x(4);
+                x_load = vars.x((3 + opts.clock):end);
             end
             f_load = obj.load_dynamics(x_load, opts) / (2^double(obj.Symmetry));
             
@@ -174,11 +181,20 @@ classdef opp_mode < opp_mode_interface
             end
         end
 
-        %TODO: current harmonics
-
-        
+       function om = occ_mass(obj)
+            %mass of the occupation measure in this mode
+            om = 0;
+            [N, P] = size(obj.levels);
+            for n=1:N
+                for p = 1:P 
+                    om = om + obj.levels{n, p}.occ_mass();
+                end
+            end
+        end
 
         
     end
+
+
 end
 

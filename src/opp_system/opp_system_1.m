@@ -3,24 +3,35 @@ classdef opp_system_1 < opp_system_interface
     %   includes the N-switching constraints
     
     % properties
-    %     Property1
-    % end
-    
+    %     name = '';
+    % end    
     methods
         %% constructor
         function obj = opp_system_1(opts)
             %OPP_SYSTEM_1 Construct an instance of this class
             %   Detailed explanation goes here
-            obj@opp_system_interface(opts)
+            obj@opp_system_interface(opts)            
         end
         
         function [vars] = create_vars(obj, opts)
               %declare the variables
             load_state = imag(opts.Z_load)~=0;
-            mpol('c', 1, 1);
-            mpol('s', 1, 1)
-            mpol('phi', 1, 1)
-            mpol('I', 1, 1)
+            mpol(['c', opts.name], 1, 1);
+            mpol(['s', opts.name], 1, 1);
+
+            c = eval(['c', opts.name]);
+            s = eval(['s', opts.name]);
+
+            if opts.clock
+                mpol(['phi', opts.name], 1, 1);
+                phi = eval(['phi', opts.name]);
+            else
+                phi = [];
+            end
+
+            mpol(['I', opts.name], 1, 1)
+            I = eval(['I', opts.name]);
+            
             x = [c; s; phi];
             if load_state
                 x = [x; I];
@@ -29,7 +40,8 @@ classdef opp_system_1 < opp_system_interface
             if opts.TIME_INDEP
                t = [];
             else
-                mpol('t', 1, 1)
+                mpol(['t', opts.name], 1, 1)
+                t = eval(['t', opts.name]);
                 % t = t;
             end
             vars = struct('t', t, 'x', x);
@@ -72,18 +84,29 @@ classdef opp_system_1 < opp_system_interface
             X_trig = 1-x(1)^2 - x(2)^2;
 
             %clock and rescaled load
-            if length(x)<4
+            X = (X_trig==0); 
+            
+
+            I_ind = 3 + opts.clock;
+            if imag(opts.Z_load)==0
                 X_load = [];
             else
-                X_load = 1-x(4)^2;                
+                X_load = 1-x(I_ind)^2;                
             end
 
+            X = [X; X_load >= 0];
             Theta_scale = Theta*2^(double(opts.Symmetry));
 
-            X_clock_mode = x(3)*(1-2*Theta_scale- x(3));    
-            X_clock_jump = (x(3)-Theta_scale)*(1-2*Theta_scale- x(3));    
-            X = [X_trig==0; X_clock_mode>=0; X_load>=0];             
-            X_jump = [X_trig==0; X_clock_jump>=0; X_load>=0];
+            if opts.clock
+                X_clock_mode = x(3)*(1-2*Theta_scale- x(3)) >= 0;    
+                X_clock_jump = (x(3)-Theta_scale)*(1-2*Theta_scale- x(3)) >= 0; 
+                X = [X; X_clock_mode];  
+                X_jump = [X; X_clock_jump];
+            else
+                X_jump = X;
+            end
+                       
+            
             
   
             lsupp_base.X = X;
@@ -109,9 +132,7 @@ classdef opp_system_1 < opp_system_interface
         function [mom_con, supp_con_one] = cons(obj, d)
 
             %generate the constraints
-            supp_con_one = obj.supp_con();
-            
-              
+            supp_con_one = obj.supp_con();                          
 
             %dynamics constraints
             %mass of initial measure = 1
@@ -125,6 +146,8 @@ classdef opp_system_1 < opp_system_interface
             
             %trig is uniformly distributed over circle
             con_leb = obj.con_uni_circ(d);
+
+            con_dwell = obj.con_dwell_time();
             
 
             %harmonics constraints
@@ -152,7 +175,24 @@ classdef opp_system_1 < opp_system_interface
                 con_harm; %harmonics constraints                
                 con_preserve;  con_liou %flow
                 con_match; %quarter-matching
+                con_dwell; %soft dwell-time constraint
                 ];                  
+
+        end
+
+          function [mom_con, supp_con_one] = cons_limited(obj, d)
+
+            %generate the constraints
+            supp_con_one = obj.supp_con();                          
+
+            %initial = sum of terminal measure
+            con_preserve = obj.con_return(d);
+
+            %flow +jump continuity constraints
+            con_liou = obj.con_flow(d);
+            
+
+            mom_con = [con_preserve; con_liou];              
 
         end
   
@@ -486,6 +526,16 @@ classdef opp_system_1 < opp_system_interface
             end
         end
 
+
+        function con_dwell = con_dwell_time(obj)
+            con_dwell = [];
+            if ~obj.opts.clock && (obj.opts.Ts > 0)
+                for i = 1:length(obj.mode)
+                    Theta_scale = obj.opts.f0*obj.opts.Ts*2^(double(obj.opts.Symmetry));        
+                    con_dwell = [con_dwell; obj.mode{i}.occ_mass() >= Theta_scale];            
+                end
+            end
+        end
         %% objective
         function objective = objective_level(obj, vars, opts)
             %return the mode-objective at each level
@@ -498,6 +548,7 @@ classdef opp_system_1 < opp_system_interface
             Lmax = max(abs(opts.L));
             % sym_factor = double(2^opts.Symmetry);
             sym_factor = 1;
+            I_ind = 3+ obj.opts.clock;
             %Another TODO: quarter-wave symmetry may break the
              %characterization of the current in the inductor/capacitor
             if (length(vars.x)==3) || (imag(opts.Z_load) == 0)                      
@@ -508,7 +559,7 @@ classdef opp_system_1 < opp_system_interface
             elseif (imag(opts.Z_load) >= 0)
                 
                 % if real(opts.Z_load)==0
-                    objective = pi^2 * (2*pi)^2*vars.x(4)^2*ones(size(opts.L));
+                    objective = pi^2 * (2*pi)^2*vars.x(I_ind)^2*ones(size(opts.L));
                 % else
                     %inductive load
                     %i' = -(R/L)i + (1/L) v
@@ -530,7 +581,7 @@ classdef opp_system_1 < opp_system_interface
                  resistance= real(opts.Z_load);  
                  RC = resistance*capacitance;
                  % f_load = Lscale - vars.x(4)/(resistance*capacitance);
-                 objective = (opts.L.^2) + 2*(opts.L)*vars.x(4)*(Lmax/RC) + (Lmax/RC)^2*vars.x(4)^2;
+                 objective = (opts.L.^2) + 2*(opts.L)*vars.x(I_ind)*(Lmax/RC) + (Lmax/RC)^2*vars.x(I_ind)^2;
             end
             objective = objective'*sym_factor/(2*pi);
 
@@ -697,11 +748,12 @@ classdef opp_system_1 < opp_system_interface
                 Nmodes = length(obj.mode);
                 load_candidate = zeros(Nmodes+1, N)*NaN;
                 %get the initial current
+                I_ind = 4+obj.opts.clock;
                 for n =1:N
                     Mcurr= obj.mode{1}.levels{n, 1}.mmat_corner();
                     init_curr = Mcurr.init;
                     if ~isempty(init_curr) && (init_curr(1, 1) > 0.99)
-                        load_candidate(1, n) = init_curr(5, 1)/init_curr(1, 1);
+                        load_candidate(1, n) = init_curr(I_ind, 1)/init_curr(1, 1);
                     end
                 end
                 %track along the jumps
@@ -711,10 +763,10 @@ classdef opp_system_1 < opp_system_interface
                         for p = 1:P
                             if ms.jump_up(m, n, p) > 0.99
                                 jump_curr = Mc.jump{m}.up{n, p};
-                                load_candidate(m+1, n+1) = jump_curr(5, 1)/jump_curr(1, 1);
+                                load_candidate(m+1, n+1) = jump_curr(I_ind, 1)/jump_curr(1, 1);
                             elseif ms.jump_down(m, n, p) > 0.99
                                 jump_curr = Mc.jump{m}.down{n, p};
-                                load_candidate(m+1, n) = jump_curr(5, 1)/jump_curr(1, 1);
+                                load_candidate(m+1, n) = jump_curr(I_ind, 1)/jump_curr(1, 1);
                             end
                         end
                     end
@@ -726,7 +778,7 @@ classdef opp_system_1 < opp_system_interface
                         Mcurr= obj.mode{end}.levels{n, end}.mmat_corner();
                         term_curr = Mcurr.term;
                         if ~isempty(term_curr) && (term_curr(1, 1) > 0.99)
-                            load_candidate(end, n) = term_curr(5, 1)/term_curr(1, 1);
+                            load_candidate(end, n) = term_curr(I_ind, 1)/term_curr(1, 1);
                         end
                     end
                 load =load_candidate(1, ~isnan(load_candidate(1, :)));

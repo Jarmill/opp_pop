@@ -14,6 +14,9 @@ classdef (Abstract) opp_system_interface
         function obj = opp_system_interface(opts)
             %OPP_SYSTEM_INTERFACE Construct an instance of this class
             %   Detailed explanation goes here
+            if nargin < 2
+                name = '';
+            end
             obj.opts = opts;
             [obj.vars] = obj.create_vars(opts);
             % obj.objective = obj.create_objective();
@@ -179,12 +182,12 @@ classdef (Abstract) opp_system_interface
             sym_scale = 2^(-SYM);
             if iscell(obj.mode)
                 for m = 1:length(obj.mode)                    
-                    tr_curr = obj.mode{m}.trig_occ_monom(d, SYM);
+                    tr_curr = obj.mode{m}.trig_occ_monom(d);
                     % trmon_sum = trmon_sum + sym_scale*cell_sum(tr_curr);
                     trmon_sum = madd_cell_mom(trmon_sum,tr_curr, sym_scale);
                 end
             else
-                 trmon_sum = obj.mode.trig_occ_monom(d, SYM);
+                 trmon_sum = obj.mode.trig_occ_monom(d);
             end
         end
 

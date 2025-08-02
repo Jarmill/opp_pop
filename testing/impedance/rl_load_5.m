@@ -27,7 +27,8 @@ opts.k = 12;
 % opts.k = 32;
 % opts.k = 36;
 
-kappa = 0;
+% kappa = 0;
+kappa = 0.5;
 % kappa = 1;
 % kappa = 1.5;
 % kappa = 2;
@@ -36,9 +37,7 @@ kappa = 0;
 opts.Z_load = kappa/(2*pi*opts.f0) + 1.0j;
 
 % modulation = 1.1;
-% modulation = 0.9;
-% modulation = 0.5;
-modulation = 1.05;
+modulation = 0.9;
 % opts.Z_load = 1.0j;
 opts.verbose = 0;
 
@@ -46,19 +45,8 @@ opts.verbose = 0;
 % opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
 
 % modulation = 1;
-% opts.harmonics.index_sin= [1;  3];
-% opts.harmonics.bound_sin = [modulation, modulation; -0.01, 0.01];
-
-
-opts.harmonics.index_sin= [1];
-opts.harmonics.bound_sin = [modulation, modulation];
-% 
-% opts.allowed_levels = [0 0 1 0 0;
-%                        0 0 0 1 0;
-%                        0 0 0 0 1;
-%                        0 0 0 1 0;
-%                        ones(14, 5)];
-% sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
+opts.harmonics.index_sin= [1;  3];
+opts.harmonics.bound_sin = [modulation, modulation; -0.01, 0.01];
 
 
 %% test a manager
@@ -89,8 +77,17 @@ if sol.status==0
     % M = MG.mmat();
     out = MG.recover(sol);
 
+    if imag(opts.Z_load)>0
+        bound_upper = pattern_rec.energy_I;
+    else
+        bound_upper = pattern_rec.energy;
+    end
+    bound_lower = sol.obj_rec;
+    bn_lower = sqrt(bound_lower/pi - modulation^2/(1+kappa^2));
+    bn_upper = sqrt(bound_upper/pi - modulation^2/(1+kappa^2));
+
     % harm_valid = out.pattern.harm_valid;
-    bound_upper = out.tdd_upper;
+    % bound_upper = out.tdd_upper;
     %solve again
     if RESOLVE
         opts2 = opts;
@@ -101,25 +98,27 @@ if sol.status==0
 
         bound_lower2 = sol2.obj_rec;
         bound_upper2 = out2.tdd_upper;
-        bound_upper = out2.tdd_upper;        
-        out_polish = opp_polish_qw(out2);
-        bound_upper = out_polish.warm.tdd;
-    else
+        bound_upper = out2.tdd_upper;      
+        out_polish = out2;
+        % out_polish = opp_polish_qw(out2);
+        % bound_upper = out_polish.warm.tdd;
+    % else
         % out_polish = opp_polish_qw(out);
         out_polish = out;
-        out_polish.warm = 1;
+        % out_polish.warm = 1;
         
         
     end
     
 
-    harm_valid = ~isempty(out_polish.warm);
+    % harm_valid = ~isempty(out_polish.warm);
     
-    if harm_valid
-        validstr = ' Valid';
-    else
-        validstr = ' Invalid';
-    end
+    % if harm_valid
+    %     validstr = ' Valid';
+    % else
+    %     validstr = ' Invalid';
+    % end
+    validstr = [];
 
 
     summary_str = strcat(sprintf('M=%0.1f, k=%d, Lower=%0.3e, Upper=%0.3e ', ...
@@ -138,14 +137,25 @@ th = linspace(0, 2*pi, N);
 if ~RESOLVE
     pu = out.pattern.u;
     pa = out.pattern.alpha;
-    thi = [0, pa, 2*pi];
-    xi = out.pattern.I;
+    if real(opts.Z_load)==0
+        thi = [0, pa, 2*pi];
+        xi = out.pattern.I;
+    else
+        thi = out.pattern.alpha_val;
+        xi= out.pattern.I_val;
+    end
     % I0_rec = out.pattern.I(1);
 else
     pu = out2.pattern.u;
     pa = out2.pattern.alpha;
-    thi = [0, pa, 2*pi];
-    xi = out2.pattern.I;
+    
+    if real(opts.Z_load)==0
+        thi = [0, pa, 2*pi];
+        xi = out2.pattern.I;    
+    else
+        thi = out2.pattern.alpha_val;
+        xi= out2.pattern.I_val;
+    end
     % I0_rec = out2.pattern.I(1);
 end
 x = pulse_func(th, pu, pa);

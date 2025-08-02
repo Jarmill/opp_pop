@@ -21,8 +21,12 @@ classdef opp_jump < handle
             obj.vars = vars;
             obj.L = opts.L;
 
+            
+
             reset_law = vars.x;
-            reset_law(3) = 0*vars.x(3);
+            if opts.clock
+                reset_law(3) = 0*vars.x(3);
+            end
 
             P = opts.partition;
             N = length(obj.L);
@@ -44,8 +48,8 @@ classdef opp_jump < handle
                     supp_up = supp_curr;
                     supp_down = supp_curr;
                     % curr_name = sprintf('jump_m%d_n%d_p%d', m, n, p);
-                    name_down = sprintf('down_m%d_n%d_p%d', m, n, p);
-                    name_up = sprintf('up_m%d_n%d_p%d', m, n+1, p);
+                    name_down = sprintf([opts.name,'down_m%d_n%d_p%d'], m, n, p);
+                    name_up = sprintf([opts.name,'up_m%d_n%d_p%d'], m, n+1, p);
                     if ~isempty(opts.allowed_levels) 
 
                         %jump up
@@ -170,10 +174,10 @@ classdef opp_jump < handle
                 ind = 1:n;
             end
 
-            % if nargin < 4
-            %     subsign = false;
-            %     signs = ones(length(ind));
-            % end
+            if nargin < 4
+                % subsign = false;
+                signs = ones(length(ind), 1);
+            end
             
             [N, P] = size(obj.jump_up);
             imon_up = cell(N, P);

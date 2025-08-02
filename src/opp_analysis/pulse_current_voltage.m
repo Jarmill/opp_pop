@@ -43,13 +43,40 @@ out.u = uf;
 nalpha = length(alpha);
 
 %compute the energy
-% energy = 0;
-% for i = 1:nalpha
-%     da = (ah(i+1) - ah(i));
-%     dx = u(i)^2;
-% 
-%     energy = energy + dx*da;        
-% end
+
+%voltage energy
+energy = 0;
+for i = 1:nalpha
+    da = (ah(i+1) - ah(i));
+    dx = u(i)^2;
+
+    energy = energy + dx*da;        
+end
+
+out.energy_V = energy;
+
+[na, nb] = pulse_harmonics(50, uf', af');
+out.harmonics.a = na;
+out.harmonics.b = nb;
+
+%current energy (pure inductance)    
+    energy_raw = 0;
+    for i = 1:length(ah)-1
+        slope = uf(i);
+        offset = I_val(i);
+        prev = ah(i);
+    
+        if slope == 0
+            energy_curr = offset.^2 * (ah(i+1)-ah(i));
+        else
+            pt_end = (offset + slope*(ah(i+1)-prev))^3/(3*slope);
+            pt_start = (offset)^3/(3*slope);
+            energy_curr = pt_end - pt_start;
+        end
+        % energy_raw = energy_raw + energy_curr/(2*pi);
+        energy_raw = energy_raw + energy_curr;
+    end
+    out.energy_I = energy_raw;
 
 end
 

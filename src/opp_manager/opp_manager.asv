@@ -245,8 +245,8 @@ classdef opp_manager
                 init_match = obj.align_clock_init(d);
                 term_match = obj.align_clock_term(d);
                 occ_match = obj.align_clock_occ(d);
-                jump_match = obj.align_clock_jump(d);
-                % jump_match = [];
+                % jump_match = obj.align_clock_jump(d);
+                jump_match = [];
 
                 clock_con = [occ_match; init_match; term_match; jump_match];
             else
@@ -433,24 +433,20 @@ classdef opp_manager
             %this is bugged
 
             kc = length(obj.sys1.mode);
-            [N, P] = size(obj.sys1.mode{1}.levels); 
-            jump_mom_con = [];
+            [N, P] = size(obj.sys1.levels);            
             for m = 1:kc-1
-
-                [mom_1_up, mom_1_down] = obj.sys1.jumps{m}.sel_monom_jump(d, [1, 2]);
-                [mom_c_up, mom_c_down] = obj.sysclock.jumps{m}.sel_monom_jump(d, [1, 2]);
-                       
                 for n = 1:N-1
-                    if ~isnumeric(mom_1_up{n})                            
-                        jump_mom_con = [jump_mom_con; (mom_1_up{n}) - (mom_c_up{n})==0];                        
-                    end
-                    if ~isnumeric(mom_1_down{n})                            
-                        jump_mom_con = [jump_mom_con; (mom_1_down{n})-(mom_c_down{n})==0];                        
+                    for p = 1:P
+                        [mon_1_up, mon_1_down] = obj.sys1.jumps{m}.jump_up{n, p}.trig_monom(d);
+                        [mon_c_up, mon_c_down] = obj.sysclock.mode{m}.jumps{m}.jump_up{n, p}.trig_monom(d);
+                        
+                        
+                        if ~isnumeric(mom_1_up)                            
+                            occ_mom_con = [occ_mom_con; mom_1 == mom_c];
+                        end
                     end
                 end
-                    
             end
-        end
 
             % [su_1, sd_1] = obj.sys1.sel_jump_monom(d, [1, 2]);
             % [su_c, sd_c] = obj.sysclock.sel_jump_monom(d, [1, 2]);
@@ -471,7 +467,7 @@ classdef opp_manager
             % end
                 
            
-        
+        end
 
 
         %% process the objective

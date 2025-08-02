@@ -11,16 +11,20 @@ opts.partition = 1;
 opts.TIME_INDEP = true;
 opts.early_stop = 0;
 opts.null_objective = false;
-opts.Symmetry = 1;
-% opts.Symmetry = 2;
+% opts.Symmetry = 1;
+opts.Symmetry = 2;
 opts.unipolar = 1; %need to debug this
+% opts.quarter_match = true;
 % opts.three_phase = "Balanced";
 % opts.three_phase = "Floating";
 opts.three_phase = "Ignore";
+
+
+% opts.clock_split = true;% opts.clock = false;
+
 % opts.k = 4;
-opts.k = 8;
-opts.quarter_match = true;
-% opts.k = 12;
+% opts.k = 8;
+opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
 % opts.k = 24;
@@ -35,18 +39,18 @@ opts.common_mode = Inf;
 
 % modulation = 0.6;
 % modulation = 0.25;
-modulation = 0.8;
+% modulation = 0.8;
+modulation = 0.5;
 % modulation = 1;
 
-% kappa = 0;
-kappa = 1;
+kappa = 0;
+% kappa = 1;
 % kappa = 1.5;
 % kappa = 2;
 
 % opts.Z_load = 0;
 opts.Z_load = kappa/(2*pi*opts.f0) + 1.0j;
 % opts.Z_load = 4.0j;
-
 
 
 
@@ -86,6 +90,11 @@ if sol.status==0
     pattern_rec = MG.recover_pattern();
 
     [Mc1, Mc3] = MG.mmat_corner();
+    if opts.clock_split
+        mcc = MG.sysclock.mmat_corner();
+    else
+        mcc = [];
+    end
     % M = MG.mmat();
     
     % Q = (eye(3) - ones(3)/3);
