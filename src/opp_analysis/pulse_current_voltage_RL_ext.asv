@@ -1,7 +1,12 @@
-function [out] = pulse_current_voltage_RL(u, alpha, sym, N, kappa, I0)
+function [out] = pulse_current_voltage_RL(u, alpha, sym, N, kappa, I0, Aext, phiext)
 %Find the energy of the current when applied to an RL circuit.
 %
 %kappa = R/L ratio (default to 1)
+%I0 = initial current
+%Aext = amplitude of external voltage signal
+%phiext = phase offset of external voltage signal
+%
+%assume the external voltage signal is sinusoidal
 %
 %energy = integrate x(th)^2 dth for th in [0, 2pi]
 
@@ -41,7 +46,7 @@ I_val(1) = I0;
 
 Na = (length(I_s)-1);
 
-%compute the current
+%compute the current of the pulse pattern
 for i = 1:Na
     ucurr = uf(i);
     Iprev = I_s(i);
@@ -56,12 +61,35 @@ for i = 1:Na
         % - (kappa*Iprev)^3)/(3*kappa^3);
 end
 
+%compute the current of the external voltage signal
+
+uext = @(a) -Aext/(kappa^2+1) * (kappa*sin(a + phiext) - cos(a + phiext));
+I_s_ext = uext(ah);
+I_val_ext = uext(alpha_val);
+
+I_s_orig = I_s;
+I_val_orig = I_val;
+
+I_s = I_s + I_s_ext;
+I_val = I_val + I_val_ext;
+
 %compute the energy
 E_s = zeros(Na, 1);
 
+
+figure(2)
+clf
+hold on
+plot(alpha_val, I_val_ext, 'b')
+plot(alpha_val, I_val, 'k')
+plot(alpha_val, I_val_orig, 'r')
+
+%this will be a tricky integral
+
+%energy of only the pulse component Ip^2
 for i = 1:Na
     ucurr = uf(i);
-    Iprev = I_s(i);
+    Iprev = I_s_orig(i);
     dt = da(i);
 
     E0 = (ucurr-kappa*Iprev)*(3*ucurr + kappa*Iprev);
@@ -73,8 +101,52 @@ for i = 1:Na
     E_s(i) = (E_num_1 + E_num_2 - E0)/E_denom;
 end
 
-% energy = da'*E_s;
-energy = sum(E_s);
+%energy of the mix Ip*Ie
+E_s_mix = zeros(Na, 1);
+for i = 1:Na
+    ucurr = uf(i);
+    Iprev = I_s_orig(i);
+    dt = da(i);
+    z = atan(1/kappa);
+
+    gain = (Aext/sqrt(kappa^2+1));
+    E0 = gain*exp(-kappa*dt);
+    E_denom = kappa^3+kappa;
+
+    % E_1 = sin(dt+z)*(Iprev*kappa + ...
+    %     ucurr*(kappa^2+1)*kappa*exp(kappa*dt) ...
+    %     - 1);
+    % E_2 = -kappa*cos(dt+z)*(Iprev*kappa - ucurr);
+
+    Esep = ucurr*sin(dt + z);
+
+    % E_num_1 = 2*ucurr^2*kappa*dt;
+
+
+    % E_num_2 = exp(-2*kappa*dt)*(ucurr - kappa*Iprev) * ...
+    %     (kappa*Iprev + ucurr*(4*exp(kappa*dt)-1));
+    % 
+    E_s_mix(i) = E0*(E_1 + E_2)/E_denom;
+end
+
+energy_pulse = sum(E_s);
+
+energy_mix = sum(E_s_mix);
+
+%energy of only the trigonometric external component
+energy_ext = pi*Aext^2/(kappa^2 + 1);
+
+
+%energy of the mixture I_p(theta) I_e(theta)
+
+energy = energy_pulse + energy_ext + 2*energy_mix;
+
+
+%compare the result against numerical integration
+energy_trapz = trapz(alpha_val, I_val.^2)
+
+ediff  = energy - energy_trapz;
+
 
 out.energy = energy;
 % out.I_avg = I_avg;

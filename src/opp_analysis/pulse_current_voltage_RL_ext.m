@@ -1,0 +1,173 @@
+function [out] = pulse_current_voltage_RL(u, alpha, sym, N, kappa, I0, Aext, phiext)
+%Find the energy of the current when applied to an RL circuit.
+%
+%kappa = R/L ratio (default to 1)
+%I0 = initial current
+%Aext = amplitude of external voltage signal
+%phiext = phase offset of external voltage signal
+%
+%assume the external voltage signal is sinusoidal
+%
+%energy = integrate x(th)^2 dth for th in [0, 2pi]
+
+%replicate the voltages and angles
+if sym == 0
+    %full-wave symmetry
+    uf = u;
+    af = alpha;
+elseif sym==1
+    %half-wave symmetry
+    uf = [u; -u(2:end)];
+    af = [alpha; alpha+pi];
+else
+    %quarter-wave symmetry
+    urev = u(end-1:-1:1);
+    uf = [u; urev; -u(2:end); -urev];
+    af= [alpha; pi - (alpha(end:-1:1)); pi + alpha; 2*pi - alpha(end:-1:1)];
+end
+
+ah = [0; af; 2*pi];
+da = diff(ah);
+
+out = struct;
+out.alpha = ah;
+out.voltage = uf;
+
+%compute the current
+% I0 = 0;
+% I_step = uf.*da;
+% I0_val = cumsum([0; I_step]);
+
+I_s = I0*ones(size(ah));
+
+alpha_val = linspace(0, 2*pi, N);
+I_val = zeros(1, N);
+I_val(1) = I0;
+
+Na = (length(I_s)-1);
+
+%compute the current of the pulse pattern
+for i = 1:Na
+    ucurr = uf(i);
+    Iprev = I_s(i);
+    dt = da(i);
+    I_s(i+1) = ucurr*(1-exp(-kappa*dt))/kappa + Iprev*exp(-kappa*dt);
+
+    a_range = (alpha_val >= ah(i)) & (alpha_val <= ah(i+1));
+    dt_range = alpha_val(a_range) - ah(i);
+    I_val(a_range) = ucurr*(1-exp(-kappa*dt_range))/kappa + Iprev*exp(-kappa*dt_range);
+    
+    % E_s(i)= (exp(-2*kappa*dt)*(ucurr*(exp(kappa*dt)-1)+(kappa*Iprev))^3 ...
+        % - (kappa*Iprev)^3)/(3*kappa^3);
+end
+
+%compute the current of the external voltage signal
+
+uext = @(a) -Aext/(kappa^2+1) * (kappa*sin(a + phiext) - cos(a + phiext));
+uphase = @(a) Aext/sqrt(kappa^2+1) * (cos(a + phiext + atan(kappa)));
+
+I_s_ext = uext(ah);
+I_val_ext = uext(alpha_val);
+I_val_phase = uphase(alpha_val);
+
+I_s_orig = I_s;
+I_val_orig = I_val;
+
+I_s = I_s + I_s_ext;
+I_val = I_val + I_val_ext;
+
+%compute the energy
+E_s = zeros(Na, 1);
+
+
+figure(2)
+clf
+hold on
+plot(alpha_val, I_val_ext, 'b')
+plot(alpha_val, I_val, 'k')
+plot(alpha_val, I_val_orig, 'r')
+
+%this will be a tricky integral
+
+%energy of only the pulse component Ip^2
+for i = 1:Na
+    ucurr = uf(i);
+    Iprev = I_s_orig(i);
+    dt = da(i);
+
+    E0 = (ucurr-kappa*Iprev)*(3*ucurr + kappa*Iprev);
+    E_denom = 2*kappa^3;
+    E_num_1 = 2*ucurr^2*kappa*dt;
+    E_num_2 = exp(-2*kappa*dt)*(ucurr - kappa*Iprev) * ...
+        (kappa*Iprev + ucurr*(4*exp(kappa*dt)-1));
+    
+    E_s(i) = (E_num_1 + E_num_2 - E0)/E_denom;
+end
+
+%energy of the mix Ip*Ie
+E_s_mix = zeros(Na, 1);
+for i = 1:Na
+    ucurr = uf(i);
+    Iprev = I_s_orig(i);
+    dt = da(i);
+    z = atan(kappa);
+
+    gain = (Aext/sqrt(kappa^2+1));
+    E0 = gain*exp(-kappa*dt);
+    E_denom = kappa^3+kappa;
+
+    % E_1 = sin(dt+z)*(Iprev*kappa + ...
+    %     ucurr*(kappa^2+1)*kappa*exp(kappa*dt) ...
+    %     - 1);
+    % E_2 = -kappa*cos(dt+z)*(Iprev*kappa - ucurr);
+
+    
+   Esin = Iprev*kappa + ucurr*((kappa^2+1)*exp(kappa*dt)-1);
+   Ecos = -kappa*(Iprev*kappa - ucurr);
+    % E_num_1 = 2*ucurr^2*kappa*dt;
+
+
+    % E_num_2 = exp(-2*kappa*dt)*(ucurr - kappa*Iprev) * ...
+    %     (kappa*Iprev + ucurr*(4*exp(kappa*dt)-1));
+    % 
+    E_s_mix(i) = (E0/E_denom)*(Esin*sin(dt+z) + Ecos*cos(dt+z));
+    % E_s_mix(i) = E0*(E_1 + E_2)/E_denom;
+end
+
+energy_pulse = sum(E_s);
+
+energy_mix = sum(E_s_mix);
+
+%energy of only the trigonometric external component
+energy_ext = pi*Aext^2/(kappa^2 + 1);
+
+
+%energy of the mixture I_p(theta) I_e(theta)
+
+energy = energy_pulse + energy_ext + 2*energy_mix;
+
+
+%compare the result against numerical integration
+energy_trapz = trapz(alpha_val, I_val.^2)
+
+ediff  = energy - energy_trapz;
+
+
+out.energy = energy;
+% out.I_avg = I_avg;
+out.I = I_s;
+out.I_val = I_val;
+out.alpha_val = alpha_val;
+out.u = uf;
+
+%compute the energy
+% energy = 0;
+% for i = 1:nalpha
+%     da = (ah(i+1) - ah(i));
+%     dx = u(i)^2;
+% 
+%     energy = energy + dx*da;        
+% end
+
+end
+
