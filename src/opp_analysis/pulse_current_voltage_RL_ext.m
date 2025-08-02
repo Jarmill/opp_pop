@@ -86,6 +86,7 @@ hold on
 plot(alpha_val, I_val_ext, 'b')
 plot(alpha_val, I_val, 'k')
 plot(alpha_val, I_val_orig, 'r')
+plot(alpha_val, I_val_ext.*I_val_orig, 'g')
 
 %this will be a tricky integral
 
@@ -95,6 +96,9 @@ for i = 1:Na
     Iprev = I_s_orig(i);
     dt = da(i);
 
+    
+    %query in https://www.wolframalpha.com/input?i=integrate+%28%28u*%281-e%5E%28-k*%28t%29%29%29%2Fk+%2B+c*e%5E%28-k*%28t%29%29%29%29%5E2+dt
+    %E0 is the integration constant (dt=0)
     E0 = (ucurr-kappa*Iprev)*(3*ucurr + kappa*Iprev);
     E_denom = 2*kappa^3;
     E_num_1 = 2*ucurr^2*kappa*dt;
@@ -105,35 +109,39 @@ for i = 1:Na
 end
 
 %energy of the mix Ip*Ie
+
+%integrate cos(t+z)*(u*(1-e^(-k*(t)))/k + c*e^(-k*(t))) dt
 E_s_mix = zeros(Na, 1);
 for i = 1:Na
     ucurr = uf(i);
     Iprev = I_s_orig(i);
     dt = da(i);
-    z = atan(kappa);
+    acurr = ah(i);
+    z = atan(kappa) + phiext;
 
     gain = (Aext/sqrt(kappa^2+1));
-    E0 = gain*exp(-kappa*dt);
+    % gain_discount = gain*exp(-kappa*dt);
     E_denom = kappa^3+kappa;
 
-    % E_1 = sin(dt+z)*(Iprev*kappa + ...
-    %     ucurr*(kappa^2+1)*kappa*exp(kappa*dt) ...
-    %     - 1);
-    % E_2 = -kappa*cos(dt+z)*(Iprev*kappa - ucurr);
-
     
-   Esin = Iprev*kappa + ucurr*((kappa^2+1)*exp(kappa*dt)-1);
+   Esin = Iprev*kappa + ...
+       ucurr*((kappa^2+1)*exp(kappa*dt)-1);
    Ecos = -kappa*(Iprev*kappa - ucurr);
-    % E_num_1 = 2*ucurr^2*kappa*dt;
+   E_dt =  (exp(-kappa*dt))*(Esin*sin(dt+z+acurr)...
+       + Ecos*cos(dt+z+acurr));
+    
+
+    Esin0 = (Iprev*kappa + ucurr*(kappa^2));
+    Ecos0 = Ecos;
+    E0 = (sin(z+acurr)*Esin0 +...
+        Ecos0*cos(z+acurr));
 
 
-    % E_num_2 = exp(-2*kappa*dt)*(ucurr - kappa*Iprev) * ...
-    %     (kappa*Iprev + ucurr*(4*exp(kappa*dt)-1));
-    % 
-    E_s_mix(i) = (E0/E_denom)*(Esin*sin(dt+z) + Ecos*cos(dt+z));
+    E_s_mix(i) =(E_dt - E0)*(gain/E_denom);
     % E_s_mix(i) = E0*(E_1 + E_2)/E_denom;
 end
 
+disp(E_s_mix')
 energy_pulse = sum(E_s);
 
 energy_mix = sum(E_s_mix);

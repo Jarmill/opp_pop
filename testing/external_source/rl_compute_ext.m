@@ -5,20 +5,22 @@
 % R = 10;
 % R = 0.1;
 % R = 1e-1;
-% R = 1;
+R = 1;
 % R = 0;
 % R = 1e-4;
-R = 1;
+% R = 1;
 L = 1;
 kappa = R/L;
 
 %external voltage signal
-% Aext = -0.5;
+Aext = -0.5;
 % Aext = -1;
-Aext = 0;
-Aext = -0.25;
+% Aext = 0;
+% Aext = -0.25;
 % phiext = 0;
-phiext = pi/3;
+% phiext = pi;
+% phiext = pi/3;
+phiext = pi/6;
 
 N = 1000;
 
