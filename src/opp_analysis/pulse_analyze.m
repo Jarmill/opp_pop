@@ -46,6 +46,15 @@ out.voltage = uf;
 %     I_s = I0_s + I0;
 % end
 
+Aext = abs(uext);
+phiext = angle(uext);
+% tau = 0;
+% uext = @(a) -Aext/(tau^2+1) * (tau*sin(a + phiext) - cos(a + phiext));
+uphase = @(a) Aext/sqrt(tau^2+1) * (cos(a + phiext + atan(tau)));
+
+%initial current for the pulse response only
+I0 = I0 - uphase(0);
+
 I_s = I0*ones(size(ah));
 
 alpha_val = linspace(0, 2*pi, N);
@@ -75,11 +84,6 @@ end
 
 % I_s = I_val;
 %compute the current of the external voltage
-Aext = abs(uext);
-phiext = angle(uext);
-% tau = 0;
-% uext = @(a) -Aext/(tau^2+1) * (tau*sin(a + phiext) - cos(a + phiext));
-uphase = @(a) Aext/sqrt(tau^2+1) * (cos(a + phiext + atan(tau)));
 
 
 I_s_ext = uphase(ah);
@@ -123,11 +127,11 @@ for i = 1:Na
     if tau ==0
         %reactance
         if ucurr == 0
-            E_s(i) = Iprev.^2 * (ah(i+1)-ah(i));
+            E_s(i) = Iprev.^2 * (dt);
         else
-            pt_end = (Iprev + ucurr*(dt))^3/(3*ucurr);
-            pt_start = (Iprev)^3/(3*ucurr);
-            E_s(i) = pt_end - pt_start;
+            pt_end = (Iprev + ucurr*(dt))^3;
+            pt_start = (Iprev)^3;
+            E_s(i) = (pt_end - pt_start)/(3*ucurr);
         end
 
     else
@@ -155,21 +159,46 @@ end
        
         if tau == 0
             %pure reactance
-            Esin = Iprev + ucurr*(acurr + dt);
+            %integrate (q+t*u)*cos(t+z) dt 
+            Esin = Iprev + ucurr*(dt);
             Ecos = ucurr;
-
-            E_denom =1;   
             E_dt = (Esin*sin(dt+acurr + phiext)...
                + Ecos*cos(dt+acurr+phiext));
-            
-        
-            Esin0 = (Iprev* + ucurr*acurr);
+
+
+            Esin0 = (Iprev);
             Ecos0 = Ecos;
-            E0 = (sin(phiext+acurr)*Esin0 +...
+            E0 = (Esin0*sin(phiext+acurr) +...
                 Ecos0*cos(phiext+acurr));
-           
+
+
+            
+            % tau2 = 1e-4;
+            % E_denom = tau2^3+tau2;
+            % z = atan(tau) + phiext;
+            % Esin = (Iprev*tau2 + ...
+            % ucurr*((tau2^2+1)*exp(tau2*dt)-1))/E_denom;
+            % Ecos = -tau2*(Iprev*tau2 - ucurr)/E_denom;
+            % E_dt =  (exp(-tau2*dt))*(Esin*sin(dt+z+acurr)...
+            % + Ecos*cos(dt+z+acurr));
+            % 
+            % 
+            % Esin0 = (Iprev*tau2 + ucurr*(tau2^2))/E_denom;
+            % Ecos0 = Ecos/E_denom;
+            % E0 = (sin(z+acurr)*Esin0 +...
+            % Ecos0*cos(z+acurr));
+            
             E_s_mix(i) =(E_dt - E0)*(gain);
+            E_s_curr = E_s_mix(i);
+            %test 
+            a_range = (alpha_val >= ah(i)) & (alpha_val <= ah(i+1));
+            e_curr = trapz(alpha_val(a_range), I_val_ext(a_range).*I_val_orig(a_range));
+
+            e_diff_curr = e_curr - E_s_curr;
+
+            % disp(e_diff_curr)
         else
+            %integrate cos(t+z)*(u*(1-e^(-k*(t)))/k + c*e^(-k*(t))) dt
             z = atan(tau) + phiext;
             E_denom = tau^3+tau;
             
@@ -202,7 +231,7 @@ end
 energy = energy_pulse + energy_ext + 2*energy_mix;
 
 %compare the result against numerical integration
-energy_trapz = trapz(alpha_val, I_val.^2)
+energy_trapz = trapz(alpha_val, I_val.^2);
 
 ediff  = energy - energy_trapz;
 

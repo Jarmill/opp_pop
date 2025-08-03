@@ -5,10 +5,13 @@
 % R = 10;
 % R = 0.1;
 % R = 1e-1;
-R = 0;
+% R = 1;
 % R = 0;
+% R = 1e-5;
 % R = 1e-4;
 % R = 1;
+% R = 1e-4;
+R =0;
 L = 1;
 tau = R/L;
 
@@ -46,7 +49,9 @@ param = struct('aq', aq, 'uq', uq, 'tau', tau);
 % outq.aa = [0; kron(outq.alpha(2:end-1), [1; 1]); 2*pi];
 
 % y0 = -0.472;
-y0 =-0.3;
+% y0 =-0.3;
+% y0 = -0.8;
+y0 = -1.3;
 
 NA = 10000;
 % [y, cval, info] = fmincon(@(I) objective_Imatch(I, param), y0, [1; -1], [1; 1]);
@@ -55,7 +60,7 @@ NA = 10000;
 
 [outq] = pulse_analyze(param.uq, param.aq, 2, NA, param.tau, y0,uext);
 
-e_trapz = trapz(outq.alpha_val, outq.I_val.^2)
+e_trapz = trapz(outq.alpha_val, outq.I_val.^2);
 
 ediff  = outq.energy - e_trapz;
 
