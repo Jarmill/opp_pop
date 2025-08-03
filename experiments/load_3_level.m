@@ -14,10 +14,15 @@ opts.null_objective = false;
 % opts.Symmetry = 1;
 opts.Symmetry = 2;
 opts.unipolar = 1; %need to debug this
-% opts.quarter_match = true;
+% % opts.quarter_match = true;
 % opts.three_phase = "Balanced";
 % opts.three_phase = "Floating";
 opts.three_phase = "Ignore";
+
+%external voltage
+% opts.uext = 0 + 0j;
+opts.uext = 0.05+0j;
+% opts.phiext = 0;
 
 
 % opts.clock_split = true;% opts.clock = false;

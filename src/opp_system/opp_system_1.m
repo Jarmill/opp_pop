@@ -91,6 +91,7 @@ classdef opp_system_1 < opp_system_interface
             if imag(opts.Z_load)==0
                 X_load = [];
             else
+                %LOAD LIMIT
                 X_load = 1-x(I_ind)^2;                
             end
 
@@ -559,7 +560,22 @@ classdef opp_system_1 < opp_system_interface
             elseif (imag(opts.Z_load) >= 0)
                 
                 % if real(opts.Z_load)==0
-                    objective = pi^2 * (2*pi)^2*vars.x(I_ind)^2*ones(size(opts.L));
+                objective_pulse = pi^2 *vars.x(I_ind)^2*ones(size(opts.L));
+                
+                if opts.uext ~= 0
+                    inductance = imag(opts.Z_load)/(2*pi*opts.f0);
+                    resistance= real(opts.Z_load); 
+                    tau = resistance/inductance;               
+                    trig_wave = [real(opts.uext), imag(opts.uext)]*vars.x(1:2)/sqrt(tau^2 + 1);
+                    objective_mix = trig_wave *  (pi * vars.x(I_ind)*ones(size(opts.L)));                    
+                    objective_wave = pi*abs(opts.uext)/(tau^2+1) / (2*pi)^2;
+                else
+                    objective_mix =0;
+                    objective_wave = 0;
+                end
+
+
+                    objective =  (2*pi)^2*(objective_pulse - 2*objective_mix + objective_wave);
                 % else
                     %inductive load
                     %i' = -(R/L)i + (1/L) v

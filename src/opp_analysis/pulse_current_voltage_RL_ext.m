@@ -1,4 +1,4 @@
-function [out] = pulse_current_voltage_RL(u, alpha, sym, N, kappa, I0, Aext, phiext)
+function [out] = pulse_current_voltage_RL_ext(u, alpha, sym, N, kappa, I0, uext)
 %Find the energy of the current when applied to an RL circuit.
 %
 %kappa = R/L ratio (default to 1)
@@ -44,7 +44,7 @@ alpha_val = linspace(0, 2*pi, N);
 I_val = zeros(1, N);
 I_val(1) = I0;
 
-Na = (length(I_s)-1);
+Na = (length(ah)-1);
 
 %compute the current of the pulse pattern
 for i = 1:Na
@@ -63,6 +63,9 @@ end
 
 %compute the current of the external voltage signal
 
+Aext = abs(uext);
+phiext = angle(uext);
+
 uext = @(a) -Aext/(kappa^2+1) * (kappa*sin(a + phiext) - cos(a + phiext));
 uphase = @(a) Aext/sqrt(kappa^2+1) * (cos(a + phiext + atan(kappa)));
 
@@ -80,13 +83,13 @@ I_val = I_val + I_val_ext;
 E_s = zeros(Na, 1);
 
 
-figure(2)
-clf
-hold on
-plot(alpha_val, I_val_ext, 'b')
-plot(alpha_val, I_val, 'k')
-plot(alpha_val, I_val_orig, 'r')
-plot(alpha_val, I_val_ext.*I_val_orig, 'g')
+% figure(2)
+% clf
+% hold on
+% plot(alpha_val, I_val_ext, 'b')
+% plot(alpha_val, I_val, 'k')
+% plot(alpha_val, I_val_orig, 'r')
+% plot(alpha_val, I_val_ext.*I_val_orig, 'g')
 
 %this will be a tricky integral
 
@@ -141,7 +144,7 @@ for i = 1:Na
     % E_s_mix(i) = E0*(E_1 + E_2)/E_denom;
 end
 
-disp(E_s_mix')
+% disp(E_s_mix')
 energy_pulse = sum(E_s);
 
 energy_mix = sum(E_s_mix);

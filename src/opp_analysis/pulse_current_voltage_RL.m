@@ -1,7 +1,7 @@
-function [out] = pulse_current_voltage_RL(u, alpha, sym, N, kappa, I0)
+function [out] = pulse_current_voltage_RL(u, alpha, sym, N, tau, I0)
 %Find the energy of the current when applied to an RL circuit.
 %
-%kappa = R/L ratio (default to 1)
+%tau = R/L ratio (default to 1)
 %
 %energy = integrate x(th)^2 dth for th in [0, 2pi]
 
@@ -46,14 +46,12 @@ for i = 1:Na
     ucurr = uf(i);
     Iprev = I_s(i);
     dt = da(i);
-    I_s(i+1) = ucurr*(1-exp(-kappa*dt))/kappa + Iprev*exp(-kappa*dt);
+    I_s(i+1) = ucurr*(1-exp(-tau*dt))/tau + Iprev*exp(-tau*dt);
 
     a_range = (alpha_val >= ah(i)) & (alpha_val <= ah(i+1));
     dt_range = alpha_val(a_range) - ah(i);
-    I_val(a_range) = ucurr*(1-exp(-kappa*dt_range))/kappa + Iprev*exp(-kappa*dt_range);
+    I_val(a_range) = ucurr*(1-exp(-tau*dt_range))/tau + Iprev*exp(-tau*dt_range);
     
-    % E_s(i)= (exp(-2*kappa*dt)*(ucurr*(exp(kappa*dt)-1)+(kappa*Iprev))^3 ...
-        % - (kappa*Iprev)^3)/(3*kappa^3);
 end
 
 %compute the energy
@@ -64,11 +62,11 @@ for i = 1:Na
     Iprev = I_s(i);
     dt = da(i);
 
-    E0 = (ucurr-kappa*Iprev)*(3*ucurr + kappa*Iprev);
-    E_denom = 2*kappa^3;
-    E_num_1 = 2*ucurr^2*kappa*dt;
-    E_num_2 = exp(-2*kappa*dt)*(ucurr - kappa*Iprev) * ...
-        (kappa*Iprev + ucurr*(4*exp(kappa*dt)-1));
+    E0 = (ucurr-tau*Iprev)*(3*ucurr + tau*Iprev);
+    E_denom = 2*tau^3;
+    E_num_1 = 2*ucurr^2*tau*dt;
+    E_num_2 = exp(-2*tau*dt)*(ucurr - tau*Iprev) * ...
+        (tau*Iprev + ucurr*(4*exp(tau*dt)-1));
     
     E_s(i) = (E_num_1 + E_num_2 - E0)/E_denom;
 end

@@ -122,7 +122,8 @@ classdef (Abstract) opp_mode_interface
             %n: level of the inverter
 
             %scaled inverter value
-            Lscale = 2*opts.L/max(max(abs(opts.L)));
+            Lrescale = (max(max(abs(opts.L))));
+            Lscale = 2*opts.L/Lrescale;
             % u_curr = opts.L(n)/max(abs(opts.L)); 
 
             N = size(opts.L, 2);
@@ -138,11 +139,12 @@ classdef (Abstract) opp_mode_interface
                 inductance = imag(opts.Z_load)/(2*pi*opts.f0);
                 resistance= real(opts.Z_load);                
 
+                tau = resistance/inductance;
                 % load_scale = 1/(2*pi);
                 % load_scale = 1/pi;
-                load_scale = 2*pi;
+                load_scale = 2*pi;                
 
-                f_load = -load_scale*((resistance)/(inductance))*x_load*ones(1, N) + Lscale;
+                f_load = -load_scale*(tau)*x_load*ones(1, N) + Lscale;
             else
                  %vc' = (v-vc)/(R*C)
                  %per-unit, ignore (R*C) factor

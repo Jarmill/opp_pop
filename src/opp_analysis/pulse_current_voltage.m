@@ -34,10 +34,11 @@ if nargin < 4
     % mean_I = mean(I0_val);
     I_val = I0_val - max(I0_val)/2;
 else
-    I_val = I_val + I0;
+    I_val = I0_val + I0;
 end
 
 out.current = I_val;
+out.I_val = I_val;
 out.u = uf;
 
 nalpha = length(alpha);

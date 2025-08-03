@@ -112,6 +112,13 @@ classdef opp_mode < opp_mode_interface
             end
             f_load = obj.load_dynamics(x_load, opts) / (2^double(obj.Symmetry));
             
+            %apply the external voltage
+            % if ~isempty(f_load) && (opts.uext ~= 0)
+            %     uext = opts.uext/max(max(abs(opts.L)));
+            %     f_ext = 2*pi*[real(uext), imag(uext)]*vars.x(1:2)/ (2^double(obj.Symmetry));
+            %     f_load = f_load - f_ext;
+            % end
+
             % f = [f_trig; f_phi; f_load];
             N = size(opts.L, 2);
             f_basic = [f_trig; f_clock] * ones(1, N);
