@@ -520,10 +520,10 @@ classdef opp_manager
             M = obj.mmat();
 
             bound_lower = sol.obj_rec;
-            if obj.opts.Z_load==1.0j
-                bound_upper = pattern_rec.energy_I;
+            if obj.opts.Z_load==0
+                bound_upper = pattern_rec.energy;                
             else
-                bound_upper = pattern_rec.energy;
+                bound_upper = pattern_rec.energy_I;
             end
 
             %assuming that the b1 coefficient is pinned
@@ -531,7 +531,7 @@ classdef opp_manager
 
             
             %impedance function
-            kappa = real(obj.opts.Z_load)/(imag(obj.opts.Z_load)*2*pi*obj.opts.f0);
+            kappa = real(obj.opts.Z_load)/imag(obj.opts.Z_load) * (2 * pi * obj.opts.f0); 
             A_scale = 1/(1+kappa^2);
 
 

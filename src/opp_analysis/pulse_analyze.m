@@ -170,23 +170,6 @@ end
             Ecos0 = Ecos;
             E0 = (Esin0*sin(phiext+acurr) +...
                 Ecos0*cos(phiext+acurr));
-
-
-            
-            % tau2 = 1e-4;
-            % E_denom = tau2^3+tau2;
-            % z = atan(tau) + phiext;
-            % Esin = (Iprev*tau2 + ...
-            % ucurr*((tau2^2+1)*exp(tau2*dt)-1))/E_denom;
-            % Ecos = -tau2*(Iprev*tau2 - ucurr)/E_denom;
-            % E_dt =  (exp(-tau2*dt))*(Esin*sin(dt+z+acurr)...
-            % + Ecos*cos(dt+z+acurr));
-            % 
-            % 
-            % Esin0 = (Iprev*tau2 + ucurr*(tau2^2))/E_denom;
-            % Ecos0 = Ecos/E_denom;
-            % E0 = (sin(z+acurr)*Esin0 +...
-            % Ecos0*cos(z+acurr));
             
             E_s_mix(i) =(E_dt - E0)*(gain);
             E_s_curr = E_s_mix(i);
