@@ -81,10 +81,13 @@ classdef opp_system_1 < opp_system_interface
 
             %BUG HERE BUG HERE BUG HERE
             %X_trig = 1-x(1)^2 + x(2)^2;
-            X_trig = 1-x(1)^2 - x(2)^2;
+            % X_trig = 1-x(1)^2 - x(2)^2;
 
             %clock and rescaled load
-            X = (X_trig==0); 
+            % X = (X_trig==0); 
+
+            %GROEBNER REDUCTION !!!!!!!
+            X = (x(2)^2 == 1 - x(1)^2);
             
 
             I_ind = 3 + opts.clock;

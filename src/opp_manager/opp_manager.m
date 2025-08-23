@@ -162,6 +162,8 @@ classdef opp_manager
             sol.solver_time = toc;
 
             if sol.status == 0
+
+                [sol.block_count, sol.block_size] = groupcounts(cellfun(@(c) size(c, 2), sol.dual_rec(2:end)));
                 sol.mass = obj.mass_summary();
     
                 [~, mom_harm] = obj.sys1.con_harmonics();

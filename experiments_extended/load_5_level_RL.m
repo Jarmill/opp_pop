@@ -12,14 +12,14 @@ opts.TIME_INDEP = true;
 opts.early_stop = 0;
 opts.null_objective = false;
 % opts.Symmetry = 0;
-opts.Symmetry = 1;
-% opts.Symmetry = 2;
+% opts.Symmetry = 1;
+opts.Symmetry = 2;
 opts.unipolar = 1;
 opts.quarter_match = 1;
 % opts.three_phase = "Balanced";
 % opts.k = 4;
-opts.k = 8;
-% opts.k = 12;
+% opts.k = 8;
+opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
 % opts.k = 24;
@@ -27,8 +27,8 @@ opts.k = 8;
 % opts.k = 32;
 % opts.k = 36;
 
-% kappa = 0;
-kappa = 0.5;
+kappa = 0;
+% kappa = 0.5;
 % kappa = 1;
 % kappa = 1.5;
 % kappa = 2;
@@ -68,8 +68,8 @@ opts.harmonics.bound_sin = [modulation, modulation];
 
 MG = opp_manager(opts);
 % order = 1;
-order = 2;
-% order = 3;
+% order = 2;
+order = 3;
 % order = 4;
 % order = 5;
 % order = 6;
@@ -124,7 +124,7 @@ if sol.status==0
     end
 
 
-    summary_str = strcat(sprintf('M=%0.1f, k=%d, Lower=%0.3e, Upper=%0.3e ', ...
+    summary_str = strcat(sprintf('M=%0.1f, k=%d, TDD Lower=%0.3e, TDD Upper=%0.3e ', ...
     modulation, opts.k, out.tdd_lower, bound_upper), ' ', validstr);
 
 
