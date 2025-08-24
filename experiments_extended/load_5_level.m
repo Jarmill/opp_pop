@@ -27,8 +27,7 @@ opts.k = 8;
 % opts.k = 32;
 % opts.k = 36;
 
-% kappa = 0;
-kappa = 0.5;
+kappa = 0;
 % kappa = 1;
 % kappa = 1.5;
 % kappa = 2;

@@ -8,8 +8,10 @@ opts.L = [-1, -0.5, 0, 0.5, 1];
 % opts.L = [-1, 0, 1];
 
 opts.harmonics = opp_harmonics();
+
 % opts.partition = 1;
-opts.partition = 2;
+% opts.partition = 2;
+opts.partition = 4;
 opts.TIME_INDEP = true;
 opts.early_stop = 0;
 opts.null_objective = false;
@@ -29,8 +31,8 @@ opts.k = 24;
 % opts.k = 32;
 % opts.k = 36;
 
-kappa = 0;
-% kappa = 0.5;
+% kappa = 0;
+kappa = 0.5;
 % kappa = 1;
 % kappa = 1.5;
 % kappa = 2;
@@ -70,8 +72,8 @@ opts.harmonics.bound_sin = [modulation, modulation; -0.01, 0.01];
 
 MG = opp_manager(opts);
 % order = 1;
-order = 2;
-% order = 3;
+% order = 2;
+order = 3;
 % order = 4;
 % order = 5;
 % order = 6;
@@ -110,7 +112,11 @@ if sol.status==0
         out_polish = opp_polish_RL(out2);
         bound_upper = out_polish.warm.tdd;
     else
-        out_polish = opp_polish_RL(out);
+        if kappa == 0
+            out_polish = opp_polish_qw(out2);
+        else
+            out_polish = opp_polish_RL(out);
+        end
         % out_polish = out;
         % out_polish.warm = 1;
         
