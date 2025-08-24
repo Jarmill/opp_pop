@@ -95,8 +95,8 @@ classdef opp_manager
 
             %if the start level is declared, then restrict the switching
             %structure
-            pulse_length = 2^(-double(opts.Symmetry)) * opts.k;
-            if isempty(opts.allowed_levels)
+            pulse_length = 2^(-double(opts_out.Symmetry)) * opts_out.k;
+            if isempty(opts_out.allowed_levels)
                 opts_out.allowed_levels = ones( pulse_length+1, N);
             end
 
@@ -163,8 +163,7 @@ classdef opp_manager
 
             if sol.status == 0
 
-                sol.blocksize = struct;
-                [sol.block_count, sol.block_size] = groupcounts(cellfun(@(c) size(c, 2), sol.dual_rec(2:end)))
+                [sol.block_count, sol.block_size] = groupcounts(cellfun(@(c) size(c, 2), sol.dual_rec(2:end)));
                 sol.mass = obj.mass_summary();
     
                 [~, mom_harm] = obj.sys1.con_harmonics();

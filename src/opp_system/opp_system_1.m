@@ -363,10 +363,10 @@ classdef opp_system_1 < opp_system_interface
                     con_curr = [];
                     for n = 1:(N-1)
                         if ~isnumeric(jub{n})
-                            con_curr = [con_curr; jub{n}-jda{n}==0];
+                            con_curr = [con_curr; jub{n}==jda{n}];
                         end
                         if ~isnumeric(jdb{n})
-                            con_curr = [con_curr;  jdb{n} - jua{n}==0];
+                            con_curr = [con_curr;  jdb{n} == jua{n}];
                         end                                                
                     end
                     
@@ -726,6 +726,25 @@ classdef opp_system_1 < opp_system_interface
             end
         end
     
+        function cs = current_square_summary(obj)
+            % cs = [];
+            K = length(obj.mode);
+            [N, P] = size(obj.mode{1}.levels);
+
+            cs = zeros(K, N);
+            for m=1:K
+                for n=1:N
+                    for p = 1:P
+                        if ~isempty(obj.mode{m}.levels{n, p}.sys{1}.meas_occ.supp)
+                            currsq = obj.mode{m}.levels{n, p}.sys{1}.meas_occ.vars.x(end)^2;
+                            cs(m, n) = cs(m, n) +  double(mom(currsq));
+                        end
+                    end
+                end
+            end
+            cscale = pi^3 * 2^double(obj.opts.Symmetry);
+            cs = cs * cscale;
+        end
 
         function ms = mass_summary(obj)
             %collect the masses of the occupation measure into a neat array
@@ -761,11 +780,16 @@ classdef opp_system_1 < opp_system_interface
             ms.harm = double(mom_harm);
         end
         function [load, load_candidate] = recover_load(obj)
+            %
+            %load:              initial current in the load
+            %load_candidate:    load current upon entering the state
+            %leaving the state
                 Mc = obj.mmat_corner();
                 ms = obj.mass_summary();
                 [N, P] = size(obj.mode{1}.levels);
                 Nmodes = length(obj.mode);
                 load_candidate = zeros(Nmodes+1, N)*NaN;
+ 
                 %get the initial current
                 I_ind = 4+obj.opts.clock;
                 for n =1:N

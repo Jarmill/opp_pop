@@ -48,10 +48,11 @@ for i = 1:Na
     dt = da(i);
     I_s(i+1) = ucurr*(1-exp(-tau*dt))/tau + Iprev*exp(-tau*dt);
 
-    a_range = (alpha_val >= ah(i)) & (alpha_val <= ah(i+1));
-    dt_range = alpha_val(a_range) - ah(i);
-    I_val(a_range) = ucurr*(1-exp(-tau*dt_range))/tau + Iprev*exp(-tau*dt_range);
-    
+    if N > 0
+        a_range = (alpha_val >= ah(i)) & (alpha_val <= ah(i+1));
+        dt_range = alpha_val(a_range) - ah(i);
+        I_val(a_range) = ucurr*(1-exp(-tau*dt_range))/tau + Iprev*exp(-tau*dt_range);
+    end
 end
 
 %compute the energy
@@ -73,12 +74,14 @@ end
 
 % energy = da'*E_s;
 energy = sum(E_s);
-
+out.energy_break = E_s;
 out.energy = energy;
 % out.I_avg = I_avg;
 out.I = I_s;
+if N
 out.I_val = I_val;
 out.alpha_val = alpha_val;
+end
 out.u = uf;
 
 %compute the energy

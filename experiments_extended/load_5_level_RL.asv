@@ -4,12 +4,12 @@ yalmip('clear')
 RESOLVE = 0;
 
 opts = opp_options;
-opts.L = [-1, -0.5, 0, 0.5, 1];
-% opts.L = [-1, 0, 1];
+% opts.L = [-1, -0.5, 0, 0.5, 1];
+opts.L = [-1, 0, 1];
 
 opts.harmonics = opp_harmonics();
-% opts.partition = 1;
-opts.partition = 2;
+opts.partition = 1;
+% opts.partition = 2;
 opts.TIME_INDEP = true;
 opts.early_stop = 0;
 opts.null_objective = false;
@@ -29,8 +29,8 @@ opts.k = 24;
 % opts.k = 32;
 % opts.k = 36;
 
-kappa = 0;
-% kappa = 0.5;
+% kappa = 0;
+kappa = 0.5;
 % kappa = 1;
 % kappa = 1.5;
 % kappa = 2;
@@ -50,13 +50,13 @@ opts.verbose = 0;
 % opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
 
 % modulation = 1;
-opts.harmonics.index_sin= [1;  3];
-opts.harmonics.bound_sin = [modulation, modulation; -0.01, 0.01];
+% opts.harmonics.index_sin= [1;  3];
+% opts.harmonics.bound_sin = [modulation, modulation; -0.01, 0.01];
 
 
-% opts.harmonics.index_sin= [1];
-% opts.harmonics.bound_sin = [modulation, modulation];
-
+opts.harmonics.index_sin= [1];
+opts.harmonics.bound_sin = [modulation, modulation];
+% 
 % opts.allowed_levels = [0 0 1 0 0;
 %                        0 0 0 1 0;
 %                        0 0 0 0 1;
@@ -70,8 +70,8 @@ opts.harmonics.bound_sin = [modulation, modulation; -0.01, 0.01];
 
 MG = opp_manager(opts);
 % order = 1;
-order = 2;
-% order = 3;
+% order = 2;
+order = 3;
 % order = 4;
 % order = 5;
 % order = 6;
@@ -106,13 +106,12 @@ if sol.status==0
         bound_lower2 = sol2.tdd_lower;
         bound_upper2 = out2.tdd_upper;
         bound_upper = out2.tdd_upper;        
-        % out_polish = opp_polish_qw(out2);
-        out_polish = opp_polish_RL(out2);
+        out_polish = opp_polish_qw(out2);
         bound_upper = out_polish.warm.tdd;
     else
-        out_polish = opp_polish_RL(out);
-        % out_polish = out;
-        % out_polish.warm = 1;
+        % out_polish = opp_polish_qw(out);
+        out_polish = out;
+        out_polish.warm = 1;
         
         
     end
@@ -147,7 +146,6 @@ if ~RESOLVE
     % xi_switch = out.pattern.I;
     thi = out.pattern.alpha_val;
     xi = out.pattern.I_val;
-    pI = out.pattern.I;
     % I0_rec = out.pattern.I(1);
 else
     pu = out2.pattern.u;
@@ -187,17 +185,17 @@ xlim([0, 2*pi])
 
 nexttile
 hold on
-plot(thi, -modulation/sqrt(1+kappa^2)*cos(thi + atan(kappa)), 'k', 'linewidth', 3);
+plot(thi, -modulation/(1+kappa)*cos(thi + atan(kappa)), 'k', 'linewidth', 3);
 plot(thi, xi, 'linewidth', 3, 'color', cc(2, :));
 plot([0, 2*pi], [0, 0], ':k')
-scatter([0, pa, 2*pi], pI, 100, cc(2, :), 'filled')
+scatter([0, out.pattern.alpha, 2*pi], out.pattern.I, 200, 'k', 'filled')
 ylabel('$I(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
 xlim([0, 2*pi]) 
 
 nexttile
 hold on
 % xi_query = interp1(thi,xi, th);
-res_xi = xi + modulation/sqrt(1+kappa^2)*cos(thi + atan(kappa));
+res_xi = xi + modulation/(1+kappa)*cos(thi + atan(kappa));
 plot(thi, res_xi, 'linewidth', 3, 'color', cc(3, :));
 plot([0, 2*pi], [0, 0], ':k')
 xlim([0, 2*pi])

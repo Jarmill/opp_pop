@@ -95,8 +95,8 @@ classdef opp_manager
 
             %if the start level is declared, then restrict the switching
             %structure
-            pulse_length = 2^(-double(opts.Symmetry)) * opts.k;
-            if isempty(opts.allowed_levels)
+            pulse_length = 2^(-double(opts_out.Symmetry)) * opts_out.k;
+            if isempty(opts_out.allowed_levels)
                 opts_out.allowed_levels = ones( pulse_length+1, N);
             end
 
@@ -519,7 +519,7 @@ classdef opp_manager
 
             % ms = obj.mass_summary();
             pattern_rec = obj.recover_pattern();
-            M = obj.mmat();
+            % M = obj.mmat();
 
             bound_lower = sol.obj_rec;
             if obj.opts.Z_load==0
@@ -542,7 +542,7 @@ classdef opp_manager
 
             opp_out = struct;
             opp_out.pattern = pattern_rec;
-            opp_out.M = M;
+            % opp_out.M = M;
             opp_out.sol = sol;
             opp_out.energy_lower = bound_lower;
             opp_out.energy_upper = bound_upper;
@@ -644,6 +644,7 @@ classdef opp_manager
                     pattern.I_val = outq.I_val;
                     pattern.alpha_val = outq.alpha_val;
                     pattern.I = outq.I;
+                    pattern.energy_break = outq.energy_break;
                 else
                     uf = pattern.u';
                     ah = [0; pattern.alpha'; 2*pi];               
