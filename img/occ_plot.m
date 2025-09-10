@@ -31,7 +31,7 @@ subplot(2, 2, [1, 2])
 hold on
 plot(a1_full, u1_full, 'linewidth', 2)
 plot(a2_full, u2_full, '--', 'linewidth', 2)
-title('Switching Signals $U_1$, $U_2$', 'Interpreter', 'latex', 'FontSize',14)
+title('Pulse Patterns $U_1$, $U_2$', 'Interpreter', 'latex', 'FontSize',18)
 % axis off
 xl = xlabel('$\theta$', 'interpreter', 'latex');
 xl.Position(2) = xl.Position(2) + 0.2;
@@ -40,12 +40,15 @@ xlim([0, 2*pi])
 
 subplot(2, 2, 3)
 imagesc(mass_1)
-title('Pure ($U_1$) Mass', 'interpreter', 'latex', 'FontSize',12)
+title('Pure Dwell Table $\xi^1$', 'interpreter', 'latex', 'FontSize',12)
 % colorbar
 clim([0, 2.6])
 % axis off
 ylabel('$n$', 'interpreter', 'latex')
 xlabel('$i$', 'interpreter', 'latex')
+yticks(1:3)
+yticklabels(3:-1:1)
+xticklabels(0:4)
 xl = xlim;
 yl = ylim;
 pbaspect([diff(xl), diff(yl), 1])
@@ -53,12 +56,15 @@ pbaspect([diff(xl), diff(yl), 1])
 
 subplot(2, 2, 4)
 imagesc(mass_mixed)
-title('Mixed ($0.6U_1 + 0.4U_2$) Mass', 'interpreter', 'latex', 'FontSize',12)
+title('Mixed Dwell Table $0.6 \xi^1 + 0.4 \xi^2$', 'interpreter', 'latex', 'FontSize',12)
 % cb= colorbar;
 clim([0, 2.6])
 % ylabel(cb,'Dwell Angle','FontSize',16,'Rotation',270, 'interpreter', 'latex')
 ylabel('$n$', 'interpreter', 'latex')
 xlabel('$i$', 'interpreter', 'latex')
+yticks(1:3)
+yticklabels(3:-1:1)
+xticklabels(0:4)
 % /axis off
 xl = xlim;
 yl = ylim;
