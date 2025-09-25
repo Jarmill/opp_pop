@@ -638,7 +638,7 @@ classdef opp_manager
                         outq = pulse_current_voltage_RL(uf, af, 0, 1000, kappa, pi*I0);
                     else
                         I0_send = pi*I0 + abs(obj.opts.uext)*cos(angle(obj.opts.uext));
-                        outq = pulse_current_voltage_RL_ext(uf, af, 0, 1000, kappa, I0_send, abs(obj.opts.uext), angle(obj.opts.uext));
+                        outq = pulse_current_voltage_RL_ext(uf, af, 0, 1000, kappa, I0_send, obj.opts.uext);
                     end
                     pattern.energy_I = outq.energy;
                     pattern.I_val = outq.I_val;

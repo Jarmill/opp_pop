@@ -20,9 +20,9 @@ Aext = -0.5;
 % Aext = -1;
 % Aext = 0;
 % Aext = -0.25;
-phiext = 0;
+% phiext = 0;
 % phiext = pi;
-% phiext = pi/3;
+phiext = pi/3;
 % phiext = pi/6;
 
 

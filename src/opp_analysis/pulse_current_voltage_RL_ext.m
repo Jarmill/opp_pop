@@ -158,8 +158,10 @@ energy_ext = pi*Aext^2/(kappa^2 + 1);
 energy = energy_pulse + energy_ext + 2*energy_mix;
 
 
+out.energy_break = E_s_mix + E_s + energy_ext;
+
 %compare the result against numerical integration
-energy_trapz = trapz(alpha_val, I_val.^2)
+energy_trapz = trapz(alpha_val, I_val.^2);
 
 ediff  = energy - energy_trapz;
 
