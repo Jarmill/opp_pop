@@ -142,7 +142,9 @@ classdef (Abstract) opp_mode_interface
                 tau = resistance/inductance;
                 % load_scale = 1/(2*pi);
                 % load_scale = 1/pi;
-                load_scale = 2*pi;                
+                load_scale = 2*pi;                 
+
+
 
                 f_load = -load_scale*(tau)*x_load*ones(1, N) + Lscale;
             else

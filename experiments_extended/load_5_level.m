@@ -1,31 +1,55 @@
 mset clear
 yalmip('clear')
 
-RESOLVE = 0;
-
 opts = opp_options;
+% opts.L = [-1, 0, 1];
 opts.L = [-1, -0.5, 0, 0.5, 1];
+% opts.L = [-1, 1];
+% opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
 opts.partition = 1;
-% opts.partition = 2;
 opts.TIME_INDEP = true;
 opts.early_stop = 0;
 opts.null_objective = false;
-% opts.Symmetry = 0;
 opts.Symmetry = 1;
 % opts.Symmetry = 2;
-opts.unipolar = 1;
-opts.quarter_match = 1;
+opts.unipolar = 1; %need to debug this
+% % opts.quarter_match = true;
 % opts.three_phase = "Balanced";
+% opts.three_phase = "Floating";
+opts.three_phase = "Ignore";
+
+%external voltage
+opts.uext = 0 + 0j;
+% opts.uext = 0.05+0j;
+% opts.uext = -0.1 + 0j;
+% opts.uext = -1 + 0j;
+% opts.uext = 0.5 * exp(-pi/3*1.0j);
+% opts.phiext = 0
+
+
+% opts.clock_split = true;% opts.clock = false;
+
 % opts.k = 4;
 opts.k = 8;
 % opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
 % opts.k = 24;
-% opts.k= 28;
-% opts.k = 32;
 % opts.k = 36;
+
+% opts.common_mode = 1;
+% opts.common_mode = 1/3;
+% opts.common_mode = 0;
+opts.common_mode = Inf;
+
+% opts.common_mode = 1/3;
+
+% modulation = 0.6;
+% modulation = 0.25;
+modulation = 0.8;
+% modulation = 0.5;
+% modulation = 1;
 
 kappa = 0;
 % kappa = 1;
@@ -34,45 +58,32 @@ kappa = 0;
 
 % opts.Z_load = 0;
 opts.Z_load = kappa/(2*pi*opts.f0) + 1.0j;
+% opts.Z_load = 4.0j;
 
-% modulation = 1.1;
-% modulation = 0.9;
-% modulation = 0.5;
-modulation = 0.8;
-% modulation = 1.05;
-% opts.Z_load = 1.0j;
-opts.verbose = 0;
+
+
+opts.harmonics.bound_sin = modulation*[1, 1];
+% opts.harmonics.bound_cos = [0,  0; 0.5, 0.5];
 
 %k=4 example
 % opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
 
 % modulation = 1;
-% opts.harmonics.index_sin= [1;  3];
-% opts.harmonics.bound_sin = [modulation, modulation; -0.01, 0.01];
+% opts.harmonics.index_cos = [opts.harmonics.index_cos; 2; 3; 4];
+% opts.harmonics.bound_cos = [opts.harmonics.bound_cos; 0, 0; 0, 0; -0.1, 0.1];
+% opts.harmonics.index_sin= [1; 2; 3; 4];
+% opts.harmonics.bound_sin = [modulation, modulation; 0, 0; 0, 0; -0.1, 0.1];
 
-
-opts.harmonics.index_sin= [1];
-opts.harmonics.bound_sin = [modulation, modulation];
-% 
-% opts.allowed_levels = [0 0 1 0 0;
-%                        0 0 0 1 0;
-%                        0 0 0 0 1;
-%                        0 0 0 1 0;
-%                        ones(14, 5)];
-% sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
 
 
 %% test a manager
 
 
 MG = opp_manager(opts);
-% order = 1;
-order = 2;
-% order = 3;
 % order = 4;
-% order = 5;
-% order = 6;
-% order = 7;
+% order = 3;
+% order = 2;
+order = 1;
 d = 2*order;
 
 sol = MG.run(order);
@@ -83,82 +94,63 @@ disp(sol)
 %% diagnose the solution
 if sol.status==0
     % m_out = MG.mmat();
-    ms = MG.mass_summary();
+    [ms1, ms3] = MG.mass_summary();
     pattern_rec = MG.recover_pattern();
 
-    % Mc = MG.mmat_corner();
+    [Mc1, Mc3] = MG.mmat_corner();
+    if opts.clock_split
+        mcc = MG.sysclock.mmat_corner();
+    else
+        mcc = [];
+    end
     % M = MG.mmat();
-    out = MG.recover(sol);
-
-    % harm_valid = out.pattern.harm_valid;
-    bound_upper = out.tdd_upper;
-    %solve again
-    if RESOLVE
-        opts2 = opts;
-        opts2.allowed_levels = out.pattern.levels;
-        MG2 = opp_manager(opts2);
-        sol2 = MG2.run(order);
-        out2 = MG2.recover(sol2);
-
-        bound_lower2 = sol2.obj_rec;
-        bound_upper2 = out2.tdd_upper;
-        bound_upper = out2.tdd_upper;        
-        out_polish = opp_polish_qw(out2);
-        bound_upper = out_polish.warm.tdd;
-    else
-        % out_polish = opp_polish_qw(out);
-        out_polish = out;
-        out_polish.warm = 1;
-        
-        
-    end
     
+    % Q = (eye(3) - ones(3)/3);
+    % if opts.three_phase == "Floating"
+    %     % Mcd = Mc.diff(4:6, 4:6);
+    % 
+    % else
+    %     Mcd = [];
+    % end
 
-    harm_valid = ~isempty(out_polish.warm);
-    
-    if harm_valid
-        validstr = ' Valid';
+
+    bound_lower = sol.obj_rec;
+    if imag(opts.Z_load)>0
+        bound_upper = pattern_rec.energy_I;
     else
-        validstr = ' Invalid';
+        bound_upper = pattern_rec.energy;
     end
+    bn_lower = sqrt(bound_lower/pi - modulation^2/(1+kappa^2));
+    bn_upper = sqrt(bound_upper/pi - modulation^2/(1+kappa^2));
+% save('experiments/k_16_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern_rec', 'ms', 'order')
+% save('experiments/k_8_full.mat', 'sol', 'opts', 'Mc', 'M', 'pattern', 'ms', 'order')
 
-
-    summary_str = strcat(sprintf('M=%0.1f, k=%d, Lower=%0.3e, Upper=%0.3e ', ...
-    modulation, opts.k, out.tdd_lower, bound_upper), ' ', validstr);
-
-
-
-fprintf(strcat(summary_str, '\n'));
+% M = MG.mmat();
 
 %% plotting 
-    %plot the signal
-    N = 1000;
-th = linspace(0, 2*pi, N);
+
+
+
+%plot the signal
+N_interp = 900;
+th = linspace(0, 2*pi, N_interp);
 
 %function
-if ~RESOLVE
-    pu = out.pattern.u;
-    pa = out.pattern.alpha;
-    thi = [0, pa, 2*pi];
-    xi = out.pattern.I;
-    % I0_rec = out.pattern.I(1);
-else
-    pu = out2.pattern.u;
-    pa = out2.pattern.alpha;
-    thi = [0, pa, 2*pi];
-    xi = out2.pattern.I;
-    % I0_rec = out2.pattern.I(1);
-end
+pu = pattern_rec.u;
+pa = pattern_rec.alpha;
 x = pulse_func(th, pu, pa);
-% I0_rec = M.modes{1}{2}.init(1,5);
-% I0_rec = M.modes{1}{3}.init(1,5);
 
+
+
+I0_rec = pattern_rec.I(1);
+% I0_rec = M.modes{1}{3}.init(1,5);
 %need to perform appropriate scaling
-% xi = 
+xi = pi*(cumsum(2*x)/(N_interp)) + I0_rec;
+
 % [t, y] = ode45(@(t, th) pulse_func(th, pattern.u, pattern.alpha), [0, 2*pi], I0_rec*pi);
 
 
-cc = linspecer(3);
+cc = linspecer(4);
 figure(1)
 clf
 tiledlayout(3, 1)
@@ -166,21 +158,29 @@ nexttile
 hold on
 plot(th, modulation*sin(th), 'k', 'linewidth', 3);
 plot(th, x, 'linewidth', 3, 'color', cc(1, :))
-plot([0, 2*pi], [0, 0], ':k')
 
 ylabel('$u(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
 
 xlim([0, 2*pi]) 
-% title(summary_str, ...
-    % 'FontSize',16, 'Interpreter', 'latex')
+title(sprintf('M=%0.1f, k=%d, Lower=%0.3f\\%%, Upper=%0.3f\\%%', modulation, opts.k, bn_lower, bn_upper), ...
+    'FontSize',16, 'Interpreter', 'latex')
 
 nexttile
 hold on
-plot(th, -modulation/(1+kappa)*cos(th + atan(kappa)), 'k', 'linewidth', 3);
-plot(thi, xi, 'linewidth', 3, 'color', cc(2, :));
-plot([0, 2*pi], [0, 0], ':k')
+plot(th, -modulation/(1+kappa)*(cos(th + atan(kappa))) - ...
+    abs(opts.uext)/(kappa^2+1)*(kappa*sin(th + angle(opts.uext)) - cos(th + angle(opts.uext))), 'k', 'linewidth', 3);
+if kappa > 0
+    plot(pattern_rec.alpha_val, pattern_rec.I_val, 'linewidth', 3, 'color', cc(2, :));
+else
+    plot(th, xi, 'linewidth', 3, 'color', cc(2, :));
+end
 ylabel('$I(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
-xlim([0, 2*pi]) 
+xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
+xlim([0, 2*pi])
+
+
+% th_interp = linspace(0, 2*pi, 900);
+% xi_interp = interp1(th,xi,th_interp);
 
 nexttile
 hold on
@@ -192,37 +192,63 @@ xlim([0, 2*pi])
 ylabel('$I(\theta)-I^*(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
 xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
 
-
-nmax = 20;
-[na, nb] = pulse_harmonics(nmax, pu, pa);
-% energy_L_h = pi*sum(((na(2:end).^2 + nb(2:end).^2)./(1:Nh)'.^2));
-% energy_L = sum(iL.^2)/N;
-
-
-% figure(4)
-% clf
-% hold on
-% % plot(th, -modulation*cos(th), 'k', 'linewidth', 3);
-
+% xa = x;
+% xb = circshift(xa, N_interp/3);
+% xc = circshift(xa, 2*N_interp/3);
 % 
-% figure(3)
-% clf
-% if opts.Symmetry == 2
-%     tiledlayout(1, 1)
-% else
-%     tiledlayout(2, 1)
-%     nexttile
-% % subplot(2, 1,  1)
-% hold on
-% stem(0:nmax, na)
-% title('Cosine Harmonics')
-% xlabel('n')
-% ylabel('a_n')
-% end
-% % subplot(2, 1, 2)
+% xcm = (xa + xb + xc)/3;
+% 
 % nexttile
-% stem(0:nmax,nb)
-% title('Sine Harmonics')
-% xlabel('n')
-% ylabel('b_n')
+% hold on
+% plot(th, xcm, 'linewidth', 3, 'color', cc(4, :))
+% plot([0, 2*pi], [0, 0], ':k')
+% if (opts.common_mode < Inf) && (opts.common_mode > 0)
+%     plot([0, 2*pi], [1, 1]*opts.common_mode, 'k')
+%     plot([0, 2*pi], -[1, 1]*opts.common_mode, 'k')
+%     ylim([-1, 1]*1.25*opts.common_mode)
+% end
+% xlim([0, 2*pi])
+% ylabel('$v_{cm}(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
+% xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
+
+
+
+figure(3)
+clf
+nmax = 21;
+[na, nb] = pulse_harmonics(nmax, pu, pa);
+
+
+di = 0:nmax;
+di = di(mod(di, 3) ~= 0);
+di = di(2:end); %drop the first harmonic
+energy_3 = sum((nb(di+1)./di').^2);
+subplot(2, 1,  1)
+hold on
+stem(0:nmax, na)
+title('Cosine Harmonics')
+xlabel('n')
+ylabel('a_n')
+subplot(2, 1, 2)
+stem(0:nmax, nb)
+title('Sine Harmonics')
+xlabel('n')
+ylabel('b_n')
 end
+
+
+%% external voltage support
+figure(5)
+% nexttile
+clf
+hold on
+plot(th, -modulation/(1+kappa)*(cos(th + atan(kappa))) - ...
+    abs(opts.uext)/(kappa^2+1)*(kappa*sin(th + angle(opts.uext)) - cos(th + angle(opts.uext))), 'k', 'linewidth', 3);
+if kappa > 0
+    plot(pattern_rec.alpha_val, pattern_rec.I_val, 'linewidth', 3, 'color', cc(2, :));
+else
+    plot(th, xi, 'linewidth', 3, 'color', cc(2, :));
+end
+ylabel('$I(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
+xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
+xlim([0, 2*pi])

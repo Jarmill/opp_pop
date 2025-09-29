@@ -3,7 +3,7 @@ yalmip('clear')
 
 opts = opp_options;
 % opts.L = [-1, 0, 1];
-opts.L = [-1, -0.5, 0, 0.5, 1];
+opts.L = [-1, -0.75, -0.5, 0, 0.5, 0.75, 1];
 % opts.L = [-1, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
@@ -35,8 +35,8 @@ opts.uext = 0 + 0j;
 % opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
-opts.k = 24;
-% opts.k = 36;
+% opts.k = 24;
+opts.k = 36;
 
 % opts.common_mode = 1;
 % opts.common_mode = 1/3;
@@ -47,12 +47,14 @@ opts.common_mode = Inf;
 
 % modulation = 0.6;
 % modulation = 0.25;
-modulation = 0.8;
+% modulation = 0.8;
 % modulation = 0.5;
 % modulation = 1;
+modulation = 0.95;
 
 % kappa = 0;
-kappa = 0.5;
+% kappa = 0.5;
+kappa = 1;
 % kappa = 1.5;
 % kappa = 2;
 
@@ -68,7 +70,7 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 %k=4 example
 % opts.allowed_levels = sparse(1:5, 2+[0, 1, 0, -1, 0], ones(5, 1));
 
-% modulation = 1;
+modulation = 1;
 % opts.harmonics.index_cos = [opts.harmonics.index_cos; 2; 3; 4];
 % opts.harmonics.bound_cos = [opts.harmonics.bound_cos; 0, 0; 0, 0; -0.1, 0.1];
 % opts.harmonics.index_sin= [1; 2; 3; 4];
@@ -128,7 +130,7 @@ if sol.status==0
 % M = MG.mmat();
 
     RESOLVE = 1;
-
+    out = MG.recover(sol);
     if RESOLVE
         opts2 = opts;
         opts2.allowed_levels = out.pattern.levels;
@@ -140,6 +142,9 @@ if sol.status==0
         bound_upper2 = out2.tdd_upper;
         bound_upper = out2.tdd_upper;        
         out_polish = opp_polish_RL(out2);
+        bound_upper = out_polish.warm.tdd;
+    else
+        out_polish = opp_polish_RL(out);
         bound_upper = out_polish.warm.tdd;
     end
 
@@ -195,19 +200,19 @@ plot(th, x, 'linewidth', 3, 'color', cc(1, :))
 ylabel('$u(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
 
 xlim([0, 2*pi]) 
-title(sprintf('M=%0.1f, k=%d, Lower=%0.3f\\%%, Upper=%0.3f\\%%', modulation, opts.k, bn_lower, bn_upper), ...
-    'FontSize',16, 'Interpreter', 'latex')
+% title(sprintf('M=%0.1f, k=%d, Lower=%0.3f\\%%, Upper=%0.3f\\%%', modulation, opts.k, bn_lower, bn_upper), ...
+    % 'FontSize',16, 'Interpreter', 'latex')
 
 nexttile
 hold on
 plot(th, -modulation/sqrt(1+kappa^2)*(cos(th + atan(kappa))) - ...
     abs(opts.uext)/(kappa^2+1)*(kappa*sin(th + angle(opts.uext)) - cos(th + angle(opts.uext))), 'k', 'linewidth', 3);
 if kappa > 0
-    plot(pattern_rec.alpha_val, pattern_rec.I_val, 'linewidth', 3, 'color', cc(2, :));
+    plot([pattern_rec.alpha_val], pattern_rec.I_val, 'linewidth', 3, 'color', cc(2, :));
 else
     plot(th, xi, 'linewidth', 3, 'color', cc(2, :));
 end
-scatter(pattern_rec.alpha, pattern_rec.I, 200, cc(2, :), 'filled');
+scatter([0; pattern_rec.alpha'; 2*pi], pattern_rec.I, 200, cc(2, :), 'filled');
 ylabel('$I(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
 xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
 xlim([0, 2*pi])
@@ -219,7 +224,7 @@ xlim([0, 2*pi])
 nexttile
 hold on
 % xi_query = interp1(thi,xi, th);
-res_xi = pattern_rec.I_val + modulation/(1+kappa)*cos(pattern_rec.alpha_val+ atan(kappa));
+res_xi = pattern_rec.I_val +modulation/sqrt(1+kappa^2)*(cos(pattern_rec.alpha_val + atan(kappa)));
 plot(pattern_rec.alpha_val, res_xi, 'linewidth', 3, 'color', cc(3, :));
 plot([0, 2*pi], [0, 0], ':k')
 xlim([0, 2*pi])
@@ -247,27 +252,27 @@ xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
 
 
 
-figure(3)
-clf
-nmax = 21;
-[na, nb] = pulse_harmonics(nmax, pu, pa);
+% figure(3)
+% clf
+% nmax = 21;
+% [na, nb] = pulse_harmonics(nmax, pu, pa);
 
-
-di = 0:nmax;
-di = di(mod(di, 3) ~= 0);
-di = di(2:end); %drop the first harmonic
-energy_3 = sum((nb(di+1)./di').^2);
-subplot(2, 1,  1)
-hold on
-stem(0:nmax, na)
-title('Cosine Harmonics')
-xlabel('n')
-ylabel('a_n')
-subplot(2, 1, 2)
-stem(0:nmax, nb)
-title('Sine Harmonics')
-xlabel('n')
-ylabel('b_n')
+% 
+% di = 0:nmax;
+% di = di(mod(di, 3) ~= 0);
+% di = di(2:end); %drop the first harmonic
+% energy_3 = sum((nb(di+1)./di').^2);
+% subplot(2, 1,  1)
+% hold on
+% stem(0:nmax, na)
+% title('Cosine Harmonics')
+% xlabel('n')
+% ylabel('a_n')
+% subplot(2, 1, 2)
+% stem(0:nmax, nb)
+% title('Sine Harmonics')
+% xlabel('n')
+% ylabel('b_n')
 end
 
 

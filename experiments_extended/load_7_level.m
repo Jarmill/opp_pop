@@ -3,11 +3,11 @@ yalmip('clear')
 
 opts = opp_options;
 % opts.L = [-1, 0, 1];
-opts.L = [-1, -0.5, 0, 0.5, 1];
+opts.L = [-1, -0.75, -0.5, 0, 0.5, 0.75, 1];
 % opts.L = [-1, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
-opts.partition = 2;
+opts.partition = 1;
 opts.TIME_INDEP = true;
 opts.early_stop = 0;
 opts.null_objective = false;
@@ -35,8 +35,8 @@ opts.uext = 0 + 0j;
 % opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
-opts.k = 24;
-% opts.k = 36;
+% opts.k = 24;
+opts.k = 36;
 
 % opts.common_mode = 1;
 % opts.common_mode = 1/3;
@@ -47,12 +47,12 @@ opts.common_mode = Inf;
 
 % modulation = 0.6;
 % modulation = 0.25;
-modulation = 0.8;
+% modulation = 0.8;
 % modulation = 0.5;
-% modulation = 1;
+modulation = 0.95;
 
 % kappa = 0;
-kappa = 0.5;
+kappa = 1;
 % kappa = 1.5;
 % kappa = 2;
 
@@ -127,38 +127,6 @@ if sol.status==0
 
 % M = MG.mmat();
 
-    RESOLVE = 1;
-
-    if RESOLVE
-        opts2 = opts;
-        opts2.allowed_levels = out.pattern.levels;
-        MG2 = opp_manager(opts2);
-        sol2 = MG2.run(order);
-        out2 = MG2.recover(sol2);
-
-        bound_lower2 = sol2.obj_rec;
-        bound_upper2 = out2.tdd_upper;
-        bound_upper = out2.tdd_upper;        
-        out_polish = opp_polish_RL(out2);
-        bound_upper = out_polish.warm.tdd;
-    end
-
-pattern_rec = out_polish.warm;
-
-% if ~RESOLVE
-%     pu = out.pattern.u;
-%     pa = out.pattern.alpha;
-%     thi = [0, pa, 2*pi];
-%     xi = out.pattern.I;
-%     % I0_rec = out.pattern.I(1);
-% else
-%     pu = out2.pattern.u;
-%     pa = out2.pattern.alpha;
-%     thi = [0, pa, 2*pi];
-%     xi = out2.pattern.I;
-%     % I0_rec = out2.pattern.I(1);
-% end
-
 %% plotting 
 
 
@@ -169,8 +137,7 @@ th = linspace(0, 2*pi, N_interp);
 
 %function
 pu = pattern_rec.u;
-pa = pattern_rec.alpha(2:end-1)';
-% x = pulse_func(th, pu, pa);
+pa = pattern_rec.alpha;
 x = pulse_func(th, pu, pa);
 
 
@@ -200,14 +167,13 @@ title(sprintf('M=%0.1f, k=%d, Lower=%0.3f\\%%, Upper=%0.3f\\%%', modulation, opt
 
 nexttile
 hold on
-plot(th, -modulation/sqrt(1+kappa^2)*(cos(th + atan(kappa))) - ...
+plot(th, -modulation/(1+kappa)*(cos(th + atan(kappa))) - ...
     abs(opts.uext)/(kappa^2+1)*(kappa*sin(th + angle(opts.uext)) - cos(th + angle(opts.uext))), 'k', 'linewidth', 3);
 if kappa > 0
     plot(pattern_rec.alpha_val, pattern_rec.I_val, 'linewidth', 3, 'color', cc(2, :));
 else
     plot(th, xi, 'linewidth', 3, 'color', cc(2, :));
 end
-scatter(pattern_rec.alpha, pattern_rec.I, 200, cc(2, :), 'filled');
 ylabel('$I(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
 xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
 xlim([0, 2*pi])
@@ -218,9 +184,9 @@ xlim([0, 2*pi])
 
 nexttile
 hold on
-% xi_query = interp1(thi,xi, th);
-res_xi = pattern_rec.I_val + modulation/(1+kappa)*cos(pattern_rec.alpha_val+ atan(kappa));
-plot(pattern_rec.alpha_val, res_xi, 'linewidth', 3, 'color', cc(3, :));
+xi_query = interp1(thi,xi, th);
+res_xi = xi_query + modulation/(1+kappa)*cos(th + atan(kappa));
+plot(th, res_xi, 'linewidth', 3, 'color', cc(3, :));
 plot([0, 2*pi], [0, 0], ':k')
 xlim([0, 2*pi])
 ylabel('$I(\theta)-I^*(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
@@ -276,10 +242,8 @@ figure(5)
 % nexttile
 clf
 hold on
-plot(th, -modulation/sqrt(1+kappa^2)*(cos(th + atan(kappa))), 'k', 'linewidth', 3);
-% plot(th, modulation/(1+kappa^2)*(kappa*sin(th + atan(kappa)) + cos(th + atan(kappa))), 'k', 'linewidth', 3);
-% plot(th, -modulation/(1+kappa)*(cos(th + atan(kappa))) - ...
-%     abs(opts.uext)/(kappa^2+1)*(kappa*sin(th + angle(opts.uext)) - cos(th + angle(opts.uext))), 'k', 'linewidth', 3);
+plot(th, -modulation/(1+kappa)*(cos(th + atan(kappa))) - ...
+    abs(opts.uext)/(kappa^2+1)*(kappa*sin(th + angle(opts.uext)) - cos(th + angle(opts.uext))), 'k', 'linewidth', 3);
 if kappa > 0
     plot(pattern_rec.alpha_val, pattern_rec.I_val, 'linewidth', 3, 'color', cc(2, :));
 else

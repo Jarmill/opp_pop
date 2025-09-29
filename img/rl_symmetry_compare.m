@@ -51,7 +51,7 @@ plot([pi, pi], [-1, 1], ':k','LineWidth',2)
 plot([pi/2, pi/2], [-1, 1], ':k','LineWidth',2)
 plot([pi*3/2, pi*3/2], [-1, 1], ':k','LineWidth',2)
 xlim([0, 2*pi]);
-title('$L=0$ (QW-Symmetric) \\', 'interpreter', 'latex', 'fontsize', 16)
+title('$L_{{load}}=0$ (QW-Symmetric) \\', 'interpreter', 'latex', 'fontsize', 16)
 axis off
 
 
@@ -62,7 +62,7 @@ plot([pi/2, pi/2], [-1, 1], ':k','LineWidth',2)
 plot([pi*3/2, pi*3/2], [-1, 1], ':k','LineWidth',2)
 % plot([0, 2*pi], [0, 0], '--k','LineWidth',0.5)
 plot(outL.alpha, outL.current, 'LineWidth',3, 'Color', c(1, :))
-title('$R=0$ (QW-Antisymmetric) \\', 'interpreter', 'latex', 'fontsize', 16)
+title('$R_{{load}}=0$ (QW-Antisymmetric) \\', 'interpreter', 'latex', 'fontsize', 16)
 xlim([0, 2*pi]);
 axis off
 
@@ -76,7 +76,7 @@ plot([pi/2, pi/2], [-1, 1], ':k','LineWidth',2)
 plot([pi*3/2, pi*3/2], [-1, 1], ':k','LineWidth',2)
 % plot([0, 2*pi], [0, 0], '--k','LineWidth',0.5)
 plot(outq.alpha_val, outq.I_val, 'LineWidth',3, 'Color', c(3, :))
-title('$R/L = 0.4$ (HW-Symmetric, not QW) \\', 'interpreter', 'latex', 'fontsize', 16)
+title('$R_{{load}}/L_{{load}} = 0.4$ (HW-Symmetric, not QW) \\', 'interpreter', 'latex', 'fontsize', 16)
 xlim([0, 2*pi]);
 axis off
 

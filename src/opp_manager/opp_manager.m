@@ -589,6 +589,7 @@ classdef opp_manager
             % energy:   energy in the switching sequence
             ms = obj.sys1.mass_summary;
             % L = obj.L;
+            n = length(obj.opts.L);
             
             mocc = sum(ms.mode, 3);
             [d, N] = size(mocc);
@@ -605,7 +606,7 @@ classdef opp_manager
             alpha_pre = cumsum(ang(1:end-1));
             u_base = obj.opts.L(ind)';
 
-            pattern.levels = sparse(1:d, ind, ones(1, d));
+            pattern.levels = sparse(1:d, ind, ones(1, d), d, n);
             switch obj.opts.Symmetry
                 case 0
                     alpha_base= 2*pi*alpha_pre;
@@ -637,7 +638,8 @@ classdef opp_manager
                     if (obj.opts.uext)==0
                         outq = pulse_current_voltage_RL(uf, af, 0, 1000, kappa, pi*I0);
                     else
-                        I0_send = pi*I0 + abs(obj.opts.uext)*cos(angle(obj.opts.uext));
+                        I0_ext = abs(obj.opts.uext)*cos(angle(obj.opts.uext))/sqrt(1+kappa^2);
+                        I0_send = pi*I0  - I0_ext;
                         outq = pulse_current_voltage_RL_ext(uf, af, 0, 1000, kappa, I0_send, obj.opts.uext);
                     end
                     pattern.energy_I = outq.energy;
