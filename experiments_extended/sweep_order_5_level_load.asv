@@ -53,13 +53,12 @@ result_resolve.solver_time  = NaN*ones(Nkappa, Norder);
 result_resolve.preprocess_time  = NaN*ones(Nkappa, Norder);
 
 for jj = 1:Nkappa       
-    % opts
+    
     if kappalist(jj)==Inf
-        opts.Z_load = 0;
+        MG.opts.Z_load = 0;
     else
-        opts.Z_load = kappalist(jj) + 1.0j;
+        MG.opts.Z_load = kappalist(jj) + 1.0j;
     end
-    MG = opp_manager(opts);
     for i = 1:Norder    
         
         order = orderlist(i); 
