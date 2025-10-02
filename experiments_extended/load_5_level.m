@@ -51,8 +51,8 @@ modulation = 0.8;
 % modulation = 0.5;
 % modulation = 1;
 
-kappa = 0;
-% kappa = 1;
+% kappa = 0;
+kappa = 0.5;
 % kappa = 1.5;
 % kappa = 2;
 

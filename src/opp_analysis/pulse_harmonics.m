@@ -1,5 +1,5 @@
 function [na, nb] = pulse_harmonics(nmax, u, alpha)
-%Find the nth harmonic of the pulse function
+%Find harmonics of the pulse function up to order n
 %
 % na = int cos(n th) x(th) d th
 % nb = int sin(n th) x(th) d th

@@ -122,3 +122,7 @@ end
 file = matopen("she_gen_08_1.mat", "w")
 write(file, "root_list_all", root_list_all)
 close(file)
+
+file = matopen("she_gen_08_1_valid.mat", "w")
+write(file, "root_list", root_list)
+close(file)

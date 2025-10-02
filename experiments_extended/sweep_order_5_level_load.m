@@ -6,7 +6,7 @@ RESOLVE = false;
 opts = opp_options;
 opts.L = [-1, -0.5, 0, 0.5, 1];
 opts.harmonics = opp_harmonics();
-opts.partition = 1;
+opts.partition = 2;
 opts.TIME_INDEP = true;
 opts.early_stop = 0;
 opts.null_objective = false;
@@ -95,7 +95,7 @@ for jj = 1:Nkappa
                     result_resolve.solver_time(i, jj) = out2.sol.solver_time;
                     result_resolve.preprocess_time(i, jj) = out2.sol.preprocess_time;
                     fprintf('restricted order %d: tdd>=%0.4e', order, out2.tdd_lower)
-                    save('order_sweep_5_load.mat','result_std', 'result_resolve')
+                    save('order_sweep_5_load_rev.mat','result_std', 'result_resolve')
                 end
             end
         end
