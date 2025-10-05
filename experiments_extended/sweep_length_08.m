@@ -78,12 +78,12 @@ for jj = 1:Nk
             ms = MG.mass_summary();
             pattern_rec = MG.recover_pattern();
             out = MG.recover(sol);
-            result_std.out{i, jj} = out;
+            result_std.out{jj, i} = out;
         
             % harm_valid = out.pattern.harm_valid;
-            result_std.tdd_lower(i, jj) = out.tdd_lower;
-            result_std.solver_time(i, jj) = out.sol.solver_time;
-            result_std.preprocess_time(i, jj) = out.sol.preprocess_time;
+            result_std.tdd_lower(jj, i) = out.tdd_lower;
+            result_std.solver_time(jj, i) = out.sol.solver_time;
+            result_std.preprocess_time(jj, i) = out.sol.preprocess_time;
     
             fprintf('unipolar k=%d, order %d: tdd>=%0.4e', klist(jj), order, out.tdd_lower)
             %solve again.
@@ -94,15 +94,17 @@ for jj = 1:Nk
                 sol2 = MG2.run(order);
                 if sol2.status == 0
                     out2 = MG2.recover(sol2);
-                    result_resolve.out{i, jj} = out2;
+                    result_resolve.out{jj, i} = out2;
         
                     % harm_valid = out.pattern.harm_valid;
-                    result_resolve.tdd_lower(i, jj) = out2.tdd_lower;
-                    result_resolve.solver_time(i, jj) = out2.sol.solver_time;
-                    result_resolve.preprocess_time(i, jj) = out2.sol.preprocess_time;
+                    result_resolve.tdd_lower(jj, i) = out2.tdd_lower;
+                    result_resolve.solver_time(jj, i) = out2.sol.solver_time;
+                    result_resolve.preprocess_time(jj, i) = out2.sol.preprocess_time;
                     fprintf('restricted order %d: energy >= %0.4e, tdd>=%0.4e \n', order, out2.energy, out2.tdd_lower)
                     save('order_sweep_5_load_k.mat','result_std', 'result_resolve')
                 end
+            else
+                save('order_sweep_5_load_length.mat','result_std', 'orderlist', 'klist', 'opts')
             end
         end
     end
