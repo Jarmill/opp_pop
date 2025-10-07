@@ -130,6 +130,18 @@ if sol.status==0
 %% plotting 
 
 
+[out2] = pulse_current_voltage_RL(out_polish.warm.u', out_polish.warm.alpha,...
+    0, 1000, kappa, out_polish.warm.I_q);
+pu = out2.u;
+    pa = out2.alpha;
+    % thi = [0, pa, 2*pi];
+    % xi = out2.I;
+    thi = out2.alpha_val;
+    xi = out2.I_val;
+
+I_ref = modulation^2*pi*(1/(1+kappa));
+tdd_lower = sqrt(out.energy_lower - I_ref);
+tdd_upper = sqrt(out_polish.warm.objective - I_ref);
 
 %plot the signal
 N_interp = 900;
@@ -145,7 +157,7 @@ x = pulse_func(th, pu, pa);
 I0_rec = pattern_rec.I(1);
 % I0_rec = M.modes{1}{3}.init(1,5);
 %need to perform appropriate scaling
-xi = pi*(cumsum(2*x)/(N_interp)) + I0_rec;
+% xi = pi*(cumsum(2*x)/(N_interp)) + I0_rec;
 
 % [t, y] = ode45(@(t, th) pulse_func(th, pattern.u, pattern.alpha), [0, 2*pi], I0_rec*pi);
 
@@ -162,18 +174,20 @@ plot(th, x, 'linewidth', 3, 'color', cc(1, :))
 ylabel('$u(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
 
 xlim([0, 2*pi]) 
-title(sprintf('M=%0.1f, k=%d, Lower=%0.3f\\%%, Upper=%0.3f\\%%', modulation, opts.k, bn_lower, bn_upper), ...
-    'FontSize',16, 'Interpreter', 'latex')
+% title(sprintf('M=%0.2f, k=%d, Lower=%0.3f\\%%, Upper=%0.3f\\%%', modulation, opts.k, 100*tdd_lower, 100*tdd_upper), ...
+    % 'FontSize',16, 'Interpreter', 'latex')
 
 nexttile
 hold on
-plot(th, -modulation/(1+kappa)*(cos(th + atan(kappa))) - ...
+plot(th, -modulation/sqrt(1+kappa^2)*(cos(th + atan(kappa))) - ...
     abs(opts.uext)/(kappa^2+1)*(kappa*sin(th + angle(opts.uext)) - cos(th + angle(opts.uext))), 'k', 'linewidth', 3);
-if kappa > 0
-    plot(pattern_rec.alpha_val, pattern_rec.I_val, 'linewidth', 3, 'color', cc(2, :));
-else
-    plot(th, xi, 'linewidth', 3, 'color', cc(2, :));
-end
+scatter(out_polish.warm.alpha, out_polish.warm.I(2:end-1), 100, ...
+     cc(2, :), 'filled')
+% if kappa > 0
+    % plot(pattern_rec.alpha_val, pattern_rec.I_val, 'linewidth', 3, 'color', cc(2, :));
+% else
+    plot(thi, xi, 'linewidth', 3, 'color', cc(2, :));
+% end
 ylabel('$I(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
 xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
 xlim([0, 2*pi])
@@ -184,9 +198,12 @@ xlim([0, 2*pi])
 
 nexttile
 hold on
-xi_query = interp1(thi,xi, th);
-res_xi = xi_query + modulation/(1+kappa)*cos(th + atan(kappa));
-plot(th, res_xi, 'linewidth', 3, 'color', cc(3, :));
+res_xi = xi + modulation/sqrt(1+kappa^2)*cos(thi + atan(kappa));
+plot(thi, res_xi, 'linewidth', 3, 'color', cc(3, :));
+
+% xi_query = interp1(thi,xi, th);
+% res_xi = xi_query + modulation/(1+kappa)*cos(th + atan(kappa));
+% plot(th, res_xi, 'linewidth', 3, 'color', cc(3, :));
 plot([0, 2*pi], [0, 0], ':k')
 xlim([0, 2*pi])
 ylabel('$I(\theta)-I^*(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
@@ -212,6 +229,7 @@ xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
 % xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
 
 
+%%
 
 figure(3)
 clf
