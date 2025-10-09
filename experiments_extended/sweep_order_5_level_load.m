@@ -95,9 +95,10 @@ for jj = 1:Nkappa
                     result_resolve.solver_time(i, jj) = out2.sol.solver_time;
                     result_resolve.preprocess_time(i, jj) = out2.sol.preprocess_time;
                     fprintf('restricted order %d: tdd>=%0.4e', order, out2.tdd_lower)
-                    save('order_sweep_5_load_rev.mat','result_std', 'result_resolve')
+                    
                 end
             end
+            save('order_sweep_5_load_rev.mat','result_std', 'result_resolve')
         end
     end
         

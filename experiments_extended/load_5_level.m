@@ -47,9 +47,9 @@ opts.common_mode = Inf;
 
 % modulation = 0.6;
 % modulation = 0.25;
-modulation = 0.8;
+% modulation = 0.8;
 % modulation = 0.5;
-% modulation = 1;
+modulation = 1.25;
 
 % kappa = 0;
 kappa = 0.5;
@@ -82,8 +82,8 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 MG = opp_manager(opts);
 % order = 4;
 % order = 3;
-% order = 2;
-order = 1;
+order = 2;
+% order = 1;
 d = 2*order;
 
 sol = MG.run(order);
@@ -162,7 +162,7 @@ plot(th, x, 'linewidth', 3, 'color', cc(1, :))
 ylabel('$u(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
 
 xlim([0, 2*pi]) 
-title(sprintf('M=%0.1f, k=%d, Lower=%0.3f\\%%, Upper=%0.3f\\%%', modulation, opts.k, bn_lower, bn_upper), ...
+title(sprintf('M=%0.2f, k=%d, Lower=%0.3f\\%%, Upper=%0.3f\\%%', modulation, opts.k, bn_lower, bn_upper), ...
     'FontSize',16, 'Interpreter', 'latex')
 
 nexttile
