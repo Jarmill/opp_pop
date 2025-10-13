@@ -628,10 +628,11 @@ classdef opp_manager
             pattern.energy = (obj.opts.L(ind).^2)*(2*pi*ang)/(2*pi);
 
 
-            [I0, Ic] = obj.recover_load();
+            
 
             % I_val = mom(obj.levels{(length(obj.opts.L)-1)/2+1, 1});
             if imag(obj.opts.Z_load) > 0
+                [I0, Ic] = obj.recover_load();
                 if real(obj.opts.Z_load) > 0
                     kappa = real(obj.opts.Z_load)/imag(obj.opts.Z_load) * (2 * pi * obj.opts.f0); 
                     

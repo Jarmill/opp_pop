@@ -56,8 +56,8 @@ kappa = 0.5;
 % kappa = 1.5;
 % kappa = 2;
 
-% opts.Z_load = 0;
-opts.Z_load = kappa/(2*pi*opts.f0) + 1.0j;
+opts.Z_load = 0;
+% opts.Z_load = kappa/(2*pi*opts.f0) + 1.0j;
 % opts.Z_load = 4.0j;
 
 
@@ -141,8 +141,11 @@ pa = pattern_rec.alpha;
 x = pulse_func(th, pu, pa);
 
 
-
-I0_rec = pattern_rec.I(1);
+if opts.Z_load == 0
+    I0_rec = [];
+else
+    I0_rec = pattern_rec.I(1);
+end
 % I0_rec = M.modes{1}{3}.init(1,5);
 %need to perform appropriate scaling
 xi = pi*(cumsum(2*x)/(N_interp)) + I0_rec;
