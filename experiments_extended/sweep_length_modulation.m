@@ -1,6 +1,3 @@
-mset clear
-yalmip('clear')
-
 %sweep on pulse length and order
 %keep 
 
@@ -18,7 +15,7 @@ opts.unipolar = 1;
 opts.quarter_match = 0;
 
 modulation_list = linspace(0.05, 1.25);
-order = 4;
+order = 3;
 
 % modulation = 0.8;
 kappa = 1;
@@ -35,6 +32,9 @@ opts.harmonics.bound_sin = [modulation, modulation];
 %% iterate over the orders
 modulationlist = 0.05:0.05:1.25;
 klist = 8:4:40;
+% modulationlist = 1;
+% klist = [8, 12];
+
 
 % modulationlist = 0.8;
 % klist = 12;
@@ -66,10 +66,13 @@ for jj = 1:Nk
     
 % for jj = 4:4
     % opts
+    mset clear
+    yalmip('clear')
     opts.k = klist(jj);
     opts.harmonics.bound_sin(1, :) = [1, 1] * modulationlist(i); 
     MG = opp_manager(opts);
     % for i = 2:2
+    
         
         
         
@@ -81,9 +84,9 @@ for jj = 1:Nk
             ms = MG.mass_summary();
             pattern_rec = MG.recover_pattern();
             out = MG.recover(sol);
-            out_polish = opp_polish_RL(out);
+            % out_polish = opp_polish_RL(out);
             result_std.out{jj, i} = out;
-            result_std.out_polish{jj, i} = out_polish;
+            % result_std.out_polish{jj, i} = out_polish;
         
             % harm_valid = out.pattern.harm_valid;
             result_std.tdd_lower(jj, i) = out.tdd_lower;
@@ -106,8 +109,8 @@ for jj = 1:Nk
                     result_resolve.tdd_lower(jj, i) = out2.tdd_lower;
                     result_resolve.solver_time(jj, i) = out2.sol.solver_time;
                     result_resolve.preprocess_time(jj, i) = out2.sol.preprocess_time;
-                    fprintf('restricted order %d: energy >= %0.4e, tdd>=%0.4e \n', order, out2.energy, out2.tdd_lower)
-                    save('order_sweep_5_mod.mat','result_std', 'result_resolve')
+                    fprintf('Resolve: unipolar k=%d, modulation %d: tdd>=%0.4e', klist(jj), modulationlist(i), out.tdd_lower)
+                    save('order_sweep_5_length_mod_2.mat','result_std', 'result_resolve')
                 end
             else
                 save('order_sweep_5_load_mod.mat','result_std', 'modulationlist', 'klist', 'opts')
