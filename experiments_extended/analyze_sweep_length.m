@@ -1,13 +1,17 @@
-% load('order_sweep_5_load_rev.mat');
+load('order_sweep_5_load_length.mat');
 
 en =  cellfun(@(c) c.energy_lower, result_std.out);
 
+modulation = 0.8;
+orderlist = 1:6;
+klist = 8:4:40;
+kappa = 1;
 
-en_lb = modulation^2 * pi * 1/(1+kappa^2);
+en_lb = modulation.^2 * pi * 1/(1+kappa^2);
 
 en_diff = en - en_lb;
 en_diff0 = max(en_diff, zeros(size(en_diff)));
-tdd_lower = sqrt(en_diff0);
+tdd_lower = sqrt(en_diff0/pi);
 
 FS = 14;
 

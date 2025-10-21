@@ -1,4 +1,4 @@
-% load('order_sweep_5_load_mod.mat');
+load('order_sweep_5_load_mod.mat');
 
 % modulation = 0.8;
 % modulationlist = [0, 0.1, 0.5, 1, 2 5];
@@ -16,7 +16,7 @@ en_lb = modulationlist.^2 * pi .* 1./(1+kappa.^2);
 % 
 en_diff = en - en_lb;
 en_diff0 = max(en_diff, zeros(size(en_diff)));
-tdd_lower = sqrt(en_diff0);
+tdd_lower = sqrt(en_diff0/pi);
 
 FS = 14;
 figure(5)
