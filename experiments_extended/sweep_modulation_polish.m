@@ -15,7 +15,10 @@ Nmod = length(modulationlist);
 polish_out = cell(Nk, Nmod);
 
 %% main loop
-for jj = 5:Nk
+% for jj = 5:Nk
+% for jj = Nk:Nk
+for jj = 5:5;
+    % i = 2;
     i = 1;
     % parfor i = 1:Nmod  
         outcurr = result_std.out{jj, i};

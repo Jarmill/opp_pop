@@ -1,6 +1,10 @@
-function [out] = opp_polish_RL(osc)
-%OPP_POLISH_RL take a pattern solution from the SDP and try to generate a 
+function [out] = opp_polish_RL_blackbox(osc)
+%OPP_POLISH_RL_blackbox take a pattern solution from the SDP and try to generate a 
 %feasible  solution using fmincon (under a fixed switching sequence)
+%
+%black-box some of the evaluations to make the optimization faster
+%
+%
 %
 %Input: 
 %   osc:    the output structure of opp_manager.recover()
@@ -69,48 +73,10 @@ else
     af= [a; pi - a(end:-1:1); pi + a; 2*pi - a(end:-1:1)];
 end
 
-ah = [0; af; 2*pi];
-da = diff(ah);
-
-%compute the current
-% I0 = 0;
-% I_step = uf.*da;
-% I0_val = cumsum([0; I_step]);
-
-I_s = I0*ones(size(ah));
-
-alpha_val = linspace(0, 2*pi, N);
-I_val = zeros(1, N);
-I_val(1) = I0;
-
-Na = (length(I_s)-1);
-
-%compute the current
-for i = 1:Na
-    ucurr = uf(i);
-    Iprev = I_s(i);
-    dt = da(i);
-    I_s(i+1) = ucurr*(1-exp(-kappa*dt))/kappa + Iprev*exp(-kappa*dt);
-end
-
-%compute the energy
-% E_s = zeros(Na, 1)*a(1);
-energy = 0;
-for i = 1:Na
-    ucurr = uf(i);
-    Iprev = I_s(i);
-    dt = da(i);
-
-    E0 = (ucurr-kappa*Iprev)*(3*ucurr + kappa*Iprev);
-    E_denom = 2*kappa^3;
-    E_num_1 = 2*ucurr^2*kappa*dt;
-    E_num_2 = exp(-2*kappa*dt)*(ucurr - kappa*Iprev) * ...
-        (kappa*Iprev + ucurr*(4*exp(kappa*dt)-1));
-    
-    energy = energy +  (E_num_1 + E_num_2 - E0)/E_denom;
-end
-
-objective = energy;
+x_in = [af; I0];
+E_out = blackbox(x_in, @energy_blackbox);
+objective = E_out(1);
+I_end = E_out(2);
 
 %% form the harmonics constraints
 harm = osc.opts.harmonics;
@@ -155,34 +121,19 @@ harm_pattern = [na(harm.index_cos+1);
 
 harm_tol = 1e-4;
 con_harm = harmonics_process(harm, harm_pattern, harm_tol);
-% [harm_pattern, con_harm] = pulse_harmonics_evaluate(struct('u', osc.pattern.u, 'alpha', alpha), harm, tol);
+
+
+
 
 %% form the ordering constraints
 Theta = osc.opts.f0*osc.opts.Ts*2*pi;
 acirc = [af; 2*pi + af(1)];
 dacirc = diff(acirc);
 con_order = dacirc >= Theta;
-% con_order = [da >= 0 ];
-% if Sym == 2
-%     Theta_lim = Theta*[0.5; ones(length(da)-1, 1); 0.5];
-% else
-%     Theta_lim = Theta*[0; ones(length(da)-1, 1)];
-% end
-% Theta_lim = 0;
-% adiff = (da - Theta_lim);
-% con_order = adiff>=0;
-
-% E_start = replace(E_all, [I0; a], [I0_start; alpha_start]);
-
 
 %% assemble and solve
-% cons = [con_harm; con_order];
 
-% cons = [con_harm; con_order; I<=0; diff(I) <= 0];
-% cons = [con_harm; con_order; I_s(1)<=0];
-% cons = [con_order; con_harm];
-cons = [con_harm; con_order; I0 <= 0; I0 == I_s(end)];
-% cons = [con_order; I0 <= 0];
+cons = [con_harm; con_order; I0 <= 0; I0 == I_end];
 feval_max = 1000;
 
 solver = 'fmincon';

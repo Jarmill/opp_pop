@@ -1,3 +1,3 @@
 load('harm_curr.mat')
 
-out_polish = opp_polish_RL(out);
+out_polish = opp_polish_RL_blackbox(out);
