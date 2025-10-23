@@ -163,8 +163,8 @@ con_harm = harmonics_process(harm, harm_pattern, harm_tol);
 Theta = osc.opts.f0*osc.opts.Ts*2*pi;
 acirc = [af; 2*pi + af(1)];
 dacirc = diff(acirc);
-% con_order = dacirc >= Theta;
-con_order = [da >= 0 ];
+con_order = dacirc >= Theta;
+% con_order = [da >= 0 ];
 % if Sym == 2
 %     Theta_lim = Theta*[0.5; ones(length(da)-1, 1); 0.5];
 % else

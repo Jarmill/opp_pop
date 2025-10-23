@@ -14,13 +14,15 @@ Nmod = length(modulationlist);
 
 polish_out = cell(Nk, Nmod);
 
-for jj = 1:Nk
-    parfor i = 1:Nmod  
+%% main loop
+for jj = 5:Nk
+    i = 1;
+    % parfor i = 1:Nmod  
         outcurr = result_std.out{jj, i};
         polish_out{jj, i} = opp_polish_RL(outcurr);
 
         fprintf('polish: k=%d, M=%0.2f', klist(jj), modulationlist(i));
-    end
+    % end
     save('order_sweep_5_load_mod_polish.mat', 'polish_out');
 end
 
@@ -28,4 +30,5 @@ end
 %% analyze
 en_polish = cellfun(@(p) p.warm.objective, polish_out);
 % en_out = cellfun(@(p) p.warm.objective, polish_out);
-en_gap = en_polish - result_std.energy(1, :)
+% en_gap = en_polish - result_std.energy(1, :)
+en_gap = en_polish - result_std.energy;
