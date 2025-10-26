@@ -207,7 +207,7 @@ if sol_cold.problem ==0
     % b_cold = value(b);
     % a_cold_full = [a_cold; pi-a_cold(end:-1:1); a_cold+pi; 2*pi - a_cold(end:-1:1)];    
     % I_cold_full = [I_cold(1:end-1); -I_cold(end-1:-1:2); -I_cold(2:end-1); I_cold(end-1:-1:1)];
-    tdd_cold = sqrt(E_cold/pi - modulation^2);
+    tdd_cold = sqrt(E_cold/pi - modulation^2 / (1+kappa^2));
     out.cold = struct('alpha', a_cold,  'u', osc.pattern.u,'I', I_cold, 'objective', E_cold,  'tdd', tdd_cold,...
         'na', value(na), 'nb', value(nb), 'solvertime', sol_cold.solvertime, 'yalmiptime', sol_cold.yalmiptime);
 else
@@ -227,7 +227,7 @@ if sol_warm.problem == 0
     % b_warm = value(b);
     a_warm_full = value(af);    
     I_warm_full = value(I_s);
-    tdd_warm = sqrt(E_warm/pi - modulation^2);
+    tdd_warm = sqrt(E_warm/pi - modulation^2 / (1+kappa^2));
     out.warm = struct('alpha', a_warm_full, 'alpha_q', a_warm, 'u', osc.pattern.u, ...
         'I', I_warm_full, 'I_q', I_warm, 'objective', E_warm,  'tdd', tdd_warm,...
         'solvertime', sol_warm.solvertime, 'yalmiptime', sol_warm.yalmiptime);

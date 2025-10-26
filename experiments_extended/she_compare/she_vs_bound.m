@@ -71,7 +71,8 @@ for i = 1:Nd
     end
 end
 
-save('she_output_sweep_ex2_result.mat', 'en_she', 'na_she', 'nb_she', 'drange', 'Mrange')
+save('she_output_sweep_ex2_result.mat', 'en_she', 'na_she', 'nb_she', ...
+    'en_she_space', 'drange', 'Mrange');
 
 
 %% visualize
@@ -107,8 +108,10 @@ ylabel('$k$', 'interpreter', 'latex')
 % xlabel('$M$', 'interpreter', 'latex')
 xticks(1:length(mod_list))
 xticklabels(mod_list)
-yticklabels(drange)
-title('$\alpha_{i+1}-\alpha_i \geq \Theta$', 'interpreter', 'latex', 'FontSize', 18)
+
+yticks(1:9)
+yticklabels(4*drange)
+title('Valid SHE: $\alpha_{i+1}-\alpha_i \geq \Theta$', 'interpreter', 'latex', 'FontSize', 18)
 % cb = colorbar(); 
 % cb.Ticks = linspace(0, 0.025, 6);
 % yl = ylabel(cb,'$TDD[I_{SHE}] - p^*_3$','FontSize',16, 'interpreter', 'latex');
@@ -125,11 +128,12 @@ ylabel('$k$', 'interpreter', 'latex')
 xlabel('$M$', 'interpreter', 'latex')
 xticks(1:length(mod_list))
 xticklabels(mod_list)
-yticklabels(drange)
+yticks(1:9)
+yticklabels(4*drange)
 
 yl = ylabel(cb,'$TDD[I_{SHE}] - p^*_3$','FontSize',16, 'interpreter', 'latex');
 
-title('$\alpha_{i+1}-\alpha_i \geq 0$', 'interpreter', 'latex', 'FontSize', 18)
+title('All SHE: $\alpha_{i+1}-\alpha_i \geq 0$', 'interpreter', 'latex', 'FontSize', 18)
 xll = diff(xlim);
 yll = diff(ylim);
 pbaspect([xll, yll, 1])

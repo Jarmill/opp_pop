@@ -23,16 +23,33 @@ Nmod = length(modulationlist);
     % i = 2;
     % i = 1;
 % Theta = pi/100;
-for jj = 1:Nk
-    for i = 1:Nmod
-    % parfor i = 1:Nmod  
-        af = polish_out{jj, i}.warm.alpha_q;
-        acirc = [af; 2*pi + af(1)];
-        dacirc = diff(acirc);
-        con_order = dacirc >= Theta;
-
-        if any(~con_order)
+% for jj = 1:Nk
+    % for i = 1:Nmod
+for jj = Nk:Nk
+    for i = Nmod:Nmod
+    % parfor i = 1:Nmod
+        redo = false;
+        if isempty(polish_out{jj, i}.warm)
+            redo = true;
+        else
+            af = polish_out{jj, i}.warm.alpha_q;
+            acirc = [af; 2*pi + af(1)];
+            dacirc = diff(acirc);
+            con_order = dacirc >= Theta;
+    
+            if any(~con_order)
+                redo = true;
+            end
+        end
+        if redo            
             outcurr = result_std.out{jj, i};
+            
+            %FINAL FIX:
+            %use previously computed data
+            outprev = result_std.out{jj, i-1};
+
+            outcurr.pattern = outprev.pattern;
+
             polish_out{jj, i} = opp_polish_RL(outcurr);
     
             sprintf('polish: k=%d, M=%0.2f', klist(jj), modulationlist(i));

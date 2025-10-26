@@ -32,9 +32,15 @@ end
 
 en_diff_polish = en_polish - en_lb;
 % en_diff0_polish = max(en_diff_polish, zeros(size(en_diff)));
-tdd_polish = sqrt(en_diff0_polish/pi);
+tdd_polish = sqrt(en_diff_polish/pi);
 
 tdd_diff = tdd_polish - tdd_lower;
+
+%SHE
+load('she_output_sweep_ex2_result.mat', 'en_she', 'en_she_space', 'na_she', 'nb_she', 'drange', 'Mrange')
+tdd_she = sqrt(en_she/pi - (Mrange').^2/(1+kappa^2));
+tdd_she_space = sqrt(en_she_space/pi - (Mrange').^2/(1+kappa^2));
+
 
 %% plots
 
@@ -80,97 +86,51 @@ cbar.Label.FontSize= FS;
 xlim([min(klist), max(klist)])
 
 
+
 hold off
 
+%% plot
+figure(7)
+clf
+tiledlayout(2, 1)
+nexttile
+colormap('parula')
+% Lt = log10(tdd);
+% h = imagesc(Lt);
+h = imagesc(tdd_diff);
+set(h, 'AlphaData', ~isnan(tdd_diff))
 
-% figure(1)
-% clf
-% tl = tiledlayout(1, 2);
-% nexttile;
-% hold on
-% colormap('autumn')
-% cmap = autumn(length(modulationlist));
-% for i = 1:length(modulationlist)
-%     plot(klist, en(:, i), '.-', 'LineWidth', 2, 'MarkerSize', 30, 'color', cmap(i, :));
-% end
-% xlabel('degree $\beta$', 'Interpreter', 'latex', 'fontsize', FS)
-% ylabel('$||I||_2^2$', 'Interpreter', 'latex', 'fontsize', FS)
-% % cbar = colorbar;
-% % % cbar.Ticks = linspace(0, 1, length(modulationlist));
-% % tlc = {};
-% % for i = 1:length(modulationlist)
-% %     tlc{i} = sprintf('%d', modulationlist(i));
-% % end
-% % 
-% nexttile;
-% hold on
-% % colormap('autumn')
-% % cmap = autumn(length(modulationlist));
-% for i = 1:length(modulationlist)
-%     plot(klist, tdd_lower(:, i), '.-', 'LineWidth', 2, 'MarkerSize', 30, 'color', cmap(i, :));
-% end
-% xlabel('degree $\beta$', 'Interpreter', 'latex', 'fontsize', FS)
-% ylabel('TDD[$I$]', 'Interpreter', 'latex', 'fontsize', FS)
-% cbar = colorbar;
-% cbar.Ticks = linspace(0, 1, length(modulationlist));
-% tlc = {};
-% for i = 1:length(modulationlist)
-%     tlc{i} = sprintf('%0.1f', modulationlist(i));
-% end
-% % cbar.TickLabels = arrayfun(@(d) sprintf('%d', d), klist, 'UniformOutput', 'False');
-% cbar.TickLabels = tlc;
-% cbar.Label.String = '$\tau$';
-% cbar.Label.Interpreter= 'latex';
-% cbar.Label.FontSize= FS;
-% % text(4, 0.008, '$k=8$', 'Interpreter', 'latex', 'fontsize', FS)
-% % text(4, 0.055, '$k=40$', 'Interpreter', 'latex', 'fontsize', FS)
-% 
-% % 
+ylabel('$k$', 'interpreter', 'latex')
+xticks(1:length(modulationlist))
+xticklabels(modulationlist)
 
-%% timing
-figure(2)
-tl = tiledlayout(1, 2);
-nexttile;
-hold on
-% figure(1)
-% plot(klist, result_std.solver_time, '.-', 'LineWidth', 2, 'MarkerSize', 30)
-for i = 1:length(modulationlist)
-    plot(klist, result_std.preprocess_time(:, i), '.-', 'LineWidth', 2, 'MarkerSize', 30, 'color', cmap(i, :));
-end
-ylim([3, 1000])
-xlim([8, 40])
-set(gca, 'yscale', 'Log')
-xlabel('length $k$', 'Interpreter', 'latex', 'fontsize', FS)
-ylabel('Preprocess Time (sec.)', 'Interpreter', 'latex', 'fontsize', FS)
-nexttile;
-hold on
-for i = 1:length(modulationlist)
-    plot(klist, result_std.solver_time(:, i), '.-', 'LineWidth', 2, 'MarkerSize', 30, 'color', cmap(i, :));
-end
-% ylim([0, 840])
-set(gca, 'yscale', 'Log')
+yticks(1:9)
+yticklabels(4*drange)
+title('$TDD[I_{loc}] - p^*_3$', 'interpreter', 'latex', 'FontSize', 18)
+% cb = colorbar(); 
+% cb.Ticks = linspace(0, 0.025, 6);
+% yl = ylabel(cb,'$TDD[I_{SHE}] - p^*_3$','FontSize',16, 'interpreter', 'latex');
 
-xlabel('length $k$', 'Interpreter', 'latex', 'fontsize', FS)
-ylabel('Solver Time (sec.)', 'Interpreter', 'latex', 'fontsize', FS)
+xll = diff(xlim);
+yll = diff(ylim);
+pbaspect([xll, yll, 1])
 
-cbar = colorbar;
-cbar.Ticks = linspace(0, 1, length(modulationlist));
-tlc = {};
-for i = 1:4:length(modulationlist)
-    tlc{i} = sprintf('%0.2f', modulationlist(i));
-end
-% cbar.TickLabels = arrayfun(@(d) sprintf('%d', d), klist, 'UniformOutput', 'False');
-cbar.TickLabels = tlc;
-cbar.Label.String = '$M$';
-cbar.Label.Interpreter= 'latex';
-cbar.Label.FontSize= FS;
+nexttile
+h = imagesc(tdd_she_space - tdd_polish);
+set(h, 'AlphaData', ~isnan(tdd_she_space))
+cb = colorbar(); 
+ylabel('$k$', 'interpreter', 'latex')
+xlabel('$M$', 'interpreter', 'latex')
+xticks(1:length(modulationlist))
+xticklabels(modulationlist)
+yticks(1:9)
+yticklabels(4*drange)
 
-xlim([8, 40])
-ylim([3, 1000])
-% 
-% % cbar = colorbar;
-% % text(4, 0.008, '$k=8$', 'Interpreter', 'latex', 'fontsize', FS)
-% % text(4, 0.055, '$k=40$', 'Interpreter', 'latex', 'fontsize', FS)
-% 
-% % figure(2)
-% % plot(klist, tdd_lower')
+yl = ylabel(cb,'TDD Gap','FontSize',16, 'interpreter', 'latex');
+
+title('$TDD[I_{SHE}] - TDD[I_{loc}]$', 'interpreter', 'latex', 'FontSize', 18)
+xll = diff(xlim);
+yll = diff(ylim);
+pbaspect([xll, yll, 1])
+% cb.Ticks = linspace(-0.005, 0.025, 7);
+cb.Layout.Tile = 'east';
