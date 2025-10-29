@@ -1,5 +1,6 @@
 mset clear
-yalmip('clear')
+mset('yalmip',true);
+mset(sdpsettings('solver', 'mosek'));
 
 RESOLVE = 0;
 

@@ -66,7 +66,8 @@ classdef opp_system_1 < opp_system_interface
             t = obj.vars.t;
 
             %create the basic support set
-            lsupp_base = loc_support();
+            
+            lsupp_base = loc_support(obj.vars);
             lsupp_base.vars.x = x;
             lsupp_base.vars.t = t;
             vars = lsupp_base.vars;

@@ -1,6 +1,7 @@
 mset clear
 yalmip('clear')
-
+mset('yalmip',true);
+mset(sdpsettings('solver', 'mosek'));
 RESOLVE = 0;
 
 opts = opp_options;
@@ -43,8 +44,8 @@ opts.Z_load = kappa/(2*pi*opts.f0) + 1.0j;
 % modulation = 1.1;
 % modulation = 0.9;
 % modulation = 0.5;
-% modulation = 0.8;
-modulation = 0.05;
+modulation = 0.8;
+% modulation = 0.05;
 % modulation = 1.05;
 % opts.Z_load = 1.0j;
 opts.verbose = 0;
@@ -74,8 +75,8 @@ opts.harmonics.bound_sin = [modulation, modulation; -0.01, 0.01];
 MG = opp_manager(opts);
 % order = 1;
 % order = 2;
-order = 3;
-% order = 4;
+% order = 3;
+order = 4;
 % order = 5;
 % order = 6;
 % order = 7;
@@ -165,8 +166,20 @@ else
     xi = out2.pattern.I_val;
     % I0_rec = out2.pattern.I(1);
 end
-puu = kron(pu', [1; 1]);
-paa = [0; kron(pa', [1; 1]); 2*pi];
+
+
+%% plot
+
+    pu = out_polish.warm.u';
+    pa = out_polish.warm.alpha;
+    % thi = [0, pa, 2*pi];
+    % xi = out_polish.warm.I;
+    
+    pat = pulse_current_voltage_RL(pu, pa, 0, 1000, kappa,-0.625416052405516);
+    thi = pat.alpha_val;
+    xi = pat.I_val;
+puu = kron(pu, [1; 1]);
+paa = [0; kron(pa, [1; 1]); 2*pi];
 % x = pulse_func(th, pu, pa);
 % I0_rec = M.modes{1}{2}.init(1,5);
 % I0_rec = M.modes{1}{3}.init(1,5);
@@ -197,7 +210,7 @@ hold on
 plot(thi, -modulation/sqrt(1+kappa^2)*cos(thi + atan(kappa)), 'k', 'linewidth', 3);
 plot(thi, xi, 'linewidth', 3, 'color', cc(2, :));
 plot([0, 2*pi], [0, 0], ':k')
-scatter([0, pa, 2*pi], pI, 100, cc(2, :), 'filled')
+scatter([0, pa', 2*pi], pI, 100, cc(2, :), 'filled')
 ylabel('$I(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
 xlim([0, 2*pi]) 
 
