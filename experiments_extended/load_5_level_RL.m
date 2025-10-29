@@ -172,6 +172,7 @@ end
 
     pu = out_polish.warm.u';
     pa = out_polish.warm.alpha;
+    pI = out_polish.warm.I;
     % thi = [0, pa, 2*pi];
     % xi = out_polish.warm.I;
     
