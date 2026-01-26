@@ -146,6 +146,25 @@ classdef opp_mode < opp_mode_interface
         end
 
 
+        function con_power = power_match_con(obj, d)
+    
+            %splitting the current into positive and negative components
+            %for bounding the power losses
+
+            con_power = [];
+
+            [N, P] = size(obj.levels);
+
+            for n=1:N
+                for p = 1:P            
+                    con_power = [con_power; obj.levels{n, p}.power_match_con(d)];
+                    
+
+                end
+            end
+        
+        end
+
 
         function power_use = power_dissipated(obj, dispatch)
             %conduction losses

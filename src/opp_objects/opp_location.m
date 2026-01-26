@@ -77,13 +77,15 @@ classdef opp_location < location_interface
         function power_use = conduction_losses(obj, dispatch)
             %power used in a fundamental cycle dissipated by conduction
             m = obj.mode;
-            cond = [0, 0];
+            % cond = [0, 0];
             power_use = 0;
-            ind_pos = dispatch.conduction_pos{m};
-            ind_neg = dispatch.conduction_neg{m};
+            ind_pos = dispatch.conduction_pos{m+1};
+            ind_neg = dispatch.conduction_neg{m+1};
             % I_lin = obj.I_split.mom_lin();
-            Ipos = obj.I_split.pos.vars.x;
-            Ineg = -obj.I_split.neg.vars.x;
+
+            %scale by the maximum rated current
+            Ipos = dispatch.IT * obj.I_split.pos.vars.x;
+            Ineg = dispatch.IT * obj.I_split.neg.vars.x;
             for i = 1:length(ind_pos)
                 cond_curr = dispatch.topology{ind_pos(i)}.conduction;
                 power_use = power_use + mom(Ipos * (cond_curr(1) + cond_curr(2)*Ipos));
@@ -91,7 +93,7 @@ classdef opp_location < location_interface
             for i = 1:length(ind_neg)
                 cond_curr = dispatch.topology{ind_neg(i)}.conduction;
                 power_use = power_use + mom(Ineg * (cond_curr(1) + cond_curr(2)*Ineg));
-            end
+            end            
 
         end
 
@@ -154,7 +156,7 @@ classdef opp_location < location_interface
             if isempty(obj.I_split)
                 con_power = [];
             else
-                con_power = [obj.sys.mom_monom(d) - obj.I_split.mom_monom(d) == 0];
+                con_power = [obj.sys{1}.mom_monom(d) - obj.I_split.mom_monom(d) == 0];
             end
         
         end

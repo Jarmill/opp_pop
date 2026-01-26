@@ -55,6 +55,7 @@ classdef opp_system_1 < opp_system_interface
             modes = cell(k+1, 1);
 
           
+            
             %x = [c; s; phi; l] -> [cos(theta), sin(theta), clock, load
             %state (current of load inductor/voltage of load capacitor)
 
@@ -163,8 +164,9 @@ classdef opp_system_1 < opp_system_interface
             con_match = obj.con_quarter_match(d);
 
 
-            con_power = obj.con_power_loss();
+            con_power_dissipation = obj.con_power_loss();
 
+            con_power_match = obj.power_match_con(d);
             %without harmonics
             % mom_con = [con_prob; con_preserve; con_leb; con_threephase; con_harm];
             
@@ -184,7 +186,8 @@ classdef opp_system_1 < opp_system_interface
                 con_preserve;  con_liou %flow
                 con_match; %quarter-matching
                 con_dwell; %soft dwell-time constraint
-                con_power; % power losses
+                con_power_dissipation; % power losses
+                con_power_match; %power matching in measures
                 ];                  
 
         end
@@ -561,6 +564,25 @@ classdef opp_system_1 < opp_system_interface
         end
 
 
+
+        function con_power_match = power_match_con(obj, d)
+            %how much power is dissipated over the fundamental period?
+            %accumulate the conduction losses and the switching losses
+
+            %conduction losses
+            con_power_match = [];
+             if obj.opts.power_budget < Inf
+               
+                for m = 1:length(obj.mode)   
+                    con_power_match= [con_power_match; obj.mode{m}.power_match_con(d)];                                
+                end
+                
+                for i = 1:M
+                    con_power_match= [con_power_match; obj.jumps{i}.power_match_con(d)];                  
+                end  
+             end
+        end
+
         function power_use = power_dissipated(obj, dispatch)
             %how much power is dissipated over the fundamental period?
             %accumulate the conduction losses and the switching losses
@@ -569,11 +591,14 @@ classdef opp_system_1 < opp_system_interface
             end
 
             %conduction losses
-            power_use = 0;
+            power_cond = 0;
             for m = 1:length(obj.mode)   
                 power_curr= obj.mode{m}.power_dissipated(dispatch);                
-                power_use = power_use + power_curr;
+                power_cond = power_cond + power_curr;
             end
+
+            %scale to [0, 2pi] time range
+            power_use = power_cond * 2*pi * (2^(double(obj.opts.Symmetry)));
 
             %switching losses
             M = length(obj.jumps);
@@ -588,10 +613,7 @@ classdef opp_system_1 < opp_system_interface
             %and also QW would require extra trackign anyways
             if obj.opts.Symmetry > 0
                 power_use = power_use * 2;
-            end
-
-
-            
+            end           
         end
         %% objective
         function objective = objective_level(obj, vars, opts)

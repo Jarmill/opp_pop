@@ -45,13 +45,13 @@ classdef opp_power_dispatch
                 
                 
                 
-                topology = cell(10, 1);
+                obj.topology = cell(10, 1);
                 %figure 4
                 for i = 1:4
-                    topology{i} = opp_component(i, true, cond_gct, on_gct, off_gct);
+                    obj.topology{i} = opp_component(i, true, cond_gct, on_gct, off_gct);
                 end
                 for i = 5:10
-                    topology{i} = opp_component(i, false, cond_diode, on_diode, off_diode);
+                    obj.topology{i} = opp_component(i, false, cond_diode, on_diode, off_diode);
                 end
             else
                 obj.topology = topology_in;
