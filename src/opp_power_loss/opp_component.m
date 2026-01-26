@@ -4,26 +4,23 @@ classdef opp_component
     
     properties
         id; 
-        type
-        conduction;
-        loss;
+        GCT; %true: GCT, false: freewheeling diode
+        conduction; 
+        switch_on; 
+        switch_off; 
     end
     
     methods
-        function obj = opp_component(id, type, conduction, loss)
+        function obj = opp_component(id,  GCT, conduction,  switch_on, switch_off)
             %OPP_COMPONENT Construct an instance of this class
             %   Detailed explanation goes here
             obj.id = id;
-            obj.type = type;
+            opts.GCT = GCT;
             obj.conduction = conduction; 
-            obj.loss = loss;
-        end
-        
-        function outputArg = method1(obj,inputArg)
-            %METHOD1 Summary of this method goes here
-            %   Detailed explanation goes here
-            outputArg = obj.Property1 + inputArg;
-        end
+            obj.switch_on = switch_on;
+            obj.switch_off = switch_off;
+        end                
+
     end
 end
 

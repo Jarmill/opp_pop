@@ -56,10 +56,11 @@ classdef opp_options
         precise = false; %true: use sdpa-gmp instead
 
 
-
+        %bounded power loss constraints
         power_budget = Inf;
-        v_max = 2400;
-        i_max = 4500;
+        dispatch = [];
+        % v_max = 2400;
+        % i_max = 4500;
     end
 
 end

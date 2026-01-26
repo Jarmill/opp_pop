@@ -13,11 +13,13 @@ opts.unipolar = 1; %need to debug this
 opts.three_phase = "Ignore";
 
 
-opts.power_budget = 100;
+% opts.power_budget = 100;
+% opts.power_budget = Inf;
+opts.power_budget = 100000;
 
 %external voltage
-% opts.k = 4;
-opts.k = 8;
+opts.k = 4;
+% opts.k = 8;
 % opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
@@ -43,6 +45,8 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 % opts.harmonics.bound_cos = [0,  0; 0.5, 0.5];
 
 %% test a manager
+
+opts.dispatch = opp_power_dispatch();
 
 MG = opp_manager(opts);
 % order = 4;

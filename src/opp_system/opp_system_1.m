@@ -163,7 +163,7 @@ classdef opp_system_1 < opp_system_interface
             con_match = obj.con_quarter_match(d);
 
 
-            con_power = obj.con_power_loss(d);
+            con_power = obj.con_power_loss();
 
             %without harmonics
             % mom_con = [con_prob; con_preserve; con_leb; con_threephase; con_harm];
@@ -204,6 +204,10 @@ classdef opp_system_1 < opp_system_interface
             mom_con = [con_preserve; con_liou];              
 
         end
+
+
+        
+  
   
 
         function flow_con = con_flow(obj, d)
@@ -378,15 +382,6 @@ classdef opp_system_1 < opp_system_interface
                     con_match = [con_match; con_curr];
                 end
 
-                %iterate over all of the constraints
-                % for n = 1:N
-                %     for i = 1:kh
-                %         con_curr = [jump_up_before(:, i)]
-                %     end
-                % end
-
-
-
                 %get flipped moments for the jumps before pi
 
                 
@@ -547,15 +542,57 @@ classdef opp_system_1 < opp_system_interface
         end 
 
 
-        function con_power = con_power_loss(obj, d)
-            %initial measure is a probability distribution (mass 1)
+
+        function con_power = con_power_loss(obj)
+            %power dissipation constraint
+            %bounded power budget per fundamental period
             
             % [~, mass_init_sum] = obj.mode{1}.initial_mass();
-        
-            con_power = [];
+            
+            if obj.opts.power_budget == Inf
+                con_power = [];
+            else
+                power_use = obj.power_dissipated(obj.opts.dispatch);
+                
+                con_power = [power_use <= obj.opts.power_budget];
+            end
+
            
         end
 
+
+        function power_use = power_dissipated(obj, dispatch)
+            %how much power is dissipated over the fundamental period?
+            %accumulate the conduction losses and the switching losses
+            if nargin == 1
+                dispatch = obj.opts.dispatch;
+            end
+
+            %conduction losses
+            power_use = 0;
+            for m = 1:length(obj.mode)   
+                power_curr= obj.mode{m}.power_dissipated(dispatch);                
+                power_use = power_use + power_curr;
+            end
+
+            %switching losses
+            M = length(obj.jumps);
+            for i = 1:M
+                power_curr = obj.jumps{i}.switching_losses(dispatch);
+                power_use = power_use + power_curr;
+                
+            end  
+
+            %symmetry: increase power losses
+            %QW: already doing quarter matching if RL ~= 0
+            %and also QW would require extra trackign anyways
+            if obj.opts.Symmetry > 0
+                power_use = power_use * 2;
+            end
+
+
+            
+        end
         %% objective
         function objective = objective_level(obj, vars, opts)
             %return the mode-objective at each level

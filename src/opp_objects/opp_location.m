@@ -31,7 +31,7 @@ classdef opp_location < location_interface
             obj.sys  = {subsystem_base(obj.supp, obj.f, [], id)};
             
             %split the current into positive and negative 
-            if info.I_split < Inf
+            if info.I_split 
                 obj.I_split = opp_current_split(loc_supp, id);
             end
         end
@@ -73,6 +73,27 @@ classdef opp_location < location_interface
             %ensure this is the correct sign
             cons_eq = [-liou==0; con_power];                        
         end      
+
+        function power_use = conduction_losses(obj, dispatch)
+            %power used in a fundamental cycle dissipated by conduction
+            m = obj.mode;
+            cond = [0, 0];
+            power_use = 0;
+            ind_pos = dispatch.conduction_pos{m};
+            ind_neg = dispatch.conduction_neg{m};
+            % I_lin = obj.I_split.mom_lin();
+            Ipos = obj.I_split.pos.vars.x;
+            Ineg = -obj.I_split.neg.vars.x;
+            for i = 1:length(ind_pos)
+                cond_curr = dispatch.topology{ind_pos(i)}.conduction;
+                power_use = power_use + mom(Ipos * (cond_curr(1) + cond_curr(2)*Ipos));
+            end
+            for i = 1:length(ind_neg)
+                cond_curr = dispatch.topology{ind_neg(i)}.conduction;
+                power_use = power_use + mom(Ineg * (cond_curr(1) + cond_curr(2)*Ineg));
+            end
+
+        end
 
         %
         %TODO: need to deal with the objective

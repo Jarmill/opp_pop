@@ -198,6 +198,8 @@ classdef opp_manager
             % con_align = [];
             % supp_clock = [];
 
+    
+
             %with harmonics and dynamics
             mom_con = [con_one; con_three; con_align; clock_align];
 
@@ -207,6 +209,7 @@ classdef opp_manager
             len_dual = 0;
 
         end
+
 
         function three_con = con_threephase_align(obj, d)                   
             %ensure that the inductive current is three-phase balanced

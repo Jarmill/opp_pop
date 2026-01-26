@@ -88,6 +88,15 @@ classdef (Abstract) opp_mode_interface
             end
         end
 
+        function power_use = conduction_losses(obj)
+            %power losses by conduction
+            power_use = 0;
+            for m = 1:length(obj.levels)
+                power_use = power_use + obj.levels{m}.conduction_losses(dispatch);
+            end
+
+        end
+
         function transition = make_transitions(obj, m, opts, lsupp_base, prefix)
             %create the transitions internal to the mode (no switching)                      
             N = size(opts.L, 2);

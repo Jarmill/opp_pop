@@ -146,6 +146,21 @@ classdef opp_mode < opp_mode_interface
         end
 
 
+
+        function power_use = power_dissipated(obj, dispatch)
+            %conduction losses
+            power_use = 0;
+            [N, P] = size(obj.levels);
+            for n=1:N
+                for p = 1:P            
+                    power_curr = obj.levels{n, p}.conduction_losses(dispatch);                                                                   
+                    
+                    power_use = power_curr + power_use;
+                end
+            end
+        end
+
+
         function harm = load_harmonics_mom(obj, vars, harm_mon, harm_in)
             %voltage harmonics constraints
             % harm= mom(p)*0;
