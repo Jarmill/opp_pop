@@ -54,6 +54,12 @@ classdef opp_options
         verbose(1, 1)logical = true; %log output
         TIME_INDEP(1, 1)logical = false; %include time as an explicit state
         precise = false; %true: use sdpa-gmp instead
+
+
+
+        power_budget = Inf;
+        v_max = 2400;
+        i_max = 4500;
     end
 
 end

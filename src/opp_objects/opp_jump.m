@@ -10,7 +10,10 @@ classdef opp_jump < handle
        src;           %source mode 
        dst;           %destination mode
        L;             %levels of the inverter               
-       vars;          %basic variable type       
+       vars;          %basic variable type   
+
+       I_split_up = []; 
+       I_split_down =[];
     end
     
     methods
@@ -36,6 +39,12 @@ classdef opp_jump < handle
             
             obj.jump_up = cell(N-1, P);
             obj.jump_down = cell(N-1, P);
+
+            I_split_up  = cell(N-1, P);
+            I_split_down  = cell(N-1, P);
+
+            %TODO: finish this
+            
 
             for n=1:N-1
                 for p = 1:P
@@ -68,6 +77,16 @@ classdef opp_jump < handle
                         [], supp_up, reset_law);
                     obj.jump_down{n, p} = guard(name_down, vars, [], ...
                         [], supp_down, reset_law);
+
+                    if opts.power_budget < Inf
+                        I_split = opts.power_budget < Inf;
+                        cell_info = struct('mode', m, 'partition', p, 'level', n, 'L', opts.L(n), 'I_split', I_split);
+                    
+                        obj.I_split_up{n, p} = opp_current_split(supp_up, name_up);
+                        obj.I_split_down{n, p} = opp_current_split(supp_down, name_down);
+                    end
+                    %split the current into positive and negative 
+                    
                 end
             end
             
@@ -119,12 +138,41 @@ classdef opp_jump < handle
                 for p = 1:P                    
                     curr_up = obj.jump_up{n, p}.supp;
                     curr_down = obj.jump_down{n, p}.supp;
+
                     supp_con_out = [supp_con_out; curr_up; curr_down];
+                    if ~isempty(obj.I_split_up)
+                        curr_up_power = obj.I_split_up{n, p}.supp;
+                        curr_down_power = obj.I_split_down{n, p}.supp;
+                        supp_con_out = [supp_con_out; curr_up_power; curr_down_power];
+                    end
+                    
                 end
             end
         end
 
 
+        function con_power = power_match_con(obj, d)
+    
+            %splitting the current into positive and negative components
+            %for bounding the power losses
+            if isempty(obj.I_split_up)
+                con_power = [];
+            else
+
+            [Np, P] = size(obj.jump_up);
+            con_power_out = [];
+            for n=1:Np
+                for p = 1:P                    
+                    curr_up = obj.jump_up{n, p}.supp;
+                    curr_down = obj.jump_down{n, p}.supp;
+                    supp_con_out = [supp_con_out; curr_up; curr_down];
+                end
+            end
+
+                con_power = [obj.sys.mom_monom(d) - obj.I_split.mom_monom(d) == 0];
+            end
+        
+        end
 
         function [imon_up, imon_down] = sel_monom_jump_summarize(obj, d, ind, signs)
             %moments of the jump measure

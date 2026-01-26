@@ -162,6 +162,9 @@ classdef opp_system_1 < opp_system_interface
             %quarter-matching constraints
             con_match = obj.con_quarter_match(d);
 
+
+            con_power = obj.con_power_loss(d);
+
             %without harmonics
             % mom_con = [con_prob; con_preserve; con_leb; con_threephase; con_harm];
             
@@ -181,11 +184,12 @@ classdef opp_system_1 < opp_system_interface
                 con_preserve;  con_liou %flow
                 con_match; %quarter-matching
                 con_dwell; %soft dwell-time constraint
+                con_power; % power losses
                 ];                  
 
         end
 
-          function [mom_con, supp_con_one] = cons_limited(obj, d)
+        function [mom_con, supp_con_one] = cons_limited(obj, d)
 
             %generate the constraints
             supp_con_one = obj.supp_con();                          
@@ -540,7 +544,18 @@ classdef opp_system_1 < opp_system_interface
                     con_dwell = [con_dwell; obj.mode{i}.occ_mass() >= Theta_scale];            
                 end
             end
+        end 
+
+
+        function con_power = con_power_loss(obj, d)
+            %initial measure is a probability distribution (mass 1)
+            
+            % [~, mass_init_sum] = obj.mode{1}.initial_mass();
+        
+            con_power = [];
+           
         end
+
         %% objective
         function objective = objective_level(obj, vars, opts)
             %return the mode-objective at each level

@@ -32,7 +32,7 @@ classdef opp_location < location_interface
             
             %split the current into positive and negative 
             if info.I_split < Inf
-                obj.I_split = opp_current_split(loc_supp, id);
+                obj.I_split = opp_current_split(loc_supp, [], info);
             end
         end
         

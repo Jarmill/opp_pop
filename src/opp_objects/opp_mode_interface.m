@@ -80,7 +80,8 @@ classdef (Abstract) opp_mode_interface
                         end
                     end
 
-                    cell_info = struct('mode', m, 'partition', p, 'level', n, 'L', opts.L(n), 'id', curr_id);
+                    I_split = opts.power_budget < Inf;
+                    cell_info = struct('mode', m, 'partition', p, 'level', n, 'L', opts.L(n), 'id', curr_id, 'I_split', I_split);
                     levels{n, p} = opp_location(curr_lsupp, curr_f, curr_objective, cell_info);
 
                 end
