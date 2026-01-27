@@ -38,7 +38,7 @@ classdef opp_current_split
             if isempty(obj.pos)
                 mmmon_out = 0;
             else
-                mmmon_out = obj.pos.mom_monom(dmin, dmax) + (-1)^(dmin:dmax) .* obj.neg.mom_monom(dmin, dmax);
+                mmmon_out = obj.pos.mom_monom(dmin, dmax) + ((-1).^(dmin:dmax))' .* obj.neg.mom_monom(dmin, dmax);
             end
         end  
 

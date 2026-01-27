@@ -577,7 +577,7 @@ classdef opp_system_1 < opp_system_interface
                     con_power_match= [con_power_match; obj.mode{m}.power_match_con(d)];                                
                 end
                 
-                for i = 1:M
+                for i = 1:length(obj.jumps)
                     con_power_match= [con_power_match; obj.jumps{i}.power_match_con(d)];                  
                 end  
              end
@@ -598,14 +598,13 @@ classdef opp_system_1 < opp_system_interface
             end
 
             %scale to [0, 2pi] time range
-            power_use = power_cond * 2*pi * (2^(double(obj.opts.Symmetry)));
+            power_use = power_cond * 2*pi * (2^(-double(obj.opts.Symmetry)));
 
             %switching losses
             M = length(obj.jumps);
             for i = 1:M
                 power_curr = obj.jumps{i}.switching_losses(dispatch);
-                power_use = power_use + power_curr;
-                
+                power_use = power_use + power_curr;                
             end  
 
             %symmetry: increase power losses

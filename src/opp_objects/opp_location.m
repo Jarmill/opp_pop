@@ -84,15 +84,17 @@ classdef opp_location < location_interface
             % I_lin = obj.I_split.mom_lin();
 
             %scale by the maximum rated current
-            Ipos = dispatch.IT * obj.I_split.pos.vars.x;
-            Ineg = dispatch.IT * obj.I_split.neg.vars.x;
+            Ipos = dispatch.I_rated * obj.I_split.pos.vars.x;
+            Ineg = dispatch.I_rated * obj.I_split.neg.vars.x;
+            power_use = zeros(length(dispatch.topology), 1) * mom(Ipos);
+
             for i = 1:length(ind_pos)
                 cond_curr = dispatch.topology{ind_pos(i)}.conduction;
-                power_use = power_use + mom(Ipos * (cond_curr(1) + cond_curr(2)*Ipos));
+                power_use(ind_pos(i)) = power_use(ind_pos(i)) + mom(Ipos * (cond_curr(1) + cond_curr(2)*Ipos));
             end
             for i = 1:length(ind_neg)
                 cond_curr = dispatch.topology{ind_neg(i)}.conduction;
-                power_use = power_use + mom(Ineg * (cond_curr(1) + cond_curr(2)*Ineg));
+                power_use(ind_neg(i)) = power_use(ind_neg(i)) + mom(Ineg * (cond_curr(1) + cond_curr(2)*Ineg));
             end            
 
         end
@@ -156,7 +158,7 @@ classdef opp_location < location_interface
             if isempty(obj.I_split)
                 con_power = [];
             else
-                con_power = [obj.sys{1}.mom_monom(d) - obj.I_split.mom_monom(d) == 0];
+                con_power = [mom(obj.sys{1}.meas_occ.vars.x(end).^((0:d)')) - obj.I_split.mom_monom(d) == 0];
             end
         
         end

@@ -9,13 +9,13 @@ opts.TIME_INDEP = true;
 opts.early_stop = 0;
 opts.null_objective = false;
 opts.Symmetry = 1;
-opts.unipolar = 1; %need to debug this
+opts.unipolar = 0; %need to debug this
 opts.three_phase = "Ignore";
 
 
 % opts.power_budget = 100;
 % opts.power_budget = Inf;
-opts.power_budget = 100000;
+opts.power_budget = 5000;
 
 %external voltage
 opts.k = 4;

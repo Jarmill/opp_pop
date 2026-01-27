@@ -26,6 +26,7 @@ classdef opp_power_dispatch
         Vdc = 5000;
         vT = 2400; %max rated voltage (V)
         IT = 4500; %max rated current (A)
+        I_rated = 2200; %nominal rated current (A)
     end
     
     methods
