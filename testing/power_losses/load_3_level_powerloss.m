@@ -14,13 +14,13 @@ opts.three_phase = "Ignore";
 
 
 % opts.power_budget = 100;
-% opts.power_budget = Inf;
-opts.power_budget = 5000;
+opts.power_budget = 1e7;
+% opts.power_budget = 5000;
 
 %external voltage
-opts.k = 4;
+% opts.k = 4;
 % opts.k = 8;
-% opts.k = 12;
+opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
 % opts.k = 24;
@@ -111,6 +111,10 @@ if sol.status==0
         out_polish = opp_polish_RL(out2);
         bound_upper = out_polish.warm.tdd;
     end
+
+    diss = MG.sys1.power_dissipated();
+    ddiss = double(diss);
+    disp('dissipation: '); ddis
 
 % pattern_rec = out_polish.warm;
 

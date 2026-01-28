@@ -85,7 +85,7 @@ classdef opp_location < location_interface
 
             %scale by the maximum rated current
             Ipos = dispatch.I_rated * obj.I_split.pos.vars.x;
-            Ineg = dispatch.I_rated * obj.I_split.neg.vars.x;
+            Ineg = -dispatch.I_rated * obj.I_split.neg.vars.x;
             power_use = zeros(length(dispatch.topology), 1) * mom(Ipos);
 
             for i = 1:length(ind_pos)

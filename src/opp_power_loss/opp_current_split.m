@@ -22,8 +22,8 @@ classdef opp_current_split
             end
 
             if ~isempty(loc_supp)                
-                obj.pos = obj.meas_def([prefix, '_pos']);
-                obj.neg = obj.meas_def([prefix, '_neg']);
+                obj.pos = obj.meas_def([prefix, '_pos'], 1);
+                obj.neg = obj.meas_def([prefix, '_neg'], -1);
             end
         end
 
@@ -38,7 +38,7 @@ classdef opp_current_split
             if isempty(obj.pos)
                 mmmon_out = 0;
             else
-                mmmon_out = obj.pos.mom_monom(dmin, dmax) + ((-1).^(dmin:dmax))' .* obj.neg.mom_monom(dmin, dmax);
+                mmmon_out = obj.pos.mom_monom(dmin, dmax) + obj.neg.mom_monom(dmin, dmax);
             end
         end  
 
@@ -62,7 +62,7 @@ classdef opp_current_split
         end
 
          %% Measure Creation
-         function [meas_sgn] = meas_def(obj, suffix)           
+         function [meas_sgn] = meas_def(obj, suffix, sign)           
             %MEAS_DEF Define the measures in the collection
             %declare a variable for each measure (index ind in the union)
 
@@ -78,7 +78,7 @@ classdef opp_current_split
 
             %define the measure
             
-            meas_sgn = meas_base(vars, [vars.x >= 0]);
+            meas_sgn = meas_base(vars, [sign*vars.x >= 0]);
         end  
     end
 end

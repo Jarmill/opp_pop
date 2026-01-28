@@ -186,7 +186,8 @@ classdef opp_jump < handle
                 for n=1:Np
                     for p = 1:P    
 
-                        I_up = dispatch.I_rated * obj.I_split_up{n, p}.mom_lin();
+                        I_up = [1; -1] .* dispatch.I_rated * obj.I_split_up{n, p}.mom_lin();
+                        
                         %power from jumping up                        
                         a_on = dispatch.topology{dispatch.jump_up_pos_on{m}}.switch_on;
                         a_off = dispatch.topology{dispatch.jump_up_pos_off{m}}.switch_off;
@@ -217,7 +218,7 @@ classdef opp_jump < handle
 
                         %power from jumping down
 
-                        I_down = dispatch.I_rated * obj.I_split_down{n, p}.mom_lin();
+                        I_down =[1; -1] .* dispatch.I_rated * obj.I_split_down{n, p}.mom_lin();
                         
                          if ~isempty(dispatch.jump_down_pos_on{m})
                             a_on = dispatch.topology{dispatch.jump_down_pos_on{m}}.switch_on;
