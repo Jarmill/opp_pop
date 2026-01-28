@@ -180,6 +180,23 @@ classdef opp_mode < opp_mode_interface
         end
 
 
+        function supp_con_out = supp_con(obj)
+            %fetch all support constraints
+
+            supp_con_out = supp_con@opp_mode_interface(obj);
+
+
+            [N, P] = size(obj.levels);
+            for n=1:N
+                for p = 1:P  
+                    if ~isempty(obj.levels{n, p}.I_split)
+                        supp_con_out = [supp_con_out; obj.levels{n, p}.I_split.supp()];
+                    end
+                end
+            end
+        end
+
+
         function harm = load_harmonics_mom(obj, vars, harm_mon, harm_in)
             %voltage harmonics constraints
             % harm= mom(p)*0;

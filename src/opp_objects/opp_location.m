@@ -76,27 +76,30 @@ classdef opp_location < location_interface
 
         function power_use = conduction_losses(obj, dispatch)
             %power used in a fundamental cycle dissipated by conduction
-            m = obj.mode;
+            
             % cond = [0, 0];
             power_use = 0;
-            ind_pos = dispatch.conduction_pos{m+1};
-            ind_neg = dispatch.conduction_neg{m+1};
-            % I_lin = obj.I_split.mom_lin();
+            
+            if ~isempty(obj.I_split)
+                ind_pos = dispatch.conduction_pos{obj.level};
+                ind_neg = dispatch.conduction_neg{obj.level};
+                % I_lin = obj.I_split.mom_lin();
+    
+                %scale by the maximum rated current
+                Ipos = dispatch.I_rated * obj.I_split.pos.vars.x;
+                Ineg = -dispatch.I_rated * obj.I_split.neg.vars.x;
+                power_use = zeros(length(dispatch.topology), 1) * mom(Ipos);
+    
+                for i = 1:length(ind_pos)
+                    cond_curr = dispatch.topology{ind_pos(i)}.conduction;
+                    power_use(ind_pos(i)) = power_use(ind_pos(i)) + mom(Ipos * (cond_curr(1) + cond_curr(2)*Ipos));
+                end
+                for i = 1:length(ind_neg)
+                    cond_curr = dispatch.topology{ind_neg(i)}.conduction;
+                    power_use(ind_neg(i)) = power_use(ind_neg(i)) + mom(Ineg * (cond_curr(1) + cond_curr(2)*Ineg));
+                end            
 
-            %scale by the maximum rated current
-            Ipos = dispatch.I_rated * obj.I_split.pos.vars.x;
-            Ineg = -dispatch.I_rated * obj.I_split.neg.vars.x;
-            power_use = zeros(length(dispatch.topology), 1) * mom(Ipos);
-
-            for i = 1:length(ind_pos)
-                cond_curr = dispatch.topology{ind_pos(i)}.conduction;
-                power_use(ind_pos(i)) = power_use(ind_pos(i)) + mom(Ipos * (cond_curr(1) + cond_curr(2)*Ipos));
             end
-            for i = 1:length(ind_neg)
-                cond_curr = dispatch.topology{ind_neg(i)}.conduction;
-                power_use(ind_neg(i)) = power_use(ind_neg(i)) + mom(Ineg * (cond_curr(1) + cond_curr(2)*Ineg));
-            end            
-
         end
 
         %

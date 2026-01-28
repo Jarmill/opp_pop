@@ -140,7 +140,7 @@ classdef opp_jump < handle
                     curr_down = obj.jump_down{n, p}.supp;
 
                     supp_con_out = [supp_con_out; curr_up; curr_down];
-                    if ~isempty(obj.I_split_up)
+                    if ~isempty(obj.I_split_up{n, p})
                         curr_up_power = obj.I_split_up{n, p}.supp;
                         curr_down_power = obj.I_split_down{n, p}.supp;
                         supp_con_out = [supp_con_out; curr_up_power; curr_down_power];
@@ -176,7 +176,7 @@ classdef opp_jump < handle
 
             %compute the switching losses incurred
             power_use = 0;
-            if ~isempty(obj.I_split_up{1}.pos)
+            if ~isempty(obj.I_split_up{1})
             [Np, P] = size(obj.jump_up);
             m = obj.mode;
 
@@ -189,25 +189,25 @@ classdef opp_jump < handle
                         I_up = [1; -1] .* dispatch.I_rated * obj.I_split_up{n, p}.mom_lin();
                         
                         %power from jumping up                        
-                        a_on = dispatch.topology{dispatch.jump_up_pos_on{m}}.switch_on;
-                        a_off = dispatch.topology{dispatch.jump_up_pos_off{m}}.switch_off;
+                        a_on = dispatch.topology{dispatch.jump_up_pos_on{n}}.switch_on;
+                        a_off = dispatch.topology{dispatch.jump_up_pos_off{n}}.switch_off;
 
 
-                        power_loss(dispatch.jump_up_pos_on{m}) = power_loss(dispatch.jump_up_pos_on{m}) + 0.5*dispatch.Vdc*(a_on(1) + a_on(2) * I_up(1));
-                        power_loss(dispatch.jump_up_pos_off{m}) = power_loss(dispatch.jump_up_pos_off{m}) + 0.5*dispatch.Vdc*(a_off(1) + a_off(2) * I_up(1));
+                        power_loss(dispatch.jump_up_pos_on{n}) = power_loss(dispatch.jump_up_pos_on{n}) + 0.5*dispatch.Vdc*(a_on(1) + a_on(2) * I_up(1));
+                        power_loss(dispatch.jump_up_pos_off{n}) = power_loss(dispatch.jump_up_pos_off{n}) + 0.5*dispatch.Vdc*(a_off(1) + a_off(2) * I_up(1));
                         % power_use = power_use + 0.5*dispatch.Vdc*(a_on(1) + a_on(2) * I_up(1));
                         % power_use = power_use + 0.5*dispatch.Vdc*(a_off(1) + a_off(2) * (I_up(2)));
 
                                            
-                        if ~isempty(dispatch.jump_up_neg_on{m})
-                            a_on = dispatch.topology{dispatch.jump_up_neg_on{m}}.switch_on;
+                        if ~isempty(dispatch.jump_up_neg_on{n})
+                            a_on = dispatch.topology{dispatch.jump_up_neg_on{n}}.switch_on;
                         else
                             a_on = [0, 0];
                         end
-                        a_off = dispatch.topology{dispatch.jump_up_neg_off{m}}.switch_off;
+                        a_off = dispatch.topology{dispatch.jump_up_neg_off{n}}.switch_off;
 
-                        power_loss(dispatch.jump_up_neg_on{m}) = power_loss(dispatch.jump_up_neg_on{m}) + 0.5*dispatch.Vdc*(a_on(1) + a_on(2) * I_up(2));
-                        power_loss(dispatch.jump_up_neg_off{m}) = power_loss(dispatch.jump_up_neg_off{m}) + 0.5*dispatch.Vdc*(a_off(1) + a_off(2) * I_up(2));
+                        power_loss(dispatch.jump_up_neg_on{n}) = power_loss(dispatch.jump_up_neg_on{n}) + 0.5*dispatch.Vdc*(a_on(1) + a_on(2) * I_up(2));
+                        power_loss(dispatch.jump_up_neg_off{n}) = power_loss(dispatch.jump_up_neg_off{n}) + 0.5*dispatch.Vdc*(a_off(1) + a_off(2) * I_up(2));
                         
                         % power_use = power_use + 0.5*dispatch.Vdc*(a_on(1) + a_on(2) * (I_up(1)));
                         % power_use = power_use + 0.5*dispatch.Vdc*(a_off(1) + a_off(2) * (I_up(2)));
@@ -220,25 +220,25 @@ classdef opp_jump < handle
 
                         I_down =[1; -1] .* dispatch.I_rated * obj.I_split_down{n, p}.mom_lin();
                         
-                         if ~isempty(dispatch.jump_down_pos_on{m})
-                            a_on = dispatch.topology{dispatch.jump_down_pos_on{m}}.switch_on;
+                         if ~isempty(dispatch.jump_down_pos_on{n})
+                            a_on = dispatch.topology{dispatch.jump_down_pos_on{n}}.switch_on;
                         else
                             a_on = [0, 0];
                          end                        
-                        a_off = dispatch.topology{dispatch.jump_down_pos_off{m}}.switch_off;
+                        a_off = dispatch.topology{dispatch.jump_down_pos_off{n}}.switch_off;
 
                         % power_use = power_use + 0.5*dispatch.Vdc*(a_on(1) + a_on(2) * I_down(1));
                         % power_use = power_use + 0.5*dispatch.Vdc*(a_off(1) + a_off(2) * (I_down(2)));
-                        power_loss(dispatch.jump_down_pos_on{m}) = power_loss(dispatch.jump_down_pos_on{m}) + 0.5*dispatch.Vdc*(a_on(1) + a_on(2) * I_down(1));
-                        power_loss(dispatch.jump_down_pos_off{m}) = power_loss(dispatch.jump_down_pos_off{m}) + 0.5*dispatch.Vdc*(a_off(1) + a_off(2) * I_down(1));
+                        power_loss(dispatch.jump_down_pos_on{n}) = power_loss(dispatch.jump_down_pos_on{n}) + 0.5*dispatch.Vdc*(a_on(1) + a_on(2) * I_down(1));
+                        power_loss(dispatch.jump_down_pos_off{n}) = power_loss(dispatch.jump_down_pos_off{n}) + 0.5*dispatch.Vdc*(a_off(1) + a_off(2) * I_down(1));
                         
 
-                        a_on = dispatch.topology{dispatch.jump_down_neg_on{m}}.switch_on;
-                        a_off = dispatch.topology{dispatch.jump_down_neg_off{m}}.switch_off;
+                        a_on = dispatch.topology{dispatch.jump_down_neg_on{n}}.switch_on;
+                        a_off = dispatch.topology{dispatch.jump_down_neg_off{n}}.switch_off;
                         % 
 
-                        power_loss(dispatch.jump_down_neg_on{m}) = power_loss(dispatch.jump_down_neg_on{m}) + 0.5*dispatch.Vdc*(a_on(1) + a_on(2) * I_down(2));
-                        power_loss(dispatch.jump_down_neg_off{m}) = power_loss(dispatch.jump_down_neg_off{m}) + 0.5*dispatch.Vdc*(a_off(1) + a_off(2) * I_down(2));
+                        power_loss(dispatch.jump_down_neg_on{n}) = power_loss(dispatch.jump_down_neg_on{n}) + 0.5*dispatch.Vdc*(a_on(1) + a_on(2) * I_down(2));
+                        power_loss(dispatch.jump_down_neg_off{n}) = power_loss(dispatch.jump_down_neg_off{n}) + 0.5*dispatch.Vdc*(a_off(1) + a_off(2) * I_down(2));
                         
 
                         % power_use = power_use + 0.5*dispatch.Vdc*(a_on(1) + a_on(2) * (I_down(1)));
