@@ -13,10 +13,15 @@ opts.unipolar = 1; %need to debug this
 opts.three_phase = "Ignore";
 
 
-opts.power_budget = Inf;
-% opts.power_budget = 3000;
+% opts.power_budget = Inf;  %I =  1.6123, TDD =  0.0347
+% opts.power_budget = 1000; 
 % opts.power_budget = 5000;
-% opts.power_budget = 1e7;
+% opts.power_budget = 1000;   % infeasible
+% opts.power_budget = 2000;   % I =  1.6123, TDD = 0.0348
+% opts.power_budget = 3000;   % I =1.6123, TDD =  0.0349
+% opts.power_budget = 5000;   % I =1.6126, TDD 0.0362
+% opts.power_budget = 10000;  % I =1.6143, TDD = 0.0429
+opts.power_budget = 1e7;      %I = 3.3936, TDD = 0.7538
 
 %external voltage
 % opts.k = 4;

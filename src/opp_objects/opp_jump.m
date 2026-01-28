@@ -176,11 +176,12 @@ classdef opp_jump < handle
 
             %compute the switching losses incurred
             power_use = 0;
-            if ~isempty(obj.I_split_up{1})
+            if ~isempty(obj.I_split_up{1}) && ~isempty(obj.I_split_up{1}.pos)
             [Np, P] = size(obj.jump_up);
             m = obj.mode;
 
             %maximum per-switch power loss
+            
             IposI = obj.I_split_up{1}.mom_lin();
             power_loss = zeros(length(dispatch.topology), 1) * IposI(1);
                 for n=1:Np
