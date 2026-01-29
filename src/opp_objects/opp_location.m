@@ -32,7 +32,7 @@ classdef opp_location < location_interface
             
             %split the current into positive and negative 
             if info.I_split 
-                obj.I_split = opp_current_split(loc_supp, id);
+                obj.I_split = opp_current_split(loc_supp, id, 0);
             end
         end
         
@@ -161,7 +161,7 @@ classdef opp_location < location_interface
             if isempty(obj.I_split)
                 con_power = [];
             else
-                con_power = [mom(obj.sys{1}.meas_occ.vars.x(end).^((0:d)')) - obj.I_split.mom_monom(d) == 0];
+                con_power = [mom(obj.sys{1}.meas_occ.vars.x(end).^((0:d)')) - obj.I_split.mom_monom_first(d) == 0];
             end
         
         end

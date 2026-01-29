@@ -10,7 +10,7 @@ classdef opp_current_split
     end
     
     methods
-        function obj = opp_current_split(loc_supp, prefix, jump)
+        function obj = opp_current_split(loc_supp, prefix)
             %CURRENT_SPLIT Construct an instance of this class
             %   Detailed explanation goes here
 
@@ -22,23 +22,23 @@ classdef opp_current_split
             end
 
             if ~isempty(loc_supp)                
-                obj.pos = obj.meas_def([prefix, '_pos'], 1, jump);
-                obj.neg = obj.meas_def([prefix, '_neg'], -1, jump);
+                obj.pos = obj.meas_def([prefix, '_pos'], 1);
+                obj.neg = obj.meas_def([prefix, '_neg'], -1);
             end
         end
 
         %% measure access
-        function mmmon_out = mom_monom_first(obj, dmin, dmax)
+        function mmmon_out = mom_monom(obj, dmin, dmax)
             %MOM_MONOM moments of monomials
             if nargin < 3
                 dmax = dmin;
                 dmin = 0;
             end
-            d = (dmin:dmax)';
+            
             if isempty(obj.pos)
                 mmmon_out = 0;
             else
-                mmmon_out = mom(obj.pos.vars.x(1).^d) + mom(obj.neg.vars.x(1).^d);
+                mmmon_out = obj.pos.mom_monom(dmin, dmax) + obj.neg.mom_monom(dmin, dmax);
             end
         end  
 
@@ -47,7 +47,7 @@ classdef opp_current_split
             if isempty(obj.pos)
                 mmmon_out = 0;
             else
-                mmmon_out = [mom(obj.pos.vars.x(1)); mom(obj.neg.vars.x(1))];
+                mmmon_out = [obj.pos.mom_monom(1,1), obj.neg.mom_monom(1,1)];
             end
         end  
 
@@ -56,18 +56,9 @@ classdef opp_current_split
             if isempty(obj.pos)
                 mmmon_out = 0;
             else
-                mmmon_out = [mom(obj.pos.vars.x(2)), mom(obj.neg.vars.x(2))];
+                mmmon_out = [obj.pos.mom_monom(1,1), obj.neg.mom_monom(1,1)];
             end
         end  
-
-        function mmmon_out = mom_sq(obj)
-            %MOM_MONOM moments of monomials           
-            if isempty(obj.pos)
-                mmmon_out = 0;
-            else
-                mmmon_out = [mom(obj.pos.vars.x(1)^2), mom(obj.neg.vars.x(1)^2)];
-            end
-        end 
 
 
         function supp_out = supp(obj)
@@ -80,7 +71,7 @@ classdef opp_current_split
         end
 
          %% Measure Creation
-         function [meas_sgn] = meas_def(obj, suffix, sign, jump)           
+         function [meas_sgn] = meas_def(obj, suffix, sign)           
             %MEAS_DEF Define the measures in the collection
             %declare a variable for each measure (index ind in the union)
 
@@ -94,19 +85,9 @@ classdef opp_current_split
             I_var = eval(new_name);
             vars = struct('x', I_var);
 
-            supp = [sign*vars.x >= 0];
-            
-
-            if jump
-                new_name_s = ['s_', suffix];
-                mpol(new_name_s, 1, 1);   
-                s_var = eval(new_name_s);
-                vars.x = [vars.x; s_var];
-                supp = [supp; s_var >= 0; s_var^2 == sign*I_var];
-            end
             %define the measure
-            meas_sgn = meas_base(vars, supp);
             
+            meas_sgn = meas_base(vars, [sign*vars.x >= 0]);
         end  
     end
 end
