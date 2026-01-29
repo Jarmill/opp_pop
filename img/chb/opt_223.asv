@@ -1,0 +1,28 @@
+% load('experiment_N_7.mat')
+
+aq = [ 0.38119444187739643
+ 0.9753206096796204
+ 1.3099716822849397
+ 1.3659375430458054];
+
+uq = [0 1 2 7/2 2]';
+
+% aa = [0; kron(alpha, [1; 1]); pi*2];
+% % uu = kron(u', [1; 1]);
+
+I0 = -1;
+outq = pulse_current_voltage(uq, aq, 2, I0);
+
+aa = [0; kron(outq.alpha(2:end-1), [1; 1]); pi*2];
+uu = kron(outq.u, [1; 1]);
+
+Ipos =outq.I_val - min(outq.I_val);
+Irefl = Ipos - max(Ipos)/2;
+
+
+figure
+c = linspecer(2);
+su
+plot(aa, uu, 'LineWidth', 2, 'color', c(1, :))
+plot(aa, uu, 'LineWidth', 2, 'color', c(1, :))
+axis off
