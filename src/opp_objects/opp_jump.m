@@ -183,6 +183,7 @@ classdef opp_jump < handle
             %maximum per-switch power loss
             
             IposI = obj.I_split_up{1}.mom_lin();
+            
             power_loss = zeros(length(dispatch.topology), 1) * IposI(1);
                 for n=1:Np
                     for p = 1:P    

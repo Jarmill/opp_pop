@@ -71,14 +71,19 @@ classdef opp_current_split
             new_stack = [];
 
             new_name = ['I_', suffix];
+            new_name_s = ['s_', suffix];
 
             mpol(new_name, 1, 1);   
+            mpol(new_name_s, 1, 1); 
             I_var = eval(new_name);
-            vars = struct('x', I_var);
+            s_var = eval(new_name_s);
+            vars = struct('x', [I_var; s_var]);
 
             %define the measure
             
-            meas_sgn = meas_base(vars, [sign*vars.x >= 0]);
+            % meas_sgn = meas_base(vars, [sign*vars.x >= 0]);
+            supp = [sign*I_var >= 0;  s_var >= 0; s_var^2 == sign*I_var];
+            meas_sgn = meas_base(vars, supp);
         end  
     end
 end

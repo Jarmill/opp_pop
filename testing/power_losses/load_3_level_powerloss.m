@@ -13,6 +13,37 @@ opts.unipolar = 1; %need to debug this
 opts.three_phase = "Ignore";
 
 
+
+
+%external voltage
+opts.k = 4;
+% opts.k = 8;
+% opts.k = 12;
+% opts.k = 16;
+% opts.k=20;
+% opts.k = 24;
+% opts.k = 36;
+
+%k=16, order 2
+opts.power_budget = 1000;   % infeasible
+opts.power_budget = 2000;   % infeasible 1.6163    0.0498
+
+%k=16, order 3
+% opts.power_budget = 1000;   % infeasible    1.9836    0.3455
+% opts.power_budget = 2000;   % infeasible    1.6163    0.0499
+% opts.power_budget = 4000;   % infeasible    1.6163    0.0499
+opts.power_budget = Inf;   % infeasible        1.6163    0.0499
+
+%k=24, order 3
+% opts.power_budget = 1000;   % infeasible    
+opts.power_budget = 1300;   % infeasible        %1.9346    0.3222
+% opts.power_budget = 2000;   % infeasible       %1.6124    0.0351
+% opts.power_budget = 4000;   % infeasible     %1.6124    0.0351
+% opts.power_budget = Inf;   % infeasible      %1.6124    0.0351   
+
+
+%order 2
+%k=24: TDD bound rises as more power allowed, this is nonsensical
 % opts.power_budget = Inf;  %I =  1.6123, TDD =  0.0347
 % opts.power_budget = 1000; 
 % opts.power_budget = 5000;
@@ -21,16 +52,9 @@ opts.three_phase = "Ignore";
 % opts.power_budget = 3000;   % I =1.6123, TDD =  0.0349
 % opts.power_budget = 5000;   % I =1.6126, TDD 0.0362
 % opts.power_budget = 10000;  % I =1.6143, TDD = 0.0429
-opts.power_budget = 1e7;      %I = 3.3936, TDD = 0.7538
+% opts.power_budget = 1e7;      %I = 3.3936, TDD = 0.7538
 
-%external voltage
-% opts.k = 4;
-% opts.k = 8;
-% opts.k = 12;
-% opts.k = 16;
-% opts.k=20;
-opts.k = 24;
-% opts.k = 36;
+
 
 opts.common_mode = Inf;
 
@@ -56,8 +80,8 @@ opts.dispatch = opp_power_dispatch();
 
 MG = opp_manager(opts);
 % order = 4;
-% order = 3;
-order = 2;
+order = 3;
+% order = 2;
 % order = 1;
 d = 2*order;
 
@@ -121,6 +145,7 @@ if sol.status==0
     diss = MG.sys1.power_dissipated();
     ddiss = double(diss);
     disp('dissipation: '); ddiss
+    disp([bound_lower, bn_lower])
 
 % pattern_rec = out_polish.warm;
 

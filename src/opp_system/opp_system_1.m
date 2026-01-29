@@ -556,8 +556,8 @@ classdef opp_system_1 < opp_system_interface
                 con_power = [];
             else
                 power_use = obj.power_dissipated(obj.opts.dispatch);
-                
-                con_power = [power_use <= obj.opts.power_budget];
+                power_use_scale = power_use .* (1/obj.opts.power_budget);
+                con_power = [power_use_scale <= 1];
             end
 
            

@@ -39,20 +39,13 @@ classdef opp_power_dispatch
                 cond_diode = [1.19, 0.395e-3];
                 
               
-                on_gct = [0, 0.095e-3, 0, 0];
-                off_gct = [0, 2.6e-3, 0, 0];
+                on_gct = [0, 0.095e-3];
+                off_gct = [0, 2.6e-3];
                 on_diode = 0;
                 % https://www.infineon.com/assets/row/public/documents/60/49/infineon-d1961sh45t-ds-en.pdf
                 % off_diode = [15.2, 0, 0, 0]; %reverse recovery, make this fancier later
-               
-                %[1, I, log(1+I), sqrt(I)]
                 off_diode = [0.72096, -0.000113, -0.0806, 0.0469]; %reverse recovery, make this fancier later
                 
-                %[1, I, I^2, sqrt(I)]
-                off_diode = [0.455831233546860
-                            4.74461201369456e-05
-                            -1.08254424398555e-08
-                            0.0329289648790771];
                 
                 
                 obj.topology = cell(10, 1);
