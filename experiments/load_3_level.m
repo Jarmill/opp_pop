@@ -2,8 +2,8 @@ mset clear
 yalmip('clear')
 
 opts = opp_options;
-% opts.L = [-1, 0, 1];
-opts.L = [-1, -0.5, 0, 0.5, 1];
+opts.L = [-1, 0, 1];
+% opts.L = [-1, -0.5, 0, 0.5, 1];
 % opts.L = [-1, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();

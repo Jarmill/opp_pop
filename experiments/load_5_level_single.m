@@ -11,8 +11,8 @@ opts.partition = 2;
 opts.TIME_INDEP = true;
 opts.early_stop = 0;
 opts.null_objective = false;
-opts.Symmetry = 1;
-% opts.Symmetry = 2;
+% opts.Symmetry = 1;
+opts.Symmetry = 2;
 opts.unipolar = 1; %need to debug this
 % % opts.quarter_match = true;
 % opts.three_phase = "Balanced";
@@ -51,8 +51,8 @@ modulation = 0.8;
 % modulation = 0.5;
 % modulation = 1;
 
-% kappa = 0;
-kappa = 0.5;
+kappa = 0;
+% kappa = 0.5;
 % kappa = 1.5;
 % kappa = 2;
 
@@ -61,6 +61,7 @@ opts.Z_load = kappa/(2*pi*opts.f0) + 1.0j;
 % opts.Z_load = 4.0j;
 
 
+opts.verbose = true;
 
 opts.harmonics.bound_sin = modulation*[1, 1];
 % opts.harmonics.bound_cos = [0,  0; 0.5, 0.5];
@@ -81,8 +82,8 @@ opts.harmonics.bound_sin = modulation*[1, 1];
 
 MG = opp_manager(opts);
 % order = 4;
-order = 3;
-% order = 2;
+% order = 3;
+order = 2;
 % order = 1;
 d = 2*order;
 
