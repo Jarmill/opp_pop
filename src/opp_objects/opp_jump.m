@@ -184,7 +184,7 @@ classdef opp_jump < handle
             
             IposI = obj.I_split_up{1}.mom_lin();
             
-            power_loss = zeros(length(dispatch.topology), 1) * IposI(1);
+            power_loss = zeros(length(dispatch.topology), 1) * mom(obj.vars.x(1))*0;
                 for n=1:Np
                     for p = 1:P    
                         if ~isempty(obj.I_split_up{n}) && ~isempty(obj.I_split_up{n}.pos)
