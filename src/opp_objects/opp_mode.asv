@@ -133,12 +133,11 @@ classdef opp_mode < opp_mode_interface
 
             if opts.hard_stage_costs
                 % [n, bounds, types] = harm_screen(obj.opts);
-                % stage_ind = (I_ind+1):length(x);
+                stage_ind = (I_ind+1):length(x);
                 nstage = length(stage_ind);
 
-                % xstage = vars.x(stage_ind);
-                
-                f_stage = obj.stage_dynamics(opts, vars.x([1, 2, I_ind]));
+                xstage = vars.x(stage_ind);
+                f_stage = obj.stage_dynamics(opts, xstage);
 
 
             else
@@ -179,23 +178,7 @@ classdef opp_mode < opp_mode_interface
     
         %% harmonics constraints
 
-        function f_stage = stage_dynamics(obj, opts, x)
-            %running (stage) costs. the harmonics constraints and power
-            %loss constraints, if hard constraints are used.
-            
-            %a hard version of opp_system_1.con_harmonics()
-
-            f_stage = [];
-            %x: [1, 2, 3]: [cos, sin, I]
-            if opts.hard_stage_costs
-            
-                [n, bounds, types] = harm_screen(opts);
-            
-
-            end
-
-
-        end
+        function f_stage = stage_dynamics(obj, )
 
         function harm = voltage_harmonics_mom(obj, vars, harm_mon)
             %voltage harmonics constraints

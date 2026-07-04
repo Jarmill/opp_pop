@@ -11,10 +11,10 @@ opts.partition = 2;
 opts.TIME_INDEP = true;
 opts.early_stop = 0;
 opts.null_objective = false;
-% opts.Symmetry = 1;
-opts.Symmetry = 2;
+opts.Symmetry = 1;
+% opts.Symmetry = 2;
 opts.unipolar = 1; %need to debug this
-% % opts.quarter_match = true;
+opts.quarter_match = true;
 % opts.three_phase = "Balanced";
 % opts.three_phase = "Floating";
 opts.three_phase = "Ignore";
@@ -31,11 +31,11 @@ opts.uext = 0 + 0j;
 % opts.clock_split = true;% opts.clock = false;
 
 % opts.k = 4;
-% opts.k = 8;
+opts.k = 8;
 % opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
-opts.k = 24;
+% opts.k = 24;
 % opts.k = 36;
 
 % opts.common_mode = 1;
@@ -51,8 +51,8 @@ modulation = 0.8;
 % modulation = 0.5;
 % modulation = 1;
 
-kappa = 0;
-% kappa = 0.5;
+% kappa = 0;
+kappa = 0.5;
 % kappa = 1.5;
 % kappa = 2;
 
@@ -128,7 +128,7 @@ if sol.status==0
 
 % M = MG.mmat();
 
-    RESOLVE = 1;
+    RESOLVE = 0;
 
     if RESOLVE
         opts2 = opts;

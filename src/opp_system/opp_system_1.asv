@@ -41,7 +41,7 @@ classdef opp_system_1 < opp_system_interface
                 % explicitly include the harmonics constraints as states
 
                 %TODO: incorporate power losses here.
-                [n, bounds, types] = harm_screen(opts);
+                [n, bounds, types] = harm_screen(obj, opts);
 
                 mpol(['stage', opts.name], length(n), 1);
                 stage = eval(['stage', opts.name]);
@@ -131,9 +131,9 @@ classdef opp_system_1 < opp_system_interface
                 %normalize the hard stage costs to [-1, 1]
                 stage_ind = (I_ind+1):length(x);
                
-                [n, bounds, types] = harm_screen(opts);
-                bndmax = max(max(bounds));
-                X_stage = bndmax^2 - x(stage_ind).^2;
+                [n, bounds, types] = harm_screen(obj, opts);
+                mas
+                X_stage = 1 - x(stage_ind).^2;
                 X = [X; X_stage];
 
             end
@@ -455,7 +455,69 @@ classdef opp_system_1 < opp_system_interface
 
 
 
-      
+        function [n, bounds, types] = harm_screen(obj, opts)
+
+            %screen the harmonics constraints for nontrivial terms (given
+            %the symmetry configuration)
+
+            if nargin < 2
+                opts = obj.opts;
+            end
+
+            Sym = opts.Symmetry;
+            if Sym==1 && opts.quarter_match
+                Sym = 2;
+            end
+
+            n = [];
+            bounds = [];
+            types = [];
+
+            harm = opts.harmonics;
+
+            %process the cosine harmonics
+            for i = 1:length(harm.index_cos)
+                
+                ncurr = harm.index_cos(i);
+                bndcurr = harm.bound_cos(i, :);
+                
+                keep = 1;
+                if Sym==1
+                    %half-wave
+                    keep = mod(ncurr, i)==1;
+
+                elseif Sym==2
+                    %quarter-wave
+                    keep = 0;
+                end
+
+                if keep
+                    n = [n; ncurr];
+                    types = [types; 0];
+                    bounds = [bounds; bndcurr]; %TODO: check dimensions here
+                end
+            end
+            
+            %process the sine harmonics
+            for i = 1:length(harm.index_sin)
+
+                ncurr = harm.index_sin(i);
+                bndcurr = harm.bound_sin(i, :);
+
+                keep = 1;
+                if Sym>0
+                    %half-wave and quarter-wave
+                    keep = mod(ncurr, i)==1;
+                end
+
+                if keep
+                    n = [n; ncurr];
+                    types = [types; 1];
+                    bounds = [bounds; bndcurr]; %TODO: check dimensions here
+                end
+            end
+
+        end
 
         function harm_monom = harm_eval(obj, vars, harm_in)            
             % [vars.x(1).^harm_in.index_cos; vars.x(2).^harm_in.index_sin]/pi;

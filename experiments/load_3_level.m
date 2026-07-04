@@ -7,17 +7,19 @@ opts.L = [-1, 0, 1];
 % opts.L = [-1, 1];
 % opts.L = [-2, -1, 0, 1, 2];
 opts.harmonics = opp_harmonics();
-opts.partition = 2;
+opts.partition = 1;
 opts.TIME_INDEP = true;
 opts.early_stop = 0;
 opts.null_objective = false;
 opts.Symmetry = 1;
 % opts.Symmetry = 2;
 opts.unipolar = 1; %need to debug this
-% % opts.quarter_match = true;
+opts.quarter_match = true;
 % opts.three_phase = "Balanced";
 % opts.three_phase = "Floating";
 opts.three_phase = "Ignore";
+
+opts.hard_stage_costs = true;
 
 %external voltage
 opts.uext = 0 + 0j;
@@ -31,11 +33,11 @@ opts.uext = 0 + 0j;
 % opts.clock_split = true;% opts.clock = false;
 
 % opts.k = 4;
-% opts.k = 8;
+opts.k = 8;
 % opts.k = 12;
 % opts.k = 16;
 % opts.k=20;
-opts.k = 24;
+% opts.k = 24;
 % opts.k = 36;
 
 % opts.common_mode = 1;
@@ -127,7 +129,7 @@ if sol.status==0
 
 % M = MG.mmat();
 
-    RESOLVE = 1;
+    RESOLVE = 0;
 
     if RESOLVE
         opts2 = opts;
@@ -141,23 +143,9 @@ if sol.status==0
         bound_upper = out2.tdd_upper;        
         out_polish = opp_polish_RL(out2);
         bound_upper = out_polish.warm.tdd;
+        pattern_rec = out_polish.warm;
     end
 
-pattern_rec = out_polish.warm;
-
-% if ~RESOLVE
-%     pu = out.pattern.u;
-%     pa = out.pattern.alpha;
-%     thi = [0, pa, 2*pi];
-%     xi = out.pattern.I;
-%     % I0_rec = out.pattern.I(1);
-% else
-%     pu = out2.pattern.u;
-%     pa = out2.pattern.alpha;
-%     thi = [0, pa, 2*pi];
-%     xi = out2.pattern.I;
-%     % I0_rec = out2.pattern.I(1);
-% end
 
 %% plotting 
 
@@ -169,7 +157,7 @@ th = linspace(0, 2*pi, N_interp);
 
 %function
 pu = pattern_rec.u;
-pa = pattern_rec.alpha(2:end-1)';
+pa = pattern_rec.alpha;
 % x = pulse_func(th, pu, pa);
 x = pulse_func(th, pu, pa);
 
@@ -207,7 +195,7 @@ if kappa > 0
 else
     plot(th, xi, 'linewidth', 3, 'color', cc(2, :));
 end
-scatter(pattern_rec.alpha, pattern_rec.I, 200, cc(2, :), 'filled');
+scatter([0, pattern_rec.alpha, 2*pi]', pattern_rec.I, 200, cc(2, :), 'filled');
 ylabel('$I(\theta)$', 'Interpreter', 'latex', 'FontSize',14);
 xlabel('$\theta$', 'Interpreter', 'latex', 'FontSize',14);
 xlim([0, 2*pi])

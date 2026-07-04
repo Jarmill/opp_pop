@@ -33,6 +33,7 @@ classdef opp_manager
             
             obj.sys3 = opp_system_3(obj.opts);
             if obj.opts.clock_split
+                %the clock is needed, otherwise the bounds are terrible.
                 clock_opts = obj.opts;
                 std_opts = obj.opts;
                 
