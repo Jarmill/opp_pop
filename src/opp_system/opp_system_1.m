@@ -170,8 +170,9 @@ classdef opp_system_1 < opp_system_interface
             %mass of initial measure = 1
             con_prob = obj.con_prob_dist();
              
-            %initial = sum of terminal measure
+            %periodicity constraint (start and end)
             con_preserve = obj.con_return(d);
+            % con_preserve = [];
 
             %flow +jump continuity constraints
             con_liou = obj.con_flow(d);
@@ -329,9 +330,9 @@ classdef opp_system_1 < opp_system_interface
                 end
 
                 if flip_load
-                    signs = [ones(num_x-1, 1); -1];
+                    signs = [-1, 1, 1, -1];
                 else
-                    signs = ones(num_x, 1);
+                    signs = [-1, 1, 1, 1];
                 end
 
                 

@@ -12,10 +12,10 @@ opts.TIME_INDEP = true;
 opts.early_stop = 0;
 opts.null_objective = false;
 % opts.Symmetry = 0;
-% opts.Symmetry = 1;
-opts.Symmetry = 2;
+opts.Symmetry = 1;
+% opts.Symmetry = 2;
 opts.unipolar = 1; %need to debug this
-opts.quarter_match = false;
+opts.quarter_match = true;
 % opts.three_phase = "Balanced";
 % opts.three_phase = "Floating";
 opts.three_phase = "Ignore";
@@ -34,9 +34,9 @@ opts.uext = 0 + 0j;
 % opts.clock_split = true;% opts.clock = false;
 
 % opts.k = 4;
-opts.k = 8;
+% opts.k = 8;
 % opts.k = 12;
-% opts.k = 16;
+opts.k = 16;
 % opts.k=20;
 % opts.k = 24;
 % opts.k = 36;
@@ -54,8 +54,8 @@ modulation = 0.8;
 % modulation = 0.5;
 % modulation = 1;
 
-kappa = 0;
-% kappa = 0.5;
+% kappa = 0;
+kappa = 0.5;
 % kappa = 1.5;
 % kappa = 2;
 
@@ -232,7 +232,8 @@ xlim([0, 2*pi])
 
 nexttile
 hold on
-% xi_query = interp1(thi,xi, th);res_xi = pattern_rec.I_val + modulation/(1+kappa)*cos(pattern_rec.alpha_val+ atan(kappa));
+% xi_query = interp1(thi,xi, th);
+res_xi = pattern_rec.I_val + modulation/(1+kappa)*cos(pattern_rec.alpha_val+ atan(kappa));
 plot(pattern_rec.alpha_val, res_xi, 'linewidth', 3, 'color', cc(3, :));
 plot([0, 2*pi], [0, 0], ':k')
 xlim([0, 2*pi])
