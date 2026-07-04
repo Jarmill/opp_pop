@@ -52,30 +52,37 @@ classdef opp_mode < opp_mode_interface
                     end                    
             end
 
+
+            Xstop = [stop_pt; lsupp_base.X(2:end-1)];
+            Xstart = [start_pt; lsupp_base.X(2:end-1)];
+
             if opts.hard_stage_costs
+                x = vars.x;
                 stage_ind = (I_ind+1):length(x);
 
                 %constrain the harmonics at the final time
                 %must fulfill the stage cost constraints (hard)
                 [nharm, bounds, types] = harm_screen(opts);
                 X_harm = [];
+                sym_scale = 2^double(opts.Symmetry);
                 for i = 1:nharm
-                    bndcurr = bounds(i, :);
+                    bndcurr = bounds(i, :) / sym_scale;
                     if bndcurr(1) == bndcurr(2);
                         X_harm_new = [x(stage_ind(i)) == bndcurr(1)];
                     else
                         xcurr = x(stage_ind(i));
                         X_harm_new = [(xcurr - bndcurr(1)) * (bndcurr(2) - xcurr) >= 0];
                     end
+                    %TODO: URGENT: for debugging
+                    % X_harm_new = [x(stage_ind)==0];
                     X_harm = [X_harm; X_harm_new];
                 end
                 
+
                 Xstart = [Xstart; x(stage_ind)==0];
-                Xstop = [stop_pt; X_harm];
+                Xstop = [Xstop; X_harm];
             end
 
-            Xstop = [stop_pt; lsupp_base.X(2:end-1)];
-            Xstart = [start_pt; lsupp_base.X(2:end-1)];
 
             mode_end = opts.k/(2^opts.Symmetry);
             if m==0                
@@ -133,10 +140,9 @@ classdef opp_mode < opp_mode_interface
 
             if opts.hard_stage_costs
                 % [n, bounds, types] = harm_screen(obj.opts);
-                % stage_ind = (I_ind+1):length(x);
+                stage_ind = (I_ind+1):length(vars.x);
                 nstage = length(stage_ind);
 
-                % xstage = vars.x(stage_ind);
                 
                 f_stage = obj.stage_dynamics(opts, vars.x([1, 2, I_ind]));
 
@@ -146,7 +152,7 @@ classdef opp_mode < opp_mode_interface
                 f_stage = [];
             end
             
-            nstage = 
+            
 
             if imag(opts.Z_load) == 0
                 x_load = [];
@@ -161,7 +167,6 @@ classdef opp_mode < opp_mode_interface
                 f_ext = 2*pi*[real(uext), imag(uext)]*vars.x(1:2)/ (2^double(obj.Symmetry));
                 f_load = f_load + f_ext;
             end
-
 
             
             N = size(opts.L, 2);
@@ -191,6 +196,57 @@ classdef opp_mode < opp_mode_interface
             
                 [n, bounds, types] = harm_screen(opts);
             
+                %terms from opp_system_1.harm_eval(obj, vars, harm_in)            
+
+                
+                nmax = max(n);
+                c = x(1);
+                s = x(2);
+
+                %cosine harmonics
+                T = zeros(nmax+1, 1)*c;
+                T(1) = 1+0*c;
+                T(2) = c;
+                for p = 2:nmax
+                    T(p+1) = 2*c*T(p) - T(p-1);
+                end
+
+                %sin harmonics
+                U = zeros(nmax, 1)*c;
+                U(1) = 1+0*c;
+                U(2) = 2*c;
+                for p = 2:nmax
+                    U(p+1) = 2*c*U(p) - U(p-1);
+                end
+
+                % Lrescale = (max(max(abs(opts.L))));
+                % Lscale = 2*opts.L/Lrescale;
+
+                Lz = zeros(size(opts.L));
+                % fscale = 1;
+                fscale = 2*pi * (2^double(-obj.Symmetry));
+
+
+                %having nonzero dynamics here causes infeasibility
+                %why?
+
+                % f_stage = ones(length(n), length(opts.L));
+
+                % f_stage = zeros(length(n), length(opts.L));
+
+                for i = 1:length(n)
+                    if types(i) == 1
+                        %sine harmonic
+                        % f_stage = [f_stage; fscale * s*U(n(i)) * opts.L];
+                        f_stage = [f_stage; fscale * s*U(n(i)) * (opts.L)];
+
+                    else
+                        %cos harmonic
+                        f_stage = [f_stage; fscale * T(n(i)+1) * opts.L];
+                    end
+
+                    % f_stage = [f_stage; Lz];
+                end
 
             end
 

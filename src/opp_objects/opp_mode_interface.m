@@ -242,12 +242,16 @@ classdef (Abstract) opp_mode_interface
             end
         end
 
-        function imon = sel_init_monom(obj, d, ind)
+        function imon = sel_init_monom(obj, d, ind, signs)
             %moments of the initial measure
 
             n = length(obj.vars.x);
-            if nargin < 2
+            if nargin < 3
                 ind = 1:n;
+            end
+
+            if nargin < 4
+                signs = ones(length(ind), 1);
             end
             
             [N, P] = size(obj.levels);
@@ -255,7 +259,7 @@ classdef (Abstract) opp_mode_interface
             for n=1:N
                 for p = 1:P
                     if ~isempty(obj.levels{n, p}.init)                        
-                        [~, imon{n, p}] = obj.levels{n, p}.select_monom_init(d, ind);                            
+                        [~, imon{n, p}] = obj.levels{n, p}.select_monom_init(d, ind, signs);                            
                     else
                         imon{n, p} = 0;
                     end
@@ -263,20 +267,25 @@ classdef (Abstract) opp_mode_interface
             end
         end
 
-        function imon = sel_term_monom(obj, d, ind)
-            %moments of the terminalmeasure
+        function imon = sel_term_monom(obj, d, ind, signs)
+            %moments of the terminal measure
 
             n = length(obj.vars.x);
-            if nargin < 2
+            if nargin < 3
                 ind = 1:n;
             end
+
+            if nargin < 4
+                signs = ones(length(ind), 1);
+            end
+
             
             [N, P] = size(obj.levels);
             imon = cell(N, P);
             for n=1:N
                 for p = 1:P
                     if ~isempty(obj.levels{n, p}.term)                        
-                        [~, imon{n, p}] = obj.levels{n, p}.select_monom_term(d, ind);                            
+                        [~, imon{n, p}] = obj.levels{n, p}.select_monom_term(d, ind, signs);                            
                     else
                         imon{n, p} = 0;
                     end
@@ -321,7 +330,7 @@ classdef (Abstract) opp_mode_interface
                     end
                 end
             end
-                end
+        end
 
         function [trmon, trmon_sum] = trig_occ_monom(obj, d)
             %get moments of the occupation measure

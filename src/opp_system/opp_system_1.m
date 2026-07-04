@@ -129,12 +129,14 @@ classdef opp_system_1 < opp_system_interface
             %stage costs            
             if opts.hard_stage_costs
                 %normalize the hard stage costs to [-1, 1]
-                stage_ind = (I_ind+1):length(x);
-               
-                [n, bounds, types] = harm_screen(opts);
-                bndmax = max(max(bounds));
-                X_stage = bndmax^2 - x(stage_ind).^2;
-                X = [X; X_stage];
+                % stage_ind = (I_ind+1):length(x);
+                % 
+                % [n, bounds, types] = harm_screen(opts);
+                % bndmax = max(max(bounds));
+                % X_stage = bndmax^2 - x(stage_ind).^2;
+                % X = [X; X_stage >= 0];
+
+                %TODO: bug here?
 
             end
             
@@ -293,8 +295,16 @@ classdef opp_system_1 < opp_system_interface
         function return_con = con_return(obj, d)
             %conservation of position between the initial and final measure
             
+            %this does not include stage costs
+            %
+
             % mass_con = obj.mode{1}.mass_init_mode();
-            init_monom = obj.mode{1}.init_monom(d, true);
+            % init_monom = obj.mode{1}.init_monom(d, true);
+            num_x = 2 + obj.opts.clock + (obj.opts.Z_load ~= 0);
+
+            
+            x_sel = 1:num_x;
+            init_monom = obj.mode{1}.sel_init_monom(d, x_sel);
 
             N = length(obj.opts.L);
             %TODO: 
@@ -318,17 +328,25 @@ classdef opp_system_1 < opp_system_interface
                     stop_range = 3:2:length(obj.mode);
                 end
 
+                if flip_load
+                    signs = [ones(num_x-1, 1); -1];
+                else
+                    signs = ones(num_x, 1);
+                end
+
                 
 
                 if obj.opts.early_stop                
                     for m = stop_range
                         % mass_con = mass_con - obj.mode{m}.mass_term_mode();
-                        stop_monom = obj.mode{m}.term_monom(d, true, flip_load);
+                        % stop_monom = obj.mode{m}.term_monom(d, true, flip_load);
+                        stop_monom = obj.mode{m}.sel_term_monom(d, x_sel, signs);
+                        % stop_monom = 
                         return_mom = madd_cell_mom(return_mom, {stop_monom{stop_order, end}}, -1);
                     end
                 else
                     % mass_con = mass_con - obj.mode{end}.mass_term_mode();
-                    stop_monom = obj.mode{end}.term_monom(d, true, flip_load);
+                    stop_monom = obj.mode{end}.sel_term_monom(d, x_sel, signs);
                     return_mom = madd_cell_mom(return_mom, {stop_monom{stop_order, end}}, -1);
                 end
     
@@ -417,38 +435,44 @@ classdef opp_system_1 < opp_system_interface
         %% harmonics
         function [harm_con, harm_source] = con_harmonics(obj)
             %collect harmonics constraints on the voltage source and the load
-            harm = obj.harm_eval(obj.vars, obj.opts.harmonics);
-            harm_load_data = obj.harm_eval(obj.vars, obj.opts.harmonics_load);
-            
-            % harmonics on voltage source
-            if ~isempty(harm)
-                harm_source = 0;
-                for m = 1:length(obj.mode)   
-                    harm_mom = obj.mode{m}.voltage_harmonics_mom(obj.vars, harm);
-                    harm_source = harm_source + harm_mom;
+
+            if ~obj.opts.hard_stage_costs
+                harm = obj.harm_eval(obj.vars, obj.opts.harmonics);
+                harm_load_data = obj.harm_eval(obj.vars, obj.opts.harmonics_load);
+                
+                % harmonics on voltage source
+                if ~isempty(harm)
+                    harm_source = 0;
+                    for m = 1:length(obj.mode)   
+                        harm_mom = obj.mode{m}.voltage_harmonics_mom(obj.vars, harm);
+                        harm_source = harm_source + harm_mom;
+                    end
+                    harm_source_con = harmonics_process(obj.opts.harmonics, harm_source);
+                else
+                    harm_source_con = [];                
                 end
-                harm_source_con = harmonics_process(obj.opts.harmonics, harm_source);
+    
+    
+                %TODO: grid side filters
+    
+                %TODO: symmetries with harmonics on load side
+                %harmonics on the load side
+                % if ~isempty(harm_load_data)          
+                %     harm_load = 0;
+                %     for m = 0:length(obj.mode)     
+                %         harm_mom_load = obj.mode{m}.load_harmonics_mom(obj.vars, harm_load, obj.opts.harmonics_load);
+                %         harm_load = harm_load + harm_mom_load;
+                %     end
+                %     harm_load_con = harmonics_process(obj.opts.harmonics_load, harm_load);
+                % else
+                    harm_load_con = [];
+                % end
+                
+                harm_con = [harm_load_con; harm_source_con];
             else
-                harm_source_con = [];                
+                harm_source = [];
+                harm_con = [];
             end
-
-
-            %TODO: grid side filters
-
-            %TODO: symmetries with harmonics on load side
-            %harmonics on the load side
-            % if ~isempty(harm_load_data)          
-            %     harm_load = 0;
-            %     for m = 0:length(obj.mode)     
-            %         harm_mom_load = obj.mode{m}.load_harmonics_mom(obj.vars, harm_load, obj.opts.harmonics_load);
-            %         harm_load = harm_load + harm_mom_load;
-            %     end
-            %     harm_load_con = harmonics_process(obj.opts.harmonics_load, harm_load);
-            % else
-                harm_load_con = [];
-            % end
-            
-            harm_con = [harm_load_con; harm_source_con];
 
             %TODO: finish this. Sum up the harmonics over all components
         end

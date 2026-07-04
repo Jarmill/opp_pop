@@ -145,9 +145,13 @@ classdef opp_location < location_interface
 
         end
 
-        function [v_sel, mon_sel] = select_monom_init(obj, d, ind)
+        function [v_sel, mon_sel] = select_monom_init(obj, d, ind, signs)
             %moments of all other variables [phi, l] 
             
+            if nargin < 3
+                signs = ones(length(ind), 1);
+            end
+
             if isempty(obj.supp.X)
                 v_sel = 0;
                 mon_sel= 0;
@@ -155,15 +159,24 @@ classdef opp_location < location_interface
                 x_curr = obj.init.meas{1}.vars.x;
                 x_sel = x_curr(ind);                
                 v_sel= mmon(x_sel, 0, d);
+
+
+                if any(signs ~= 1)
+                    v_sel =  subs(v_sel, x_sel, diag(signs)*x_sel);                
+                end
                 
     
                 mon_sel = mom(v_sel);
             end
         end
 
-        function [v_sel, mon_sel] = select_monom_term(obj, d, ind)
+        function [v_sel, mon_sel] = select_monom_term(obj, d, ind, signs)
             %moments of all other variables [phi, l] 
             
+            if nargin < 3
+                signs = ones(length(ind), 1);
+            end
+
             if isempty(obj.supp.X)
                 v_sel = 0;
                 mon_sel= 0;
@@ -172,6 +185,9 @@ classdef opp_location < location_interface
                 x_sel = x_curr(ind);                
                 v_sel= mmon(x_sel, 0, d);
                 
+                if any(signs ~= 1)
+                    v_sel =  subs(v_sel, x_sel, diag(signs)*x_sel);                
+                end
     
                 mon_sel = mom(v_sel);
             end

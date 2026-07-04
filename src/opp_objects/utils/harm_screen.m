@@ -8,7 +8,8 @@ function [n, bounds, types] = harm_screen(opts)
                 Sym = 2;
             end
 
-            Sym_Scale = double(2^(-Sym));
+            % Sym_Scale = double(2^(-Sym));
+            Sym_Scale = 1;
             n = [];
             bounds = [];
             types = [];
@@ -24,7 +25,7 @@ function [n, bounds, types] = harm_screen(opts)
                 keep = 1;
                 if Sym==1
                     %half-wave
-                    keep = mod(ncurr, i)==1;
+                    keep = mod(ncurr, 2)==1;
 
                 elseif Sym==2
                     %quarter-wave
@@ -47,7 +48,7 @@ function [n, bounds, types] = harm_screen(opts)
                 keep = 1;
                 if Sym>0
                     %half-wave and quarter-wave
-                    keep = mod(ncurr, i)==1;
+                    keep = mod(ncurr, 2)==1;
                 end
 
                 if keep
