@@ -63,10 +63,11 @@ classdef opp_mode < opp_mode_interface
                 %constrain the harmonics at the final time
                 %must fulfill the stage cost constraints (hard)
                 [nharm, bounds, types] = harm_screen(opts);
-                X_harm = [];
-                sym_scale = 2^double(opts.Symmetry);
+                X_harm = [];                
+                % sym_scale = (2^double(-obj.Symmetry));
+                sym_scale = 1;
                 for i = 1:nharm
-                    bndcurr = bounds(i, :) / sym_scale;
+                    bndcurr = bounds(i, :) * sym_scale;
                     if bndcurr(1) == bndcurr(2);
                         X_harm_new = [x(stage_ind(i)) == bndcurr(1)];
                     else
@@ -223,8 +224,11 @@ classdef opp_mode < opp_mode_interface
                 % Lscale = 2*opts.L/Lrescale;
 
                 Lz = zeros(size(opts.L));
+                fscale = 2;
+                %*2pi: time scale [0, T], /2pi: denominator for harmonics
+                %constraint
+                % fscale = 2*pi * (2^double(-obj.Symmetry)) / (2*pi);
                 % fscale = 1;
-                fscale = 2*pi * (2^double(-obj.Symmetry));
 
 
                 %having nonzero dynamics here causes infeasibility
